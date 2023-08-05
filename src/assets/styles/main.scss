@@ -1,0 +1,10 @@
+body {
+  background-color: var(--home-background);
+  color: var(--home-color);
+  height: 100vh;
+  font-family: 'Arial Narrow Bold', sans-serif;
+
+  & div#app {
+    height: 100%;
+  }
+}

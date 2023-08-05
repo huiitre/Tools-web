@@ -1,0 +1,23 @@
+:root {
+  /** Couleurs */
+  --orange: #da6200;
+  --light-grey: #7c7c83;
+  --lighty-grey: #999;
+  --very-light-grey: #dddddd;
+  --white: #fff;
+  --black: #000;
+  --blue-green: #3a6073;
+  --grey: #4d4c4c;
+  --red: #af2727;
+  --transparent: #00000000;
+  --high-transparent: #ffffff26;
+}
+
+.main-theme {
+  /** home */
+  --home-background: var(--very-light-grey);
+  --home-color: var(--black);
+
+  /* * login */
+  --login-form-background-color: var(--white);
+}
