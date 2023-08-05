@@ -25,17 +25,17 @@ const connexionData = reactive({
 });
 
 // méthode submit de connexion
-const handleSubmitConnection = (credentials) => {
+const handleSubmitConnection = () => {
   console.log("%c Login.vue #36 || handleConnexion", 'background:blue;color:#fff;font-weight:bold;');
 }
 
 //* data formulaire d'inscription
-const inscriptionData = reactive({
+/* const inscriptionData = reactive({
   nickname: '',
   email: '',
   password: '',
   confirmPassword: '',
-});
+}); */
 </script>
 
 <template>

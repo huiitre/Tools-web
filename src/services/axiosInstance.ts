@@ -1,7 +1,7 @@
 import axios from "axios";
 import LS from "./localStorage";
 import { clearToasts } from "mosha-vue-toastify";
-import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
+// import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
 import router from "@/router/router";
 import store from "@/store/store";
 
@@ -42,7 +42,7 @@ client.interceptors.response.use(async(response) => {
   if (!data.status && data.msg.includes('EW ERR 401 - IDUSER OR TOKEN UNIDENTIFY')) {
     //* on tente de regénérer un token et de relancer la requête
     try {
-      const data = await useFetchConnexion({ login: user.login, password: user.password })
+      // const data = await useFetchConnexion({ login: user.login, password: user.password })
       //* si l'identifiant est incorrect
       if (!data.status)
         throw new DOMException(data.msg)

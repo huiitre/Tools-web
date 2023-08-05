@@ -21,7 +21,7 @@
     "mosha-vue-toastify": "^1.0.23",
     "vue": "^3.2.47",
     "vue-router": "^4.2.2",
-    "vuex": "^4.0.2"
+    "vuex": "^4.1.0"
   },
   "devDependencies": {
     "@types/node": "^18.11.9",
@@ -35,7 +35,7 @@
     "eslint-plugin-vue": "^9.14.1",
     "prettier": "^2.8.8",
     "sass": "^1.56.1",
-    "typescript": "^5.0.2",
+    "typescript": "^5.1.6",
     "vite": "^4.3.9",
     "vue-tsc": "^1.4.2"
   },

@@ -1,4 +1,4 @@
-import { createStore } from "vuex";
+import { createStore } from 'vuex';
 import Core from './Core/core'
 // import StringGenerator from './modules/StringGenerator/StringGenerator'
 // import StringList from './modules/StringList/StringList'

@@ -1,6 +1,5 @@
 <script setup lang="ts">
 // Vue
-import { reactive } from 'vue';
 
 // Components
 import CustomInput from '@/components/form/CustomInput.vue'
@@ -19,7 +18,6 @@ import CustomButton from '@/components/form/CustomButton.vue'
       placeholder=""
       modelValue=""
       @update:modelValue=""
-      isError=""
       isErrorMessage=""
     />
     <CustomInput
@@ -30,7 +28,6 @@ import CustomButton from '@/components/form/CustomButton.vue'
       placeholder=""
       modelValue=""
       @update:modelValue=""
-      isError=""
       isErrorMessage=""
     />
     <CustomInput
@@ -41,8 +38,6 @@ import CustomButton from '@/components/form/CustomButton.vue'
       placeholder=""
       modelValue=""
       @update:modelValue=""
-      allowShowPasswordIcon=""
-      isError=""
       isErrorMessage=""
     />
     <div class="c-f_buttons">
