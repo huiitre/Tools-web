@@ -2,6 +2,8 @@ import { createRouter, createWebHistory } from "vue-router";
 import store from "@/store/store";
 // import LS from "@/services/localStorage";
 
+console.log("%c router.ts #5 || import.meta.env : ", 'background:red;color:#fff;font-weight:bold;', import.meta.env);
+
 // components
 import Login from '@/modules/Login/Login.vue'
 import Home from '@/modules/Home/Home.vue'
@@ -30,7 +32,6 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   console.log("%c router.ts #33 || from : ", 'background:red;color:#fff;font-weight:bold;', from);
-  console.log("%c router.ts #32 || store : ", 'background:red;color:#fff;font-weight:bold;', store.state);
   if (to.meta.requireAuth && !store.state.Core.user.isLogged)
     next('/login')
   next()
