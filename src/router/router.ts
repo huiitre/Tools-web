@@ -30,8 +30,12 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
   console.log("%c router.ts #33 || from : ", 'background:red;color:#fff;font-weight:bold;', from);
-  if (to.meta.requireAuth && !store.state.Core.user.isLogged)
+  if (to.meta.requireAuth && !store.state.Core.user.isLogged) {
+    console.log("%c router.ts #34 || next login", 'background:blue;color:#fff;font-weight:bold;');
     next('/login')
+  }
+  console.log("%c router.ts #37 || next classique", 'background:blue;color:#fff;font-weight:bold;');
+  console.log("%c router.ts #38 || to : ", 'background:red;color:#fff;font-weight:bold;', to);
   next()
 })
 

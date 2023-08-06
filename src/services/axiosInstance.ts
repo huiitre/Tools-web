@@ -4,7 +4,7 @@ import { clearToasts } from "mosha-vue-toastify";
 // import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
 import router from "@/router/router";
 import store from "@/store/store";
-
+console.log("%c axiosInstance.ts #7 || axiosInstance", 'background:blue;color:#fff;font-weight:bold;');
 const client = axios.create({
   headers: {
     'Content-Type': 'application/json',
