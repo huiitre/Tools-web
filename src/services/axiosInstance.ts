@@ -1,11 +1,8 @@
 import axios from "axios";
-import LS from "./localStorage";
-import { clearToasts } from "mosha-vue-toastify";
 // import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
-import router from "@/router/router";
-import store from "@/store/store";
 console.log("%c axiosInstance.ts #7 || axiosInstance", 'background:blue;color:#fff;font-weight:bold;');
 const client = axios.create({
+  baseURL: import.meta.env.VITE_TOOLS_API_URL,
   headers: {
     'Content-Type': 'application/json',
   }
@@ -13,7 +10,10 @@ const client = axios.create({
 
 
 client.interceptors.request.use((config) => {
-  const user = LS.get('TOOLZ2_USER')
+  /* console.log("%c axiosInstance.ts #17 || client.interceptors.request", 'background:blue;color:#fff;font-weight:bold;');
+  const userLS = LS.get('TOOLS_USER')
+  const userStore = store.state.
+  console.log("%c axiosInstance.ts #19 || userLS : ", 'background:red;color:#fff;font-weight:bold;', userLS);
 
   //? Pour chaque requête qu'on va intercepter, on y insère l'iduser et le token provenant du state
   //* on insère l'iduser et le token dans la requête
@@ -28,12 +28,12 @@ client.interceptors.request.use((config) => {
     config.baseURL = import.meta.env.VITE_TOOLZ_API_URL
   }
   else
-    config.baseURL = import.meta.env.VITE_TOOLZ_WEB_URL
+    config.baseURL = import.meta.env.VITE_TOOLZ_WEB_URL */
 
   return config
 })
 
-client.interceptors.response.use(async(response) => {
+/* client.interceptors.response.use(async(response) => {
   const { data } = response
 
   const user = LS.get('TOOLZ2_USER')
@@ -96,7 +96,7 @@ client.interceptors.response.use(async(response) => {
 
   return response
 }, (error) => {
-  console.log("%c axiosInstance.ts #31 || error de l'interceptor : ", 'background:red;color:#fff;font-weight:bold;', error);
-})
+  console.log("%c axiosInstance.ts #99 || error de l'interceptor : ", 'background:red;color:#fff;font-weight:bold;', error);
+}) */
 
 export default client;

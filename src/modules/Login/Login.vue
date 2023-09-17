@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import website_img from '@/assets/img/Core/website_img.jpg';
 import { ref } from 'vue';
-import { reactive } from 'vue';
 
 // components
 import CustomSwitch from '@/components/form/CustomSwitch.vue'
 import ConnexionForm from '@/modules/Login/ConnexionForm.vue'
 import InscriptionForm from '@/modules/Login/InscriptionForm.vue'
+
+import store from '@/store/store';
 
 //* mode connexion ou inscription
 const formMode = ref('Connexion');
@@ -16,26 +17,16 @@ const changeFormMode = (value: boolean) => {
   else formMode.value = 'Connexion'
 }
 
-//* data formulaire de connexion
-const connexionData = reactive({
-  formValid: false,
-  loading: false,
-  email: '',
-  password: '',
-});
-
 // méthode submit de connexion
-const handleSubmitConnection = () => {
-  console.log("%c Login.vue #36 || handleConnexion", 'background:blue;color:#fff;font-weight:bold;');
+const handleSubmitConnection = (data: { email: string, password: string }) => {
+  store.dispatch('Core/login', data)
 }
 
-//* data formulaire d'inscription
-/* const inscriptionData = reactive({
-  nickname: '',
-  email: '',
-  password: '',
-  confirmPassword: '',
-}); */
+const handleSubmitSubscribe = async(data: { email: string; password: string; confirm_password: string; name: string }) => {
+  const result = await store.dispatch('Core/register', data)
+  if (result) formMode.value = 'Connexion'
+}
+
 </script>
 
 <template>
@@ -51,14 +42,12 @@ const handleSubmitConnection = () => {
       </div>
       <div class="l-c_c_connexion" v-if="formMode === 'Connexion'">
         <ConnexionForm
-          :email="connexionData.email"
-          :password="connexionData.password"
           @event-submit="handleSubmitConnection"
         />
       </div>
       <div class="l-c_c_inscription" v-if="formMode === 'Inscription'">
         <InscriptionForm
-
+          @event-subscribe="handleSubmitSubscribe"
         />
       </div>
     </div>

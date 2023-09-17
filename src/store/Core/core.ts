@@ -1,24 +1,19 @@
-/* import * as getters from './getters';
+
 import * as actions from './actions';
-import * as mutations from './mutations'; */
+import * as mutations from './mutations';
+import * as getters from './getters';
 
 // import { State } from './Types';
 
+import { baseUser } from '@/utils/Core/createUserInfos';
+
 const state = {
-  user: {
-    isLogged: true,
-    iduser: null,
-    type: null,
-    token: null,
-    email: null,
-    password: null,
-    nickname: null
-  }
+  user: { ...baseUser }
 };
 export default {
   namespaced: true,
   state,
-  // mutations,
-  // actions,
-  // getters,
+  mutations,
+  actions,
+  getters,
 };
