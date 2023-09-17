@@ -1,1 +1,1 @@
-export const getters = {}
+export const isLogged = (state: any) => state.user.isLogged

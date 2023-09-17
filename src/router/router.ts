@@ -29,8 +29,13 @@ const router = createRouter({
 })
 
 router.beforeEach((to, from, next) => {
+  // const user = LS.get('TOOLS_USER')
   console.log("%c router.ts #33 || from : ", 'background:red;color:#fff;font-weight:bold;', from);
-  if (to.meta.requireAuth && !store.state.Core.user.isLogged) {
+  if (to.fullPath === '/login' && store.getters['Core/isLogged']) {
+    console.log("%c router.ts #36 || next home", 'background:blue;color:#fff;font-weight:bold;');
+    next('/')
+  }
+  else if (to.meta.requireAuth && !store.state.Core.user.isLogged) {
     console.log("%c router.ts #34 || next login", 'background:blue;color:#fff;font-weight:bold;');
     next('/login')
   }

@@ -40,7 +40,7 @@ const props = defineProps({
   },
   isErrorMessage: {
     type: String,
-    default: 'Erreur'
+    default: ''
   }
 });
 
@@ -80,7 +80,6 @@ const togglePasswordVisibility = () => {
   showPassword.value = !showPassword.value
 }
 
-
 </script>
 
 <template>
@@ -94,7 +93,7 @@ const togglePasswordVisibility = () => {
         :placeholder="placeholder"
         :value="modelValue"
         @input="updateValue"
-        :class="['input-field', { 'field-password': inputType === 'password' }]"
+        :class="['input-field', { 'field-password': inputType === 'password' }, { 'input-error': props.isError }]"
       />
       <span
         class="toggle-password"
@@ -105,7 +104,7 @@ const togglePasswordVisibility = () => {
           :icon="iconPassword"
         />
       </span>
-      <span v-if="props.isError" class="toogle-error">
+      <span v-if="props.isError && props.isErrorMessage.length > 0" class="toogle-error">
         {{ props.isErrorMessage }}
       </span>
     </div>
@@ -115,6 +114,10 @@ const togglePasswordVisibility = () => {
 <style lang="scss" scoped>
 .input-container {
   margin-bottom: 1rem;
+}
+
+.input-error {
+  border: 1px solid red;
 }
 
 .input-field-wrapper {
