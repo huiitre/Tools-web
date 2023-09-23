@@ -1,21 +1,22 @@
 <script setup lang="ts">
 import website_img from '@/assets/img/Core/website_img.jpg';
-import { ref } from 'vue';
-
+import { computed, ref } from 'vue';
 // components
-import CustomSwitch from '@/components/form/CustomSwitch.vue'
 import ConnexionForm from '@/modules/Login/ConnexionForm.vue'
 import InscriptionForm from '@/modules/Login/InscriptionForm.vue'
-
+import LvToggleSwitch from 'lightvue/toggle-switch';
 import store from '@/store/store';
 
 //* mode connexion ou inscription
-const formMode = ref('Connexion');
+const formMode = ref(false);
+const toggleFormMode = computed(() => {
+  return formMode.value ? 'Inscription' : 'Connexion'
+})
 //* méthode de modification
-const changeFormMode = (value: boolean) => {
+/* const changeFormMode = (value: boolean) => {
   if (value) formMode.value = 'Inscription'
   else formMode.value = 'Connexion'
-}
+} */
 
 // méthode submit de connexion
 const handleSubmitConnection = (data: { email: string, password: string }) => {
@@ -24,7 +25,7 @@ const handleSubmitConnection = (data: { email: string, password: string }) => {
 
 const handleSubmitSubscribe = async(data: { email: string; password: string; confirm_password: string; name: string }) => {
   const result = await store.dispatch('Core/register', data)
-  if (result) formMode.value = 'Connexion'
+  if (result) formMode.value = false
 }
 
 </script>
@@ -34,18 +35,19 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
     <img class="l-c_logo" :src="website_img" alt="" />
     <div class="l-c_content">
       <div class="l-c_c_mode">
-        <CustomSwitch
+        <!-- <CustomSwitch
           @switch-value="changeFormMode"
           size="small"
-        />
-        <h2>{{ formMode.toUpperCase() }}</h2>
+        /> -->
+        <LvToggleSwitch v-model="formMode" />
+        <h2>{{ toggleFormMode.toUpperCase() }}</h2>
       </div>
-      <div class="l-c_c_connexion" v-if="formMode === 'Connexion'">
+      <div class="l-c_c_connexion" v-if="!formMode">
         <ConnexionForm
           @event-submit="handleSubmitConnection"
         />
       </div>
-      <div class="l-c_c_inscription" v-if="formMode === 'Inscription'">
+      <div class="l-c_c_inscription" v-if="formMode">
         <InscriptionForm
           @event-subscribe="handleSubmitSubscribe"
         />
