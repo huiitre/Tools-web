@@ -6,6 +6,7 @@ import ConnexionForm from '@/modules/Login/ConnexionForm.vue'
 import InscriptionForm from '@/modules/Login/InscriptionForm.vue'
 import LvToggleSwitch from 'lightvue/toggle-switch';
 import store from '@/store/store';
+import toast from '@/services/toast';
 
 //* mode connexion ou inscription
 const formMode = ref(false);
@@ -19,13 +20,33 @@ const toggleFormMode = computed(() => {
 } */
 
 // méthode submit de connexion
-const handleSubmitConnection = (data: { email: string, password: string }) => {
-  store.dispatch('Core/login', data)
+const handleSubmitConnection = async(data: { email: string, password: string }) => {
+  toast.clearAll()
+  toast.loading('Connexion en cours ...')
+  try {
+    const result = await store.dispatch('Core/login', data)
+    if (result) formMode.value = false
+    toast.success(result.msg)
+  } catch(err: any) {
+    toast.error(err.msg)
+  } finally {
+    toast.clearAll()
+  }
+  
 }
 
 const handleSubmitSubscribe = async(data: { email: string; password: string; confirm_password: string; name: string }) => {
-  const result = await store.dispatch('Core/register', data)
-  if (result) formMode.value = false
+  toast.clearAll()
+  toast.loading('Inscription en cours ...')
+  try {
+    const result = await store.dispatch('Core/register', data)
+    if (result) formMode.value = false
+    toast.success(result.msg)
+  } catch(err: any) {
+    toast.error(err.msg)
+  } finally {
+    toast.clearAll()
+  }
 }
 
 </script>
