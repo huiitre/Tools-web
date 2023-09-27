@@ -5,6 +5,8 @@ import store from "@/store/store";
 // components
 import Login from '@/modules/Login/Login.vue'
 import Home from '@/modules/Home/Home.vue'
+import LS from "@/services/localStorage";
+import toast from "@/services/toast";
 
 export const routes = [
   {
@@ -28,20 +30,34 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
-  // const user = LS.get('TOOLS_USER')
-  console.log("%c router.ts #33 || from : ", 'background:red;color:#fff;font-weight:bold;', from);
+router.beforeEach(async(to, from, next) => {
+
+  //* on va chercher les infos de l'user dans le LS
+  const userLS = LS.get('TOOLS_CORE')
+
   if (to.fullPath === '/login' && store.getters['Core/isLogged']) {
-    console.log("%c router.ts #36 || next home", 'background:blue;color:#fff;font-weight:bold;');
     next('/')
+    return
   }
   else if (to.meta.requireAuth && !store.state.Core.user.isLogged) {
-    console.log("%c router.ts #34 || next login", 'background:blue;color:#fff;font-weight:bold;');
+    if (userLS && typeof userLS.user === 'object') {
+      try {
+        const result = await store.dispatch('Core/getInfosUser')
+        if (result.status == 1) {
+          store.dispatch('Core/insertUser', userLS.user)
+          next()
+        }
+      } catch (err: any) {
+        // toast.error(`Erreur lors de la tentative de reconnection`)
+        toast.error(err.message)
+      }
+    }
     next('/login')
+    return
+  } else {
+    next()
+    return
   }
-  console.log("%c router.ts #37 || next classique", 'background:blue;color:#fff;font-weight:bold;');
-  console.log("%c router.ts #38 || to : ", 'background:red;color:#fff;font-weight:bold;', to);
-  next()
 })
 
 export default router
