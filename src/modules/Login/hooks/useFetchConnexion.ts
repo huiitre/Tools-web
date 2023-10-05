@@ -5,5 +5,5 @@ export type useFetchConnexionType = {
   password: string
 }
 export const useFetchConnexion = async (credentials: useFetchConnexionType) => {
-  return await client.post('/auth/login', { ...credentials })
+  return await client.post('/core/auth/login', { ...credentials })
 }

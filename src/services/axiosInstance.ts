@@ -21,9 +21,7 @@ client.interceptors.request.use(async(config) => {
   if (requireToken) {
 
     //* token depuis le LS
-    const { user } = LS.get('TOOLS_CORE')
-
-    console.log("%c axiosInstance.ts #26 || user : ", 'background:red;color:#fff;font-weight:bold;', user);
+    const { user } = LS.get('TOOLS_CORE_USER')
 
     //* token depuis le store
     const tokenStore = store.getters['Core/rememberToken']
@@ -32,22 +30,18 @@ client.interceptors.request.use(async(config) => {
     
     //* est-ce qu'on possède un token dans le store
     if (tokenStore !== null) {
-      console.log("%c axiosInstance.ts #35 || if", 'background:blue;color:#fff;font-weight:bold;');
       rememberToken = tokenStore
     }
     //* est-ce qu'on possède un token en localstorage
     else if (user && user.remember_token !== null) {
-      console.log("%c axiosInstance.ts #40 || else if", 'background:blue;color:#fff;font-weight:bold;');
       rememberToken = user.remember_token
     }
     //* SINON on a pas de token donc on redirige vers /login
     else {
-      console.log("%c axiosInstance.ts #45 || else", 'background:blue;color:#fff;font-weight:bold;');
       await store.dispatch('Core/clearUser')
       router.push('/login')
       return config
     }
-    console.log("%c axiosInstance.ts #43 || apres le else dans l'interceptor", 'background:blue;color:#fff;font-weight:bold;');
     config.headers['Authorization'] = `Bearer ${rememberToken}`;
   }
   return config
@@ -55,8 +49,6 @@ client.interceptors.request.use(async(config) => {
 
 client.interceptors.response.use(async(response) => {
   const { data } = response
-
-  console.log("%c axiosInstance.ts #59 || response : ", 'background:red;color:#fff;font-weight:bold;', response);
 
   // const userLS = LS.get('TOOLS_USER')
 
@@ -67,7 +59,8 @@ client.interceptors.response.use(async(response) => {
       data.msg.includes('Token manquant') ||
       data.msg.includes('Utilisateur introuvable') ||
       data.msg.includes('La date de validité du token API est expirée') ||
-      data.msg.includes('Erreur du middleware token API')
+      data.msg.includes('Erreur du middleware token API') || 
+      data.msg.includes('Le compte est désactivé')
     )
   ) {
     store.dispatch('Core/clearUser')
