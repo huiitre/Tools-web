@@ -33,7 +33,7 @@ const router = createRouter({
 router.beforeEach(async(to, from, next) => {
 
   //* on va chercher les infos de l'user dans le LS
-  const userLS = LS.get('TOOLS_CORE')
+  const userLS = LS.get('TOOLS_CORE_USER')
 
   if (to.fullPath === '/login' && store.getters['Core/isLogged']) {
     next('/')

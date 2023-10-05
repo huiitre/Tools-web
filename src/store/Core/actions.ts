@@ -75,11 +75,11 @@ export const getInfosUser = ({ commit }: any) => {
 }
 
 export const insertUser = ({ commit }: any, userInfos: any) => {
-  commit('insertUser', userInfos)
-  commit('insertUserInLS', userInfos)
+  commit('insertUserInStore', userInfos)
+  commit('insertTokenAndIduserInLS', { iduser: userInfos.iduser, token: userInfos.remember_token })
 }
 
 export const clearUser = ({ commit }: any) => {
   commit('clearUser')
-  commit('clearUserInLS')
+  commit('clearLS')
 }
