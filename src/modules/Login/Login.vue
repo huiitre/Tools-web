@@ -4,12 +4,8 @@ import { computed, ref } from 'vue';
 // components
 import ConnexionForm from '@/modules/Login/ConnexionForm.vue'
 import InscriptionForm from '@/modules/Login/InscriptionForm.vue'
-import LvToggleSwitch from 'lightvue/toggle-switch';
 import store from '@/store/store';
 import toast from '@/services/toast';
-
-import { GoogleLogin } from 'vue3-google-login';
-const { signIn } = GoogleLogin;
 
 //* mode connexion ou inscription
 const formMode = ref(false);
@@ -52,17 +48,6 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
   }
 }
 
-const handleLoginGoogle = async() => {
-  console.log("%c Login.vue #53 || handleLoginGoogle", 'background:blue;color:#fff;font-weight:bold;');
-  try {
-    const response = await signIn();
-    console.log('Google Login Response:', response);
-    // Envoyez `response.credential` (token JWT) à votre API Laravel pour validation
-  } catch (error) {
-    console.error('Erreur lors de la connexion Google:', error);
-  }
-}
-
 </script>
 
 <template>
@@ -74,8 +59,6 @@ const handleLoginGoogle = async() => {
           @switch-value="changeFormMode"
           size="small"
         /> -->
-        <LvToggleSwitch v-model="formMode" />
-        <h2>{{ toggleFormMode.toUpperCase() }}</h2>
       </div>
       <div class="l-c_c_connexion" v-if="!formMode">
         <ConnexionForm
@@ -83,7 +66,6 @@ const handleLoginGoogle = async() => {
         />
       </div>
       <!-- Ajouter le bouton Google -->
-      <button @click="handleLoginGoogle">Se connecter avec Google</button>
       <!-- Inscription -->
       <div class="l-c_c_inscription" v-if="formMode">
         <InscriptionForm
