@@ -5,7 +5,7 @@ import { UserInfosType, baseUser } from "@/utils/Core/createUserInfos"
 export const isLogged = (state: any, isLogged: boolean) => state.user.isLogged = isLogged
 
 //* Insertion des data utilisateur dans le store et en localstorage
-export const insertUserInStore = (state: any, data: UserInfosType) => state.user = { ...data }
+export const insertUserInStore = (state: any, data: UserInfosType) => state.user = { ...data, isLogged: true }
 // export const insertUserInLS = (data: UserInfosType) => LS.set('TOOLS_CORE_USER', data)
 export const insertTokenAndIduserInLS = (data: any) => {
   LS.set('TOOLS_CORE_USER', data)

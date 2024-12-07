@@ -8,6 +8,9 @@ import LvToggleSwitch from 'lightvue/toggle-switch';
 import store from '@/store/store';
 import toast from '@/services/toast';
 
+import { GoogleLogin } from 'vue3-google-login';
+const { signIn } = GoogleLogin;
+
 //* mode connexion ou inscription
 const formMode = ref(false);
 const toggleFormMode = computed(() => {
@@ -49,6 +52,17 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
   }
 }
 
+const handleLoginGoogle = async() => {
+  console.log("%c Login.vue #53 || handleLoginGoogle", 'background:blue;color:#fff;font-weight:bold;');
+  try {
+    const response = await signIn();
+    console.log('Google Login Response:', response);
+    // Envoyez `response.credential` (token JWT) à votre API Laravel pour validation
+  } catch (error) {
+    console.error('Erreur lors de la connexion Google:', error);
+  }
+}
+
 </script>
 
 <template>
@@ -68,6 +82,9 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
           @event-submit="handleSubmitConnection"
         />
       </div>
+      <!-- Ajouter le bouton Google -->
+      <button @click="handleLoginGoogle">Se connecter avec Google</button>
+      <!-- Inscription -->
       <div class="l-c_c_inscription" v-if="formMode">
         <InscriptionForm
           @event-subscribe="handleSubmitSubscribe"
@@ -117,40 +134,4 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
     }
   }
 }
-
-/* .login-container {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
-  // background-color: #f2f2f2;
-  // border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-h1 {
-  text-align: center;
-}
-
-input {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007cba;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #005b82;
-} */
 </style>
