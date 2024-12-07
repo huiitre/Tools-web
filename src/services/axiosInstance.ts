@@ -1,6 +1,9 @@
 import axios from "axios";
+import LS from "./localStorage";
+import store from "@/store/store";
+import router from "@/router/router";
+import toast from "./toast";
 // import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
-console.log("%c axiosInstance.ts #7 || axiosInstance", 'background:blue;color:#fff;font-weight:bold;');
 const client = axios.create({
   baseURL: import.meta.env.VITE_TOOLS_API_URL,
   headers: {
@@ -9,36 +12,63 @@ const client = axios.create({
 })
 
 
-client.interceptors.request.use((config) => {
-  /* console.log("%c axiosInstance.ts #17 || client.interceptors.request", 'background:blue;color:#fff;font-weight:bold;');
-  const userLS = LS.get('TOOLS_USER')
-  const userStore = store.state.
-  console.log("%c axiosInstance.ts #19 || userLS : ", 'background:red;color:#fff;font-weight:bold;', userLS);
+client.interceptors.request.use(async(config) => {
 
-  //? Pour chaque requête qu'on va intercepter, on y insère l'iduser et le token provenant du state
-  //* on insère l'iduser et le token dans la requête
-  if (!config.params && user && config.url !== '/login') {
-    config.params = {
-      iduser: user.iduser,
-      token: user.token
+  //* flag pour la route sécurisé
+  const requireToken = config.headers.requireToken
+  
+  //* est-ce qu'on est sur une route sécurisé
+  if (requireToken) {
+
+    //* token depuis le LS
+    const { user } = LS.get('TOOLS_CORE_USER')
+
+    //* token depuis le store
+    const tokenStore = store.getters['Core/rememberToken']
+
+    let rememberToken = ''
+    
+    //* est-ce qu'on possède un token dans le store
+    if (tokenStore !== null) {
+      rememberToken = tokenStore
     }
+    //* est-ce qu'on possède un token en localstorage
+    else if (user && user.remember_token !== null) {
+      rememberToken = user.remember_token
+    }
+    //* SINON on a pas de token donc on redirige vers /login
+    else {
+      await store.dispatch('Core/clearUser')
+      router.push('/login')
+      return config
+    }
+    config.headers['Authorization'] = `Bearer ${rememberToken}`;
   }
-
-  if (config.url === '/login') {
-    config.baseURL = import.meta.env.VITE_TOOLZ_API_URL
-  }
-  else
-    config.baseURL = import.meta.env.VITE_TOOLZ_WEB_URL */
-
   return config
 })
 
-/* client.interceptors.response.use(async(response) => {
+client.interceptors.response.use(async(response) => {
   const { data } = response
 
-  const user = LS.get('TOOLZ2_USER')
+  // const userLS = LS.get('TOOLS_USER')
 
-  //* si le token n'est plus valide
+  //* le token n'est pas bon
+  if (
+    !data.status &&
+    (
+      data.msg.includes('Token manquant') ||
+      data.msg.includes('Utilisateur introuvable') ||
+      data.msg.includes('La date de validité du token API est expirée') ||
+      data.msg.includes('Erreur du middleware token API') || 
+      data.msg.includes('Le compte est désactivé')
+    )
+  ) {
+    store.dispatch('Core/clearUser')
+    router.push('/login')
+    // toast.error(data.msg)
+  }
+
+  /* //* si le token n'est plus valide
   if (!data.status && data.msg.includes('EW ERR 401 - IDUSER OR TOKEN UNIDENTIFY')) {
     //* on tente de regénérer un token et de relancer la requête
     try {
@@ -92,11 +122,11 @@ client.interceptors.request.use((config) => {
     } finally {
       clearToasts()
     }
-  }
+  } */
 
   return response
 }, (error) => {
   console.log("%c axiosInstance.ts #99 || error de l'interceptor : ", 'background:red;color:#fff;font-weight:bold;', error);
-}) */
+})
 
 export default client;
