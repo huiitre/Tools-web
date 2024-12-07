@@ -61,7 +61,6 @@ export const getInfosUser = ({ commit }: any) => {
   return new Promise(async(resolve, reject) => {
     try {
       const { data } = await useFetchUserInfos()
-      console.log("%c actions.ts #63 || data : ", 'background:red;color:#fff;font-weight:bold;', data);
       if (!data.status)
         throw new Error(data.msg)
 
@@ -75,6 +74,7 @@ export const getInfosUser = ({ commit }: any) => {
 }
 
 export const insertUser = ({ commit }: any, userInfos: any) => {
+  console.log("%c actions.ts #77 || userInfos : ", 'background:red;color:#fff;font-weight:bold;', userInfos);
   commit('insertUserInStore', userInfos)
   commit('insertTokenAndIduserInLS', { iduser: userInfos.iduser, token: userInfos.remember_token })
 }

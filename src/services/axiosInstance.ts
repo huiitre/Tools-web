@@ -65,7 +65,7 @@ client.interceptors.response.use(async(response) => {
   ) {
     store.dispatch('Core/clearUser')
     router.push('/login')
-    toast.error(data.msg)
+    // toast.error(data.msg)
   }
 
   /* //* si le token n'est plus valide
