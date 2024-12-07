@@ -1,9 +1,10 @@
 <script setup lang="ts">
-
 </script>
 
 <template>
-  HOMEds
+  <Router-link :to="{ path: '/dofus' }">
+    <button>Dofus</button>
+  </Router-link>
 </template>
 
 <style lang="scss" scoped>

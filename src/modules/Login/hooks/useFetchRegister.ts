@@ -7,5 +7,5 @@ export type useFetchRegisterType = {
   name: string
 }
 export const useFetchRegister = async (credentials: useFetchRegisterType) => {
-  return await client.post('/auth/register', credentials)
+  return await client.post('/core/auth/register', credentials)
 }

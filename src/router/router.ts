@@ -5,6 +5,10 @@ import store from "@/store/store";
 // components
 import Login from '@/modules/Login/Login.vue'
 import Home from '@/modules/Home/Home.vue'
+import LS from "@/services/localStorage";
+import toast from "@/services/toast";
+import Dofus from "@/modules/Dofus/Dofus.vue";
+import DofusItem from "@/modules/Dofus/DofusItem.vue";
 
 export const routes = [
   {
@@ -18,6 +22,20 @@ export const routes = [
     path: '/login',
     component: Login,
     meta: { requireAuth: false }
+  },
+  {
+    name: 'dofus',
+    path: '/dofus',
+    component: DofusItem,
+    meta: { requireAuth: true },
+    children: [
+      {
+        name: 'item',
+        path: 'item',
+        component: DofusItem,
+        meta: { requireAuth: true }
+      }
+    ]
   }
 ]
 
@@ -28,20 +46,50 @@ const router = createRouter({
   routes
 })
 
-router.beforeEach((to, from, next) => {
-  // const user = LS.get('TOOLS_USER')
-  console.log("%c router.ts #33 || from : ", 'background:red;color:#fff;font-weight:bold;', from);
-  if (to.fullPath === '/login' && store.getters['Core/isLogged']) {
-    console.log("%c router.ts #36 || next home", 'background:blue;color:#fff;font-weight:bold;');
-    next('/')
+router.beforeEach(async(to, from, next) => {
+
+  //* on va chercher les infos de l'user dans le LS
+  const userLS = LS.get('TOOLS_CORE_USER')
+
+  let isLogged = store.getters['Core/isLogged'];
+  const isPublicRoute = !to.meta.requireAuth;
+  const userInStorage = typeof userLS?.user === 'object';
+
+  console.log(`%c Route Demandée: ${to.fullPath}`, 'background:blue;color:white;font-weight:bold;');
+
+  if (isLogged && to.fullPath !== '/login') {
+    return next()
   }
-  else if (to.meta.requireAuth && !store.state.Core.user.isLogged) {
-    console.log("%c router.ts #34 || next login", 'background:blue;color:#fff;font-weight:bold;');
-    next('/login')
+
+  //* si on a un objet en LS et qu'on est pas déjà connecté, on va essayer de se connecter
+  if (userInStorage && !isLogged) {
+    const result = await store.dispatch('Core/getInfosUser');
+    if (result?.status) {
+      store.dispatch('Core/insertUser', result.data)
+      isLogged = true
+    } else {
+      store.dispatch('Core/clearUser')
+      isLogged = false
+    }
   }
-  console.log("%c router.ts #37 || next classique", 'background:blue;color:#fff;font-weight:bold;');
-  console.log("%c router.ts #38 || to : ", 'background:red;color:#fff;font-weight:bold;', to);
-  next()
+
+  //* route sécurisé et connecté
+  if (!isPublicRoute && isLogged) {
+    console.log("%c router.ts #78 || store.getters['Core/isLogged'] : ", 'background:red;color:#fff;font-weight:bold;', store.getters['Core/isLogged']);
+    next()
+  }
+  else {
+    //* connecté mais /login
+    if (isLogged && to.fullPath === '/login') {
+      next('/')
+    }
+    //* pas connecté et route sécurisé
+    else if (!isPublicRoute && !isLogged) {
+      next('/login')
+    } else {
+      next()
+    }
+  }
 })
 
 export default router

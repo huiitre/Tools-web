@@ -6,6 +6,10 @@ import ConnexionForm from '@/modules/Login/ConnexionForm.vue'
 import InscriptionForm from '@/modules/Login/InscriptionForm.vue'
 import LvToggleSwitch from 'lightvue/toggle-switch';
 import store from '@/store/store';
+import toast from '@/services/toast';
+
+import { GoogleLogin } from 'vue3-google-login';
+const { signIn } = GoogleLogin;
 
 //* mode connexion ou inscription
 const formMode = ref(false);
@@ -19,13 +23,44 @@ const toggleFormMode = computed(() => {
 } */
 
 // méthode submit de connexion
-const handleSubmitConnection = (data: { email: string, password: string }) => {
-  store.dispatch('Core/login', data)
+const handleSubmitConnection = async(data: { email: string, password: string }) => {
+  toast.clearAll()
+  toast.loading('Connexion en cours ...')
+  try {
+    const result = await store.dispatch('Core/login', data)
+    if (result) formMode.value = false
+    toast.success(result.msg)
+  } catch(err: any) {
+    toast.error(err.msg)
+  } finally {
+    toast.clearAll()
+  }
+  
 }
 
 const handleSubmitSubscribe = async(data: { email: string; password: string; confirm_password: string; name: string }) => {
-  const result = await store.dispatch('Core/register', data)
-  if (result) formMode.value = false
+  toast.clearAll()
+  toast.loading('Inscription en cours ...')
+  try {
+    const result = await store.dispatch('Core/register', data)
+    if (result) formMode.value = false
+    toast.success(result.msg)
+  } catch(err: any) {
+    toast.error(err.msg)
+  } finally {
+    toast.clearAll()
+  }
+}
+
+const handleLoginGoogle = async() => {
+  console.log("%c Login.vue #53 || handleLoginGoogle", 'background:blue;color:#fff;font-weight:bold;');
+  try {
+    const response = await signIn();
+    console.log('Google Login Response:', response);
+    // Envoyez `response.credential` (token JWT) à votre API Laravel pour validation
+  } catch (error) {
+    console.error('Erreur lors de la connexion Google:', error);
+  }
 }
 
 </script>
@@ -47,6 +82,9 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
           @event-submit="handleSubmitConnection"
         />
       </div>
+      <!-- Ajouter le bouton Google -->
+      <button @click="handleLoginGoogle">Se connecter avec Google</button>
+      <!-- Inscription -->
       <div class="l-c_c_inscription" v-if="formMode">
         <InscriptionForm
           @event-subscribe="handleSubmitSubscribe"
@@ -96,40 +134,4 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
     }
   }
 }
-
-/* .login-container {
-  max-width: 400px;
-  margin: 0 auto;
-  padding: 20px;
-  // background-color: #f2f2f2;
-  // border: 1px solid #ddd;
-  border-radius: 4px;
-}
-
-h1 {
-  text-align: center;
-}
-
-input {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-
-button {
-  width: 100%;
-  padding: 10px;
-  background-color: #007cba;
-  color: #fff;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-button:hover {
-  background-color: #005b82;
-} */
 </style>
