@@ -113,64 +113,62 @@ onMounted(() => {
   <div class="login-container">
     <img class="l-c_logo" :src="website_img" alt="" />
     <div class="l-c_content">
-      <v-card class="px-6 py-8">
-        <v-form
-          v-model="form"
-          @submit.prevent="handleSubmitConnection"
+      <v-form
+        v-model="form"
+        @submit.prevent="handleSubmitConnection"
+      >
+        <v-text-field
+          v-model="email"
+          :readonly="loading"
+          :rules="[required, validEmail]"
+          class="mb-2"
+          label="Adresse mail"
+          clearable
+        ></v-text-field>
+
+        <v-text-field
+          v-model="password"
+          :readonly="loading"
+          :rules="[required]"
+          label="Password"
+          placeholder="Mot de passe"
+          :type="showPassword ? 'text' : 'password'"
+          :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+          @click:append-inner="showPassword = !showPassword"
+        ></v-text-field>
+
+        <br>
+
+        <v-btn
+          :disabled="!form"
+          :loading="loading"
+          color="success"
+          size="large"
+          type="submit"
+          variant="elevated"
+          block
         >
-          <v-text-field
-            v-model="email"
-            :readonly="loading"
-            :rules="[required, validEmail]"
-            class="mb-2"
-            label="Adresse mail"
-            clearable
-          ></v-text-field>
+          Connexion
+        </v-btn>
 
-          <v-text-field
-            v-model="password"
-            :readonly="loading"
-            :rules="[required]"
-            label="Password"
-            placeholder="Mot de passe"
-            :type="showPassword ? 'text' : 'password'"
-            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
-            @click:append-inner="showPassword = !showPassword"
-          ></v-text-field>
+        <br />
 
-          <br>
-
-          <v-btn
-            :disabled="!form"
-            :loading="loading"
-            color="success"
-            size="large"
-            type="submit"
-            variant="elevated"
-            block
-          >
-            Connexion
-          </v-btn>
-
-          <br />
-
-          <div
-            id="g_id_onload"
-            data-client_id="404978765682-hpevl43le3qtcfcjl8uujn8ni2f6egun.apps.googleusercontent.com"
-            data-login_uri="http://localhost:5173"
-            data-callback="handleGoogleLogin"
-          ></div>
-          <div
-            class="g_id_signin"
-            data-type="standard"
-            data-shape="rectangular"
-            data-theme="outline"
-            data-text="signin_with"
-            data-size="large"
-            data-logo_alignment="left"
-          ></div>
-        </v-form>
-      </v-card>
+        <div
+          id="g_id_onload"
+          data-client_id="404978765682-hpevl43le3qtcfcjl8uujn8ni2f6egun.apps.googleusercontent.com"
+          data-login_uri="http://localhost:5173"
+          data-callback="handleGoogleLogin"
+        ></div>
+        <div
+          class="g_id_signin"
+          data-type="standard"
+          data-shape="rectangular"
+          data-theme="outline"
+          data-text="signin_with"
+          data-size="large"
+          data-logo_alignment="left"
+        ></div>
+      </v-form>
     </div>
   </div>
 </template>
@@ -198,7 +196,7 @@ onMounted(() => {
     // background-color: var(--login-form-background-color);
     border: 1px solid #ddd;
     padding: 2rem;
-    width: 400px;
+    // width: 400px;
   }
 }
 </style>
