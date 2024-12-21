@@ -18,12 +18,12 @@ const handleTest = async() => {
 
 <template>
   <div id="header">
-    <button v-on:click="handleTest">TEST /AUTH/ME</button>
+    <v-btn v-on:click="handleTest">TEST /AUTH/ME</v-btn>
     <router-link to="/">
-      <button>Retour à l'accueil</button>
+      <v-btn>Retour à l'accueil</v-btn>
     </router-link>
     <router-link to="/login">
-      <button v-on:click="handleDisconnect">Déconnexion</button>
+      <v-btn v-on:click="handleDisconnect">Déconnexion</v-btn>
     </router-link>
   </div>
 </template>

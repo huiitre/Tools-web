@@ -4,6 +4,9 @@ import { UserInfosType, baseUser } from "@/utils/Core/createUserInfos"
 //* flag pour dire si l'utilisateur est connecté ou non
 export const isLogged = (state: any, isLogged: boolean) => state.user.isLogged = isLogged
 
+//* loading
+export const isLoading = (state: any, isLoading: boolean) => state.isLoading = isLoading
+
 //* Insertion des data utilisateur dans le store et en localstorage
 export const insertUserInStore = (state: any, data: UserInfosType) => state.user = { ...data, isLogged: true }
 // export const insertUserInLS = (data: UserInfosType) => LS.set('TOOLS_CORE_USER', data)

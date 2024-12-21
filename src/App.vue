@@ -9,6 +9,8 @@ console.log("%c App.vue #8 || isLogged : ", 'background:red;color:#fff;font-weig
 
 const body = document.querySelector('body')
 body?.classList.add('main-theme')
+
+const isLoading = computed(() => store.getters['Core/isLoading'])
 </script>
 
 <template>
@@ -20,6 +22,17 @@ body?.classList.add('main-theme')
     </Page>
     <!-- </transition> -->
   </router-view>
+  <v-overlay
+    :model-value="isLoading"
+    class="align-center justify-center"
+    persistent
+  >
+    <v-progress-circular
+      color="primary"
+      size="64"
+      indeterminate
+    ></v-progress-circular>
+  </v-overlay>
 </template>
 
 <style scoped>
