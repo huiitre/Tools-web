@@ -8,7 +8,8 @@ import * as getters from './getters';
 import { baseUser } from '@/utils/Core/createUserInfos';
 
 const state = {
-  user: { ...baseUser }
+  user: { ...baseUser },
+  isLoading: false
 };
 export default {
   namespaced: true,

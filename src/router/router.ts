@@ -3,12 +3,13 @@ import store from "@/store/store";
 // import LS from "@/services/localStorage";
 
 // components
-import Login from '@/modules/Login/Login.vue'
 import Home from '@/modules/Home/Home.vue'
 import LS from "@/services/localStorage";
-import toast from "@/services/toast";
-import Dofus from "@/modules/Dofus/Dofus.vue";
 import DofusItem from "@/modules/Dofus/DofusItem.vue";
+import Login from '@/modules/Login/Login.vue'
+
+import PrivacyPolicy from "@/modules/Legal/PrivacyPolicy.vue";
+import TermsOfService from "@/modules/Legal/TermsOfService.vue";
 
 export const routes = [
   {
@@ -16,6 +17,18 @@ export const routes = [
     path: '/',
     component: Home,
     meta: { requireAuth: true }
+  },
+  {
+    name: 'PrivacyPolicy',
+    path: '/privacy-policy',
+    component: PrivacyPolicy,
+    meta: { requireAuth: false }
+  },
+  {
+    name: 'TermsOfService',
+    path: '/terms-of-service',
+    component: TermsOfService,
+    meta: { requireAuth: false }
   },
   {
     name: 'connexion',

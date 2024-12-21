@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import website_img from '@/assets/img/Core/website_img.jpg';
-import { computed, ref } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 // components
-import ConnexionForm from '@/modules/Login/ConnexionForm.vue'
-import InscriptionForm from '@/modules/Login/InscriptionForm.vue'
 import store from '@/store/store';
 import toast from '@/services/toast';
+
+const isLoading = computed(() => store.getters['Core/isLoading'])
 
 //* mode connexion ou inscription
 const formMode = ref(false);
@@ -18,35 +18,94 @@ const toggleFormMode = computed(() => {
   else formMode.value = 'Connexion'
 } */
 
-// méthode submit de connexion
-const handleSubmitConnection = async(data: { email: string, password: string }) => {
-  toast.clearAll()
-  toast.loading('Connexion en cours ...')
+// les refs
+const form = ref(false)
+const email = ref(null)
+const password = ref(null)
+const showPassword = ref(false)
+const loading = ref(false)
+
+const required = (v: string) => {
+  return !!v || 'Le champ est obligatoire !'
+}
+const validEmail = (v: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(v) || 'Veuillez entrer une adresse email valide !';
+};
+
+const handleGoogleLogin = async(response: any) => {
+  const googleJwt = response?.credential
+
+  if (!googleJwt) {
+    console.error("JWT Google manquant dans la réponse");
+    return;
+  }
+
+  const payload = {
+    googleJwt,
+  };
+
   try {
-    const result = await store.dispatch('Core/login', data)
-    if (result) formMode.value = false
+    store.commit('Core/isLoading', true)
+    const result = await store.dispatch('Core/loginWithGoogle', payload)
     toast.success(result.msg)
   } catch(err: any) {
     toast.error(err.msg)
   } finally {
-    toast.clearAll()
+    store.commit('Core/isLoading', false)
   }
-  
 }
 
-const handleSubmitSubscribe = async(data: { email: string; password: string; confirm_password: string; name: string }) => {
-  toast.clearAll()
-  toast.loading('Inscription en cours ...')
+// méthode submit de connexion
+const handleSubmitConnection = async() => {
+  if (!form.value) {
+    console.error("Formulaire invalide !");
+    return;
+  }
+
   try {
-    const result = await store.dispatch('Core/register', data)
-    if (result) formMode.value = false
+    loading.value = true
+    const result = await store.dispatch('Core/login', { email: email.value, password: password.value })
     toast.success(result.msg)
   } catch(err: any) {
     toast.error(err.msg)
   } finally {
+    loading.value = false
     toast.clearAll()
   }
 }
+
+onMounted(() => {
+  const google = window.google
+  if (typeof google === 'object' && google.accounts && google.accounts.id) {
+    // Initialise Google Identity
+    google.accounts.id.initialize({
+      client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
+      callback: handleGoogleLogin
+    });
+
+
+    // Forcer le rendu du bouton
+    const buttonContainer = document.querySelector('.g_id_signin');
+    if (buttonContainer) {
+      google.accounts.id.renderButton(
+        buttonContainer,
+        {
+          type: 'standard',
+          shape: 'rectangular',
+          theme: 'outline',
+          text: 'signin_with',
+          size: 'large',
+          logo_alignment: 'left',
+        }
+      );
+    } else {
+      console.error("Conteneur pour le bouton Google introuvable");
+    }
+  } else {
+      console.error("Google SDK non chargé ou mal initialisé");
+  }
+})
 
 </script>
 
@@ -54,24 +113,64 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
   <div class="login-container">
     <img class="l-c_logo" :src="website_img" alt="" />
     <div class="l-c_content">
-      <div class="l-c_c_mode">
-        <!-- <CustomSwitch
-          @switch-value="changeFormMode"
-          size="small"
-        /> -->
-      </div>
-      <div class="l-c_c_connexion" v-if="!formMode">
-        <ConnexionForm
-          @event-submit="handleSubmitConnection"
-        />
-      </div>
-      <!-- Ajouter le bouton Google -->
-      <!-- Inscription -->
-      <div class="l-c_c_inscription" v-if="formMode">
-        <InscriptionForm
-          @event-subscribe="handleSubmitSubscribe"
-        />
-      </div>
+      <v-card class="px-6 py-8">
+        <v-form
+          v-model="form"
+          @submit.prevent="handleSubmitConnection"
+        >
+          <v-text-field
+            v-model="email"
+            :readonly="loading"
+            :rules="[required, validEmail]"
+            class="mb-2"
+            label="Adresse mail"
+            clearable
+          ></v-text-field>
+
+          <v-text-field
+            v-model="password"
+            :readonly="loading"
+            :rules="[required]"
+            label="Password"
+            placeholder="Mot de passe"
+            :type="showPassword ? 'text' : 'password'"
+            :append-inner-icon="showPassword ? 'mdi-eye' : 'mdi-eye-off'"
+            @click:append-inner="showPassword = !showPassword"
+          ></v-text-field>
+
+          <br>
+
+          <v-btn
+            :disabled="!form"
+            :loading="loading"
+            color="success"
+            size="large"
+            type="submit"
+            variant="elevated"
+            block
+          >
+            Connexion
+          </v-btn>
+
+          <br />
+
+          <div
+            id="g_id_onload"
+            data-client_id="404978765682-hpevl43le3qtcfcjl8uujn8ni2f6egun.apps.googleusercontent.com"
+            data-login_uri="http://localhost:5173"
+            data-callback="handleGoogleLogin"
+          ></div>
+          <div
+            class="g_id_signin"
+            data-type="standard"
+            data-shape="rectangular"
+            data-theme="outline"
+            data-text="signin_with"
+            data-size="large"
+            data-logo_alignment="left"
+          ></div>
+        </v-form>
+      </v-card>
     </div>
   </div>
 </template>
@@ -86,8 +185,8 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
 
   //* logo du site
   & .l-c_logo {
-    width: 100px;
-    height: 100px;
+    width: 200px;
+    height: 200px;
     border-radius: 50%;
     margin-bottom: 1rem;
   }
@@ -96,24 +195,10 @@ const handleSubmitSubscribe = async(data: { email: string; password: string; con
   & .l-c_content {
     display: flex;
     flex-direction: column;
-    background-color: var(--login-form-background-color);
+    // background-color: var(--login-form-background-color);
     border: 1px solid #ddd;
     padding: 2rem;
-    width: 300px;
-
-    //* bouton switch entre connexion et inscription
-    & .l-c_c_mode {
-      margin-bottom: 1.5rem;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-
-      //* Titre du mode (connexion ou inscription)
-      & h2 {
-        font-weight: bold;
-        font-size: 1.3rem;
-      }
-    }
+    width: 400px;
   }
 }
 </style>
