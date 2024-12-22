@@ -21,3 +21,5 @@ export const insertConfigInLS = (data: any) => LS.set('TOOLS_CORE_CONFIG', data)
 //* Clear des data utilisateur dans le store et en localstorage
 export const clearUser = (state: any) => state.user = { ...baseUser }
 export const clearLS = () => LS.clear()
+
+export const setUserModules = (state: any, modules: any) => state.modules = modules

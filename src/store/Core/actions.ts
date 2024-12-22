@@ -6,38 +6,32 @@ import store from '../store'
 import { useFetchDisconnectUser } from '@/modules/Login/hooks/useFetchDisconnectUser'
 import { useFetchUserInfos } from '@/modules/Login/hooks/useFetchUserInfos'
 import { useFetchConnexionWithGoogle } from '@/modules/Login/hooks/useFetchConnexionWithGoogle'
+import client from '@/services/axiosInstance'
 
-export const login = async({ commit }: any, credentials: { email: string, password: string }) => {
+const handleLogin = async (authFunction: () => Promise<any>) => {
   try {
-    const { data } = await useFetchConnexion(credentials)
-    if (!data.status)
-      throw new Error(data.msg)
+    const { data } = await authFunction();
 
-    const userInfos = createUserInfos(data.data)
-    store.dispatch('Core/insertUser', userInfos)
-    router.push('/')
-    return { status: data.status, msg: 'Connexion réussi !' }
+    if (!data.status) throw new Error(data.msg);
+
+    const userInfos = createUserInfos(data.data);
+    store.dispatch('Core/insertUser', userInfos);
+
+    return { status: data.status, msg: 'Connexion réussie !' };
   } catch (err: any) {
-    store.dispatch('Core/clearUser')
-    throw { status: 0, msg: err.message }
+    store.dispatch('Core/clearUser');
+    throw { status: 0, msg: err.message };
   }
-}
+};
 
-export const loginWithGoogle = async({ commit }: any, payload: any) => {
-  try {
-    const { data } = await useFetchConnexionWithGoogle(payload)
-    if (!data.status)
-      throw new Error(data.msg)
+export const login = async ({ commit }: any, credentials: { email: string, password: string }) => {
+  return handleLogin(() => useFetchConnexion(credentials));
+};
 
-    const userInfos = createUserInfos(data.data)
-    store.dispatch('Core/insertUser', userInfos)
-    router.push('/')
-    return { status: data.status, msg: 'Connexion réussi !' }
-  } catch(err: any) {
-    store.dispatch('Core/clearUser')
-    throw { status: 0, msg: err.message }
-  }
-}
+// Action pour la connexion via Google
+export const loginWithGoogle = async ({ commit }: any, payload: any) => {
+  return handleLogin(() => useFetchConnexionWithGoogle(payload));
+};
 
 // @ts-ignore
 export const register = ({ commit }: any, credentials: { email: string; password: string; confirm_password: string; name: string }) => {
@@ -88,10 +82,21 @@ export const getInfosUser = ({ commit }: any) => {
   })
 }
 
+export const getUserModules = async({ commit }: any) => {
+  try {
+    const { data } = await client.get('core/module/getusermodule', { headers: { requireToken: true } })
+    if (!data.status)
+      throw data.msg
+    return data
+  } catch(err) {
+    throw err
+  }
+}
+
 export const insertUser = ({ commit }: any, userInfos: any) => {
-  console.log("%c actions.ts #77 || userInfos : ", 'background:red;color:#fff;font-weight:bold;', userInfos);
   commit('insertUserInStore', userInfos)
   commit('insertTokenAndIduserInLS', { iduser: userInfos.iduser, token: userInfos.remember_token })
+  return Promise.resolve()
 }
 
 export const clearUser = ({ commit }: any) => {
