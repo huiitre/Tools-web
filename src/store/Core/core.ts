@@ -9,7 +9,8 @@ import { baseUser } from '@/utils/Core/createUserInfos';
 
 const state = {
   user: { ...baseUser },
-  isLoading: false
+  isLoading: false,
+  modules: []
 };
 export default {
   namespaced: true,

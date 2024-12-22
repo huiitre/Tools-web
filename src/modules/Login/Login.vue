@@ -4,6 +4,7 @@ import { computed, ref, onMounted } from 'vue';
 // components
 import store from '@/store/store';
 import toast from '@/services/toast';
+import router from '@/router/router';
 
 const isLoading = computed(() => store.getters['Core/isLoading'])
 
@@ -33,47 +34,49 @@ const validEmail = (v: string) => {
   return emailRegex.test(v) || 'Veuillez entrer une adresse email valide !';
 };
 
-const handleGoogleLogin = async(response: any) => {
-  const googleJwt = response?.credential
+const handleLogin = async (action: string, payload: any) => {
+  try {
+    store.commit('Core/isLoading', true);
+    const result = await store.dispatch(action, payload);
+
+    if (!result?.status) throw result.msg;
+
+    //* récupération des modules
+    const { data } = await store.dispatch('Core/getUserModules')
+    store.commit('Core/setUserModules', data)
+
+    router.push('/');
+    toast.success(result.msg);
+  } catch (err: any) {
+    toast.error(err.msg);
+  } finally {
+    store.commit('Core/isLoading', false);
+    toast.clearAll();
+  }
+};
+
+// Connexion classique
+const handleSubmitConnection = async () => {
+  if (!form.value) {
+    console.error('Formulaire invalide !');
+    return;
+  }
+
+  await handleLogin('Core/login', { email: email.value, password: password.value });
+};
+
+// Connexion via Google
+const handleGoogleLogin = async (response: any) => {
+  const googleJwt = response?.credential;
+  console.log("%c Login.vue #67 || googleJwt : ", 'background:red;color:#fff;font-weight:bold;', googleJwt);
 
   if (!googleJwt) {
-    console.error("JWT Google manquant dans la réponse");
+    console.error('JWT Google manquant dans la réponse');
     return;
   }
 
-  const payload = {
-    googleJwt,
-  };
-
-  try {
-    store.commit('Core/isLoading', true)
-    const result = await store.dispatch('Core/loginWithGoogle', payload)
-    toast.success(result.msg)
-  } catch(err: any) {
-    toast.error(err.msg)
-  } finally {
-    store.commit('Core/isLoading', false)
-  }
-}
-
-// méthode submit de connexion
-const handleSubmitConnection = async() => {
-  if (!form.value) {
-    console.error("Formulaire invalide !");
-    return;
-  }
-
-  try {
-    loading.value = true
-    const result = await store.dispatch('Core/login', { email: email.value, password: password.value })
-    toast.success(result.msg)
-  } catch(err: any) {
-    toast.error(err.msg)
-  } finally {
-    loading.value = false
-    toast.clearAll()
-  }
-}
+  await handleLogin('Core/loginWithGoogle', { googleJwt });
+};
 
 onMounted(() => {
   const google = window.google

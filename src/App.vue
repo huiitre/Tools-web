@@ -14,25 +14,30 @@ const isLoading = computed(() => store.getters['Core/isLoading'])
 </script>
 
 <template>
-  <Header v-if="isLogged" />
-  <router-view v-slot="{ Component }">
-    <!-- <transition name="fade" mode="out-in"> -->
-    <Page>
-      <component :is="Component" />
-    </Page>
-    <!-- </transition> -->
-  </router-view>
-  <v-overlay
-    :model-value="isLoading"
-    class="align-center justify-center"
-    persistent
-  >
-    <v-progress-circular
-      color="primary"
-      size="64"
-      indeterminate
-    ></v-progress-circular>
-  </v-overlay>
+  <v-app>
+    <Header v-if="isLogged" />
+
+    <v-main>
+      <router-view v-slot="{ Component }">
+        <!-- <transition name="fade" mode="out-in"> -->
+        <Page>
+          <component :is="Component" />
+        </Page>
+        <!-- </transition> -->
+      </router-view>
+    </v-main>
+    <v-overlay
+      :model-value="isLoading"
+      class="align-center justify-center"
+      persistent
+    >
+      <v-progress-circular
+        color="primary"
+        size="64"
+        indeterminate
+      ></v-progress-circular>
+    </v-overlay>
+  </v-app>
 </template>
 
 <style scoped>
