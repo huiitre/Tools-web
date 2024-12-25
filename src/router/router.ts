@@ -12,6 +12,7 @@ import PrivacyPolicy from "@/modules/Legal/PrivacyPolicy.vue";
 import TermsOfService from "@/modules/Legal/TermsOfService.vue";
 import DofusSet from "@/modules/Dofus/DofusSet.vue";
 import Dofus from "@/modules/Dofus/Dofus.vue";
+import NotFound from "@/modules/Common/NotFound.vue";
 
 export const routes = [
   {
@@ -48,7 +49,7 @@ export const routes = [
     name: 'dofus',
     path: '/dofus',
     component: Dofus,
-    meta: { requireAuth: true },
+    meta: { requireAuth: true, idmodule: 1 },
     redirect: { name: 'dofus-item' },
     children: [
       {
@@ -64,7 +65,13 @@ export const routes = [
         meta: { requireAuth: true, label: 'Gestion Set' }
       },
     ]
-  }
+  },
+  {
+    path: '/:catchAll(.*)', // Catch-all pour toutes les URL non correspondantes
+    name: 'NotFound',
+    component: NotFound,
+    meta: { requireAuth: false },
+  },
 ]
 
 const router = createRouter({
@@ -96,20 +103,21 @@ router.beforeEach(async(to, from, next) => {
       if (!result?.status)
         throw result?.msg
 
-      await store.dispatch('Core/insertUser', result.data)
-
       //* récupération des modules
       const { data } = await store.dispatch('Core/getUserModules')
       store.commit('Core/setUserModules', data)
+
+      await store.dispatch('Core/insertUser', result.data)
+
       isLogged = true
+      store.commit('Core/isLoading', false)
 
     } catch(err) {
       console.log("%c router.ts #94 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
       store.dispatch('Core/clearUser')
       isLogged = false
-      next('/login')
-    } finally {
       store.commit('Core/isLoading', false)
+      return next('/login')
     }
   }
 

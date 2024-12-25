@@ -14,7 +14,10 @@ const handleLogin = async (authFunction: () => Promise<any>) => {
 
     if (!data.status) throw new Error(data.msg);
 
+    console.log("%c actions.ts #17 || data : ", 'background:red;color:#fff;font-weight:bold;', data);
+
     const userInfos = createUserInfos(data.data);
+    console.log("%c actions.ts #18 || userInfos : ", 'background:red;color:#fff;font-weight:bold;', userInfos);
     store.dispatch('Core/insertUser', userInfos);
 
     return { status: data.status, msg: 'Connexion réussie !' };
@@ -95,7 +98,7 @@ export const getUserModules = async({ commit }: any) => {
 
 export const insertUser = ({ commit }: any, userInfos: any) => {
   commit('insertUserInStore', userInfos)
-  commit('insertTokenAndIduserInLS', { iduser: userInfos.iduser, token: userInfos.remember_token })
+  commit('insertUserInLS', { iduser: userInfos.iduser, token: userInfos.remember_token })
   return Promise.resolve()
 }
 
