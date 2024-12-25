@@ -14,10 +14,7 @@ const handleLogin = async (authFunction: () => Promise<any>) => {
 
     if (!data.status) throw new Error(data.msg);
 
-    console.log("%c actions.ts #17 || data : ", 'background:red;color:#fff;font-weight:bold;', data);
-
     const userInfos = createUserInfos(data.data);
-    console.log("%c actions.ts #18 || userInfos : ", 'background:red;color:#fff;font-weight:bold;', userInfos);
     store.dispatch('Core/insertUser', userInfos);
 
     return { status: data.status, msg: 'Connexion réussie !' };
