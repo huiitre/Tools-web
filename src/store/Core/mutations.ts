@@ -10,7 +10,7 @@ export const isLoading = (state: any, isLoading: boolean) => state.isLoading = i
 //* Insertion des data utilisateur dans le store et en localstorage
 export const insertUserInStore = (state: any, data: UserInfosType) => state.user = { ...data, isLogged: true }
 // export const insertUserInLS = (data: UserInfosType) => LS.set('TOOLS_CORE_USER', data)
-export const insertTokenAndIduserInLS = (data: any) => {
+export const insertUserInLS = (data: any) => {
   LS.set('TOOLS_CORE_USER', data)
 }
 
