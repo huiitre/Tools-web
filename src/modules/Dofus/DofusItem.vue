@@ -58,20 +58,26 @@ const calculateCraftPrice = (recipe: any) => {
   }
 
   return recipe.reduce((total, ingredient) => {
-    const price = ingredient.item_average_price || 0;
+    const price = unformatPrice(ingredient.item_average_price) || 0;
     const quantity = ingredient.item_quantity || 1;
     return total + price * quantity;
   }, 0);
 };
 
 const calculateTotalPrice = (recipeItem: any) => {
-  const price = Number(recipeItem.item_average_price) || 0;
-  const quantity = Number(recipeItem.item_quantity) || 0;
-  return (price * quantity).toLocaleString(); // Formate avec des séparateurs
+  const price = unformatPrice(recipeItem.item_average_price) || 0;
+  const quantity = parseInt(recipeItem.item_quantity) || 0;
+  return formatPrice((price * quantity)); // Formate avec des séparateurs
 }
 
 const formatPrice = (price: number) => {
   return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+};
+const unformatPrice = (formattedPrice: any): number => {
+  if (typeof formattedPrice === 'string') {
+    return parseInt(formattedPrice.replace(/\s/g, ''), 10);
+  }
+  return formattedPrice;
 };
 
 // Ajout du "Prix craft" aux items
@@ -115,7 +121,7 @@ const openImageDialog = (image: string) => {
 };
 
 const handleSaveAveragePrice = async(item: any) => {
-  const cleanedPrice = item.editedPrice.replace(/\s+/g, '');
+  const cleanedPrice = unformatPrice(item.editedPrice);
 
   if (cleanedPrice == item.item_average_price) {
     console.log("%c Aucune modification détectée, sauvegarde ignorée.", 'background:orange;color:#fff;font-weight:bold;');
