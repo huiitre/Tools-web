@@ -94,7 +94,7 @@ const handleDisconnect = () => {
       </v-app-bar-title>
       <v-spacer></v-spacer>
       <v-btn class="text-caption font-weight-light" style="pointer-events: none;">
-        0.1.0
+        0.2.1
       </v-btn>
     </v-app-bar>
 

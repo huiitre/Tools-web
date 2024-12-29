@@ -188,13 +188,13 @@ const handleCustomAddItem = (item: any) => {
                   <span class="text-caption font-weight-bold">Craft :</span>
                   <span>
                     <v-icon
-                      :color="item.item_average_price > calculateTotalCraft(item) ? 'red' : 'green'"
+                      :color="item.item_average_price > calculateTotalCraft(item) ? 'success' : 'error'"
                       style="font-size: 30px; font-weight: bold;"
                     >
                       {{
                         item.item_average_price > calculateTotalCraft(item)
-                          ? 'mdi-arrow-up-bold'
-                          : 'mdi-arrow-down-bold'
+                          ? 'mdi-arrow-down-bold'
+                          : 'mdi-arrow-up-bold'
                       }}
                     </v-icon>
                     {{ formatPrice(calculateTotalCraft(item)) }} Kamas
