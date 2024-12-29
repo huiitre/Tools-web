@@ -5,12 +5,12 @@ import store from "@/store/store";
 // components
 import Home from '@/modules/Home/Home.vue'
 import LS from "@/services/localStorage";
-import DofusItem from "@/modules/Dofus/DofusItem.vue";
+import DofusItem from "@/modules/Dofus/DofusItem/DofusItem.vue";
 import Login from '@/modules/Login/Login.vue'
 
 import PrivacyPolicy from "@/modules/Legal/PrivacyPolicy.vue";
 import TermsOfService from "@/modules/Legal/TermsOfService.vue";
-import DofusSet from "@/modules/Dofus/DofusSet.vue";
+import DofusSet from "@/modules/Dofus/DofusSet/DofusSet.vue";
 import Dofus from "@/modules/Dofus/Dofus.vue";
 import NotFound from "@/modules/Common/NotFound.vue";
 
@@ -60,14 +60,14 @@ export const routes = [
       },
       {
         name: 'dofus-set',
-        path: 'set',
+        path: 'set/:setCode?',
         component: DofusSet,
         meta: { requireAuth: true, label: 'Gestion Set' }
       },
     ]
   },
   {
-    path: '/:catchAll(.*)', // Catch-all pour toutes les URL non correspondantes
+    path: '/:catchAll(.*)*', // Catch-all pour toutes les URL non correspondantes
     name: 'NotFound',
     component: NotFound,
     meta: { requireAuth: false },
