@@ -68,7 +68,6 @@ const handleSubmitConnection = async () => {
 // Connexion via Google
 const handleGoogleLogin = async (response: any) => {
   const googleJwt = response?.credential;
-  console.log("%c Login.vue #67 || googleJwt : ", 'background:red;color:#fff;font-weight:bold;', googleJwt);
 
   if (!googleJwt) {
     console.error('JWT Google manquant dans la réponse');
