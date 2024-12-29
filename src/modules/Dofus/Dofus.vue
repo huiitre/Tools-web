@@ -23,7 +23,8 @@ const tabs = computed(() => {
   // Construire les onglets
   return parentRoute.children.map((child, index) => ({
     label: child?.meta?.label || child.name,
-    path: `${parentRoute.path}/${child.path}`,
+    path: `${parentRoute.path}/${child.path.replace(/:setCode\??/, '')}`, // Remplacer les paramètres dynamiques
+    rawPath: `${parentRoute.path}/${child.path}`, // Garder le chemin brut pour comparer dynamiquement
     value: index + 1,
   }));
 });
@@ -31,13 +32,13 @@ const tabs = computed(() => {
 // Onglet actif par défaut
 const currentTab = ref(
   tabs.value.length > 0 
-    ? tabs.value.find(tab => tab.path === route.path)?.value || tabs.value[0].value 
+    ? tabs.value.find(tab => route.matched.some(m => m.path === tab.rawPath))?.value || tabs.value[0].value 
     : null
 );
 
 // Mettre à jour l'onglet actif selon la route
 watch(route, () => {
-  const tab = tabs.value.find(tab => tab.path === route.path);
+  const tab = tabs.value.find(tab => route.matched.some(m => m.path === tab.rawPath));
   if (tab) {
     currentTab.value = tab.value;
   }

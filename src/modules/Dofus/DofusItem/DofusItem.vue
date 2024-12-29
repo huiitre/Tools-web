@@ -1,8 +1,8 @@
 <script setup lang="ts">
 // @ts-nocheck
 import { Ref, ref } from 'vue';
-import { useFetchItemListWeb } from './hooks/useFetchItemList'
-import { useMutationAveragePrice } from './hooks/useMutationAveragePrice';
+import { useFetchItemListWeb } from '../hooks/useFetchItemList'
+import { useMutationAveragePrice } from '../hooks/useMutationAveragePrice';
 
 const loading = ref(false)
 const searchItem = ref('')
@@ -25,10 +25,7 @@ const headers: Array<{
   { title: 'Nom', value: 'item_name', sortable: true, key: 'item_name', align: 'center' },
   { title: 'Niveau', value: 'item_level', sortable: true, key: 'item_level', align: 'center' },
   { title: 'Prix moyen', value: 'item_average_price', sortable: true, key: 'item_average_price', align: 'center' },
-  { title: 'Prix craft', value: 'craft_price', sortable: true, key: 'craft_price', align: 'center' },
-  // { title: 'Prix X1', value: 'item_x1_price', sortable: true, key: 'item_x1_price', align: 'center' },
-  // { title: 'Prix X10', value: 'item_x10_price', sortable: true, key: 'item_x10_price', align: 'center' },
-  // { title: 'Prix X100', value: 'item_x100_price', sortable: true, key: 'item_x100_price', align: 'center' },
+  { title: 'Prix craft', value: 'craft_price', sortable: true, key: 'craft_price', align: 'center' }
 ];
 const recipeHeaders: Array<{
   key?: string;
@@ -45,9 +42,6 @@ const recipeHeaders: Array<{
   { title: 'Nom', value: 'item_name', align: 'center', sortable: false },
   { title: 'Niveau', value: 'item_level', align: 'center', sortable: false },
   { title: 'Prix moyen', value: 'item_average_price', sortable: false, key: 'item_average_price', align: 'center' },
-  // { title: 'Prix X1', value: 'item_x1_price', sortable: false, key: 'item_x1_price', align: 'center' },
-  // { title: 'Prix X10', value: 'item_x10_price', sortable: false, key: 'item_x10_price', align: 'center' },
-  // { title: 'Prix X100', value: 'item_x100_price', sortable: false, key: 'item_x100_price', align: 'center' },
   { title: 'Quantité', value: 'item_quantity', align: 'center', sortable: false },
   { title: 'Prix total', value: 'total_price', key: 'total_price', align: 'center' },
 ];
@@ -109,7 +103,7 @@ const toggleAllRowsExpansion = () => {
 };
 
 const getImageUrl = (path: string) => {
-  return `${import.meta.env.VITE_TOOLS_BACKEND_URL}${path}`;
+  return `${path}`;
 };
 
 const dialog = ref(false);
@@ -220,6 +214,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
         label="Search"
         prepend-inner-icon="mdi-magnify"
         variant="outlined"
+        density="compact"
         hide-details
         single-line
         clearable
@@ -286,13 +281,6 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
             />
           </td>
 
-          <!-- Autres colonnes -->
-          <!-- <td v-for="header in headers.slice(2)" :key="header.value" class="text-center">
-            <span :style="{ fontWeight: header.value === 'item_name' ? 'bold' : 'normal' }">
-              {{ item[header.value] }}
-            </span>
-          </td> -->
-          <!-- Autres colonnes -->
           <td v-for="header in headers.slice(2)" :key="header.value?.toString()" class="text-center">
             <!-- Colonne "Prix moyen" avec input -->
             <template v-if="header.value === 'item_average_price'">
@@ -300,6 +288,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
                 <v-text-field
                   v-model="item.editedPrice"
                   variant="outlined"
+                  density="compact"
                   hide-details
                   dense
                   class="price-input"
@@ -374,6 +363,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
                             <v-text-field
                               v-model="recipeItem.editedPrice"
                               variant="outlined"
+                              density="compact"
                               hide-details
                               dense
                               class="price-input"
