@@ -70,3 +70,11 @@ export const useMutationQuantityAlreadyObtained = async (idset: any, idrecipe_it
     }
   })
 }
+
+export const useMutationCreateShareLink = async(idset: number) => {
+  return await client.post(`/dofus/set/${idset}/share`, {}, {
+    headers: {
+      requireToken: true
+    }
+  })
+}
