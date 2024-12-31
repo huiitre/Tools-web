@@ -484,6 +484,7 @@ onMounted(async() => {
         :itemList="selectedSet ? selectedSet.items : []"
         :isVisible="selectedSet ? true : false"
         :readonly="readonly"
+        :idset="selectedSet ? selectedSet.idset : null"
       />
       <AddItemSet
         v-if="!readonly"

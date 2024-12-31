@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { reactive, defineEmits, computed, ref, Ref } from 'vue';
+import { reactive, defineEmits, computed, ref, Ref, watch } from 'vue';
 import { useFetchItemListWeb } from '../hooks/useFetchItemList'
+import { useMutationCreateShareLink } from '../hooks/useMutationSet';
+import { copyToClipboard } from '@/utils/Core/string';
+import toast from '@/services/toast';
 
 const emit = defineEmits([''])
 
@@ -17,8 +20,50 @@ const props = defineProps({
   readonly: {
     type: Boolean,
     default: false
+  },
+  idset: {
+    type: Number || null,
+    required: true
   }
 })
+
+const showShareDialog = ref(false)
+const shareLink = ref('')
+const isLoadingShare = ref(false)
+
+const shareSet = async () => {
+  try {
+    isLoadingShare.value = true;
+    shareLink.value = ''; // Réinitialiser le lien
+    const { data } = await useMutationCreateShareLink(props.idset)
+
+    if (!data.status) {
+      throw new Error(data.msg || 'Erreur inconnue');
+    }
+
+    shareLink.value = data.data.link;
+  } catch (error) {
+    console.error('Erreur lors du partage du set:', error);
+  } finally {
+    isLoadingShare.value = false;
+  }
+};
+
+const handleCopyToClipboard = async() => {
+  if (!shareLink.value) return;
+
+  const result = await copyToClipboard(shareLink.value)
+  if (result)
+    toast.success(`Lien du set copié dans le presse-papier`)
+  else
+    toast.error(`Erreur lors de la copie dans le presse-papier`)
+}
+
+watch(showShareDialog, (newValue) => {
+  if (newValue) {
+    shareLink.value = '';
+  }
+});
 
 // States
 const showCompleteResources = ref(false);
@@ -111,9 +156,67 @@ const formatPrice = (price: number): string => {
         :disabled="readonly"
         style="cursor: pointer;"
         class="ml-4"
+        @click="showShareDialog = true"
       >
         mdi-share
       </v-icon>
+
+      <!-- Dialog -->
+      <v-dialog v-model="showShareDialog" max-width="400">
+        <v-card class="bg-blue-grey pa-4 rounded elevation-2">
+          <!-- Titre -->
+          <v-card-title class="text-h6 text-white justify-center pb-4">
+            Actions de partage
+          </v-card-title>
+
+          <!-- Contenu principal -->
+          <v-card-text class="d-flex flex-column gap-4">
+            <!-- Bouton pour partager le set -->
+            <v-btn
+              color="cyan darken-2"
+              variant="flat"
+              rounded
+              :loading="isLoadingShare"
+              :disabled="isLoadingShare"
+              @click="shareSet"
+            >
+              Partager le set
+            </v-btn>
+
+            <!-- Input pour afficher le lien généré -->
+            <v-text-field
+              v-if="shareLink"
+              v-model="shareLink"
+              @click="handleCopyToClipboard"
+              @focus="(event: any) => event.target.select()"
+              label="Lien de partage"
+              readonly
+              outlined
+              density="compact"
+              hide-details
+              class="bg-blue-grey-lighten-3 rounded"
+            />
+
+            <!-- Bouton pour exporter le set -->
+            <v-btn color="grey darken-1" variant="flat" block rounded disabled>
+              Exporter le set
+            </v-btn>
+          </v-card-text>
+
+          <!-- Bouton de fermeture -->
+          <v-card-actions class="justify-end pt-4">
+            <v-btn
+              color="red darken-2"
+              variant="text"
+              rounded
+              @click="showShareDialog = false"
+            >
+              Fermer
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-dialog>
+
     </v-card-title>
 
     <v-divider color="white" class="my-4" :thickness="3"></v-divider>

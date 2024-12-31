@@ -4,6 +4,8 @@ import router from '@/router/router';
 import store from '@/store/store';
 import { computed, ref } from 'vue';
 
+const appVersion = __APP_VERSION__;
+
 const drawer = ref(false)
 const toggleDrawer = () => drawer.value = !drawer.value
 
@@ -94,7 +96,7 @@ const handleDisconnect = () => {
       </v-app-bar-title>
       <v-spacer></v-spacer>
       <v-btn class="text-caption font-weight-light" style="pointer-events: none;">
-        0.2.1
+        {{ appVersion }}
       </v-btn>
     </v-app-bar>
 
