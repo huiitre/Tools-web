@@ -21,12 +21,20 @@ const tabs = computed(() => {
   }
 
   // Construire les onglets
-  return parentRoute.children.map((child, index) => ({
-    label: child?.meta?.label || child.name,
-    path: `${parentRoute.path}/${child.path.replace(/:setCode\??/, '')}`, // Remplacer les paramètres dynamiques
-    rawPath: `${parentRoute.path}/${child.path}`, // Garder le chemin brut pour comparer dynamiquement
-    value: index + 1,
-  }));
+  return parentRoute.children
+    .filter(child => {
+      // Exclure "Set Partagé" si on n'est pas sur une route partagée
+      if (child.name === 'dofus-set-shared' && route.name !== 'dofus-set-shared') {
+        return false;
+      }
+      return true;
+    })
+    .map((child, index) => ({
+      label: child?.meta?.label || child.name,
+      path: `${parentRoute.path}/${child.path.replace(/:setCode\??/, '')}`, // Remplacer les paramètres dynamiques
+      rawPath: `${parentRoute.path}/${child.path}`, // Garder le chemin brut pour comparer dynamiquement
+      value: index + 1,
+    }));
 });
 
 // Onglet actif par défaut

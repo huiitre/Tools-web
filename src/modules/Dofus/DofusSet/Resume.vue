@@ -13,6 +13,10 @@ const props = defineProps({
     type: Array,
     required: true,
     default: []
+  },
+  readonly: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -104,7 +108,7 @@ const formatPrice = (price: number): string => {
       <v-icon
         size="48"
         color="white"
-        :disabled="true"
+        :disabled="readonly"
         style="cursor: pointer;"
         class="ml-4"
       >
