@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { defineProps, ref } from 'vue';
 import { useMutationAveragePrice } from '../hooks/useMutationAveragePrice';
+import toast from '@/services/toast';
 
 const timeoutFn = globalThis.setTimeout;
 
@@ -8,8 +9,20 @@ const props = defineProps({
   itemList: {
     type: Array,
     required: true
+  },
+  readonly: {
+    type: Boolean,
+    default: false,
+    required: false
   }
 });
+
+const isReadonly = () => {
+  if (props.readonly) {
+    toast.warning('Les modifications sont désactivées pour ce set.');
+    return true;
+  }
+}
 
 const emit = defineEmits(['fetch-set', 'delete-item', 'update-multiplier', 'update-qty-already-obtained', 'add-custom-item']);
 
@@ -18,6 +31,7 @@ const handleDelete = (item: any) => {
 };
 
 const handlePriceUpdate = async(item: any) => {
+  if (isReadonly()) return;
   console.log('Prix mis à jour pour l\'item', item.item_name, ':', item.item_average_price);
   const averagePrice = item.item_average_price || 0;
 
@@ -31,12 +45,14 @@ const handlePriceUpdate = async(item: any) => {
 };
 
 const handleMultiplierUpdate = (item: any, timeout: number = 0) => {
+  if (isReadonly()) return;
   setTimeout(() => {
     emit('update-multiplier', item);
   }, timeout);
 };
 
 const handleQtyAlreadyObtainedUpdate = (ingredient: any, timeout: number = 0) => {
+  if (isReadonly()) return;
   setTimeout(() => {
     emit('update-qty-already-obtained', ingredient);
   }, timeout);
@@ -84,6 +100,7 @@ const calculateTotalCraftFinal = (item: any): number => {
 };
 
 const handleCustomAddItem = (item: any) => {
+  if (isReadonly()) return;
   emit('add-custom-item', [item]);
 }
 
@@ -125,6 +142,7 @@ const handleCustomAddItem = (item: any) => {
               <div class="d-flex align-center ml-4">
                 <!-- Input Multiplicateur -->
                 <v-text-field
+                  :disabled="readonly"
                   v-model="item.multiplier"
                   type="text"
                   label="Multiplicateur"
@@ -145,6 +163,7 @@ const handleCustomAddItem = (item: any) => {
 
                 <!-- Icône poubelle -->
                 <v-icon
+                  :disabled="readonly"
                   color="red"
                   style="font-size: 40px; cursor: pointer;"
                   @click.stop="handleDelete(item)"
@@ -160,6 +179,7 @@ const handleCustomAddItem = (item: any) => {
                 <!-- Prix moyen -->
                 <div class="d-flex justify-space-between align-center">
                   <v-text-field
+                    :disabled="readonly"
                     :model-value="formatPrice(item.item_average_price)"
                     label="Prix moyen"
                     @input="(event: any) => {
@@ -260,6 +280,7 @@ const handleCustomAddItem = (item: any) => {
                         <span>{{ ingredient.item_name || 'Nom inconnu' }}</span>
                         <v-chip
                           v-if="ingredient.hasrecipe && !itemList.some(item => item.iditem === ingredient.iditem)"
+                          :disabled="readonly"
                           density="comfortable"
                           size="x-small"
                           color="orange"
@@ -289,6 +310,7 @@ const handleCustomAddItem = (item: any) => {
                     <div class="d-flex align-center" style="flex-shrink: 0; gap: 8px;">
                       <!-- Input prix moyen -->
                       <v-text-field
+                        :disabled="readonly"
                         :model-value="formatPrice(ingredient.item_average_price)"
                         density="compact"
                         variant="outlined"
@@ -308,6 +330,7 @@ const handleCustomAddItem = (item: any) => {
 
                       <!-- Input quantité obtenue -->
                       <v-text-field
+                        :disabled="readonly"
                         v-model="ingredient.quantity_already_obtained"
                         density="compact"
                         variant="outlined"

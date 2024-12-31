@@ -64,6 +64,13 @@ export const routes = [
         component: DofusSet,
         meta: { requireAuth: true, label: 'Gestion Set' }
       },
+      {
+        name: 'dofus-set-shared',
+        path: 'set/shared/:token',
+        component: DofusSet,
+        props: { readonly: true },
+        meta: { requireAuth: false, label: 'Set Partagé' },
+      },
     ]
   },
   {

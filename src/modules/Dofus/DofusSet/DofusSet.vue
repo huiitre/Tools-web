@@ -1,13 +1,29 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive, Ref, watch } from 'vue';
 import { useFetchItemListWeb } from '../hooks/useFetchItemList'
-import { useFetchSetById, useFetchSetList } from '../hooks/useFetchSet';
+import { useFetchSetById, useFetchSetList, useFetchSharedSetByToken } from '../hooks/useFetchSet';
 import { useRoute, useRouter } from 'vue-router';
 import AddItemSet from './AddItemSet.vue';
 import { useMutationAddItemsToSet, useMutationCreateSet, useMutationDeleteItemsToSet, useMutationDeleteSet, useMutationEditSet, useMutationMultiplier, useMutationQuantityAlreadyObtained } from '../hooks/useMutationSet';
 import toast from '@/services/toast';
 import ItemListSet from './ItemListSet.vue';
 import Resume from './Resume.vue';
+
+const props = defineProps({
+  readonly: {
+    type: Boolean,
+    default: false,
+    required: false
+  }
+});
+
+const isReadonly = () => {
+  if (props.readonly) {
+    toast.warning("Vous n'avez pas les droits pour effectuer cette action.");
+    return true;
+  }
+  return false
+}
 
 const route = useRoute();
 const router = useRouter();
@@ -177,6 +193,7 @@ const closeDeleteSetDialog = () => {
 };
 
 const handleAddItemsToSet = async(data: any) => {
+  if (isReadonly()) return;
   try {
     loadingGlobal.value = true
     const idItems = data.map((item: any) => item.iditem);
@@ -193,6 +210,7 @@ const handleAddItemsToSet = async(data: any) => {
 }
 
 const handleDeleteItemToSet = async(item: any) => {
+  if (isReadonly()) return;
   try {
     loadingGlobal.value = true
     const iditem = item.iditem;
@@ -209,6 +227,7 @@ const handleDeleteItemToSet = async(item: any) => {
 }
 
 const handleMultiplierUpdate = async(item: any) => {
+  if (isReadonly()) return;
   try {
     const iditem = item.iditem;
     const multiplier = item.multiplier;
@@ -223,6 +242,7 @@ const handleMultiplierUpdate = async(item: any) => {
 }
 
 const handleUpdateQtyAlreadyObtained = async(item: any) => {
+  if (isReadonly()) return;
   try {
     const result = await useMutationQuantityAlreadyObtained(selectedSet.value.idset, item.idrecipe_item_has_set, item.quantity_already_obtained)
     if (!result.data?.status)
@@ -247,7 +267,6 @@ const fetchSet = async(idset: any) => {
 }
 
 const fetchSetInfo = async (setCode: string | undefined) => {
-  console.log("fetchSetInfo", setCode);
   if (!setCode) {
     selectedSet.value = null;
     return;
@@ -265,6 +284,18 @@ const fetchSetInfo = async (setCode: string | undefined) => {
   selectedSet.value = set;
 };
 
+const fetchSetInfoShared = async(token: string) => {
+  try {
+    const { data } = await useFetchSharedSetByToken(token)
+    if (!data?.status)
+      throw data
+    selectedSet.value = data.data
+  } catch(err) {
+    console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
+    router.push({ name: 'dofus-set', params: {} });
+  }
+}
+
 onMounted(async() => {
   try {
     loadingGlobal.value = true
@@ -272,7 +303,11 @@ onMounted(async() => {
     if (!data?.status)
       throw data
     setList.value = data.data
-    fetchSetInfo(route.params.setCode as string | undefined);
+
+    if (route.name === 'dofus-set-shared' && route.params.token)
+      await fetchSetInfoShared(route.params.token as string)
+    else
+      fetchSetInfo(route.params.setCode as string | undefined);
   } catch(err) {
     console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
   } finally {
@@ -377,7 +412,7 @@ onMounted(async() => {
           @click="handleSelectSet(set)"
           class="d__l__set opacity-80"
           :class="[
-            selectedSet?.idset === set.idset 
+            (selectedSet?.idset === set.idset && !readonly) 
               ? 'bg-amber-lighten-1' 
               : setFilter === 'active' 
                 ? 'bg-cyan-darken-3' 
@@ -440,18 +475,22 @@ onMounted(async() => {
         @delete-item="handleDeleteItemToSet"
         @update-qty-already-obtained="handleUpdateQtyAlreadyObtained"
         @add-custom-item="handleAddItemsToSet"
+        :readonly="readonly"
       />
     </div>
 
     <div class="d__container d__right">
-      <AddItemSet
-        :isVisible="selectedSet ? true : false"
-        :itemListSet="selectedSet ? selectedSet.items : []"
-        @add-items="handleAddItemsToSet"
-      />
       <Resume
         :itemList="selectedSet ? selectedSet.items : []"
         :isVisible="selectedSet ? true : false"
+        :readonly="readonly"
+      />
+      <AddItemSet
+        v-if="!readonly"
+        :isVisible="selectedSet ? true : false"
+        :itemListSet="selectedSet ? selectedSet.items : []"
+        @add-items="handleAddItemsToSet"
+        :readonly="readonly"
       />
     </div>
   </div>
