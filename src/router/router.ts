@@ -13,6 +13,7 @@ import TermsOfService from "@/modules/Legal/TermsOfService.vue";
 import DofusSet from "@/modules/Dofus/DofusSet/DofusSet.vue";
 import Dofus from "@/modules/Dofus/Dofus.vue";
 import NotFound from "@/modules/Common/NotFound.vue";
+import Todolist from "@/modules/Todolist/Todolist.vue";
 
 export const routes = [
   {
@@ -72,6 +73,12 @@ export const routes = [
         meta: { requireAuth: true, label: 'Set Partagé' },
       },
     ]
+  },
+  {
+    name: 'todolist',
+    path: '/todolist',
+    component: Todolist,
+    meta: { requireAuth: true, idmodule: 3 },
   },
   {
     path: '/:catchAll(.*)*', // Catch-all pour toutes les URL non correspondantes
