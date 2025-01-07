@@ -79,6 +79,12 @@ export const routes = [
     path: '/todolist',
     component: Todolist,
     meta: { requireAuth: true, idmodule: 3 },
+    children: [
+      {
+        name: 'todolist-element',
+        path: 'todolist/:todolistCode'
+      }
+    ]
   },
   {
     path: '/:catchAll(.*)*', // Catch-all pour toutes les URL non correspondantes
