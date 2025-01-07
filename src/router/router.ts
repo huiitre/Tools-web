@@ -73,7 +73,7 @@ export const routes = [
         meta: { requireAuth: true, label: 'Set Partagé' },
       },
     ]
-  },
+  }/* ,
   {
     name: 'todolist',
     path: '/todolist',
@@ -91,7 +91,7 @@ export const routes = [
     name: 'NotFound',
     component: NotFound,
     meta: { requireAuth: false },
-  },
+  }, */
 ]
 
 const router = createRouter({
