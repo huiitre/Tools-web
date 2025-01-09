@@ -88,7 +88,7 @@ const craftableSetPrice: Ref<any> = computed(() =>
   }, 0)
 );
 
-const totalCraftPriceAdjusted = computed(() =>
+const totalCraftPriceAdjusted: Ref<any> = computed(() =>
   props.itemList.reduce((sum: any, item: any) => {
     const multiplier = item.multiplier || 1;
 
