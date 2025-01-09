@@ -82,15 +82,30 @@ const craftableSetPrice: Ref<any> = computed(() =>
     return (
       sum +
       item.recipe.reduce((recipeSum: any, ingredient: any) => {
-        const remainingQty = ingredient.total_quantity_required - ingredient.quantity_already_obtained;
-        return recipeSum + Math.max(remainingQty, 0) * ingredient.item_average_price;
+        return recipeSum + ingredient.total_quantity_required * ingredient.item_average_price;
       }, 0) * (item.multiplier || 1)
     );
   }, 0)
 );
 
 const totalCraftPriceAdjusted = computed(() =>
-  craftableSetPrice.value // Peut-être affiné avec d'autres règles si nécessaire
+  props.itemList.reduce((sum: any, item: any) => {
+    const multiplier = item.multiplier || 1;
+
+    return (
+      sum +
+      item.recipe.reduce((recipeSum: any, ingredient: any) => {
+        // Quantité totale ajustée avec le multiplicateur
+        const totalQtyRequired = ingredient.total_quantity_required * multiplier;
+
+        // Quantité restante après soustraction de la quantité déjà obtenue
+        const remainingQty = Math.max(totalQtyRequired - ingredient.quantity_already_obtained, 0);
+
+        // Prix de la quantité restante
+        return recipeSum + remainingQty * ingredient.item_average_price;
+      }, 0)
+    );
+  }, 0)
 );
 
 // Liste des ressources agrégées
