@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { reactive, defineEmits, computed, ref, Ref, watch } from 'vue';
+import { reactive, defineEmits, computed, ref, Ref, watch, onMounted } from 'vue';
 import { useFetchItemListWeb } from '../hooks/useFetchItemList'
 import { useMutationCreateShareLink } from '../hooks/useMutationSet';
 import { copyToClipboard } from '@/utils/Core/string';
@@ -72,7 +72,9 @@ const showCompleteResources = ref(false);
 const totalItemsToCraft = computed(() => props.itemList.length);
 
 const totalSetPrice: Ref<any> = computed(() =>
-  props.itemList.reduce((sum: any, item: any) => sum + item.item_average_price, 0)
+  props.itemList.reduce((sum: any, item: any) => 
+    sum + (item.item_average_price * (item.multiplier || 1)), 0
+  )
 );
 
 const craftableSetPrice: Ref<any> = computed(() =>
@@ -82,7 +84,7 @@ const craftableSetPrice: Ref<any> = computed(() =>
       item.recipe.reduce((recipeSum: any, ingredient: any) => {
         const remainingQty = ingredient.total_quantity_required - ingredient.quantity_already_obtained;
         return recipeSum + Math.max(remainingQty, 0) * ingredient.item_average_price;
-      }, 0)
+      }, 0) * (item.multiplier || 1)
     );
   }, 0)
 );
@@ -96,24 +98,25 @@ const resources = computed(() => {
   const resourceMap = new Map();
 
   props.itemList.forEach((item: any) => {
+    const multiplier = item.multiplier || 1; // Utilisation du multiplicateur (1 par défaut)
+
     item.recipe.forEach((ingredient: any) => {
       const existingResource = resourceMap.get(ingredient.iditem);
 
       if (existingResource) {
-        existingResource.total += ingredient.total_quantity_required;
+        existingResource.total += ingredient.total_quantity_required * multiplier;
         existingResource.obtained += ingredient.quantity_already_obtained;
       } else {
         resourceMap.set(ingredient.iditem, {
           id: ingredient.iditem,
           name: ingredient.item_name,
           item_img: ingredient.item_img,
-          total: ingredient.total_quantity_required,
+          total: ingredient.total_quantity_required * multiplier,
           obtained: ingredient.quantity_already_obtained
         });
       }
     });
   });
-
   return Array.from(resourceMap.values());
 });
 
