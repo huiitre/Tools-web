@@ -121,57 +121,58 @@ const handleCustomAddItem = (item: any) => {
             outlined
           >
             <!-- Header de la carte -->
-            <v-card-title class="d-flex justify-space-between align-center">
-              <!-- Image de l'item -->
-              <v-avatar size="64" class="mr-4">
-                <v-img 
-                  :src="item.item_img || 'https://via.placeholder.com/64'" 
-                  alt="item-image" 
-                />
-              </v-avatar>
+            <v-card-title class="d-flex justify-space-between align-center" style="gap: 16px;">
+            <!-- Image de l'item -->
+            <v-avatar size="64">
+              <v-img 
+                :src="item.item_img || 'https://via.placeholder.com/64'" 
+                alt="item-image" 
+              />
+            </v-avatar>
 
-              <!-- Bloc Nom et Informations -->
-              <div class="d-flex flex-column">
-                <h3 class="text-h6 font-weight-bold m-0">{{ item.item_name || 'Nom inconnu' }}</h3>
-                <p class="text-caption m-0">
-                  {{ item.item_type_name || 'Type inconnu' }} - Niveau {{ item.item_level || 'N/A' }}
-                </p>
-              </div>
+            <!-- Bloc Nom et Informations -->
+            <div class="flex-grow-1" style="min-width: 0;">
+              <h3 class="text-h6 font-weight-bold m-0" style="white-space: normal; word-break: break-word;">
+                {{ item.item_name || 'Nom inconnu' }}
+              </h3>
+              <p class="text-caption m-0">
+                {{ item.item_type_name || 'Type inconnu' }} - Niveau {{ item.item_level || 'N/A' }}
+              </p>
+            </div>
 
-              <!-- Input Multiplicateur et Icône poubelle -->
-              <div class="d-flex align-center ml-4">
-                <!-- Input Multiplicateur -->
-                <v-text-field
-                  :disabled="readonly"
-                  v-model="item.multiplier"
-                  type="text"
-                  label="Multiplicateur"
-                  density="compact"
-                  variant="outlined"
-                  style="width: 100px; margin-top: 12px; height: 50px;"
-                  class="mr-4"
-                  @update:model-value="(event: any) => {
-                    item.multiplier = sanitizeInput(event, 1, 9999)
-                  }"
-                  @keydown.enter.prevent="(event: any) => {
-                    event.target.blur();
-                  }"
-                  @blur="() => {
-                    handleMultiplierUpdate(item)
-                  }"
-                />
+            <!-- Input Multiplicateur et Icône poubelle -->
+            <div class="d-flex align-center">
+              <!-- Input Multiplicateur -->
+              <v-text-field
+                :disabled="readonly"
+                v-model="item.multiplier"
+                type="text"
+                label="Multiplicateur"
+                density="compact"
+                variant="outlined"
+                style="width: 100px; height: 50px; margin-right: 16px;"
+                @update:model-value="(event: any) => {
+                  item.multiplier = sanitizeInput(event, 1, 9999)
+                }"
+                @keydown.enter.prevent="(event: any) => {
+                  event.target.blur();
+                }"
+                @blur="() => {
+                  handleMultiplierUpdate(item)
+                }"
+              />
 
-                <!-- Icône poubelle -->
-                <v-icon
-                  :disabled="readonly"
-                  color="red"
-                  style="font-size: 40px; cursor: pointer;"
-                  @click.stop="handleDelete(item)"
-                >
-                  mdi-delete
-                </v-icon>
-              </div>
-            </v-card-title>
+              <!-- Icône poubelle -->
+              <v-icon
+                :disabled="readonly"
+                color="red"
+                style="font-size: 40px; cursor: pointer;"
+                @click.stop="handleDelete(item)"
+              >
+                mdi-delete
+              </v-icon>
+            </div>
+          </v-card-title>
 
             <v-card-subtitle class="bg-blue-grey-lighten-2">
               <!-- Section d'informations calculées -->
