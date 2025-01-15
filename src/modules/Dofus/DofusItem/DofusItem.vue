@@ -107,10 +107,10 @@ const getImageUrl = (path: string) => {
 };
 
 const dialog = ref(false);
-const selectedImage = ref('');
+const selectedImage = ref({});
 
-const openImageDialog = (image: string) => {
-  selectedImage.value = image;
+const openImageDialog = (item: object) => {
+  selectedImage.value = item;
   dialog.value = true;
 };
 
@@ -277,7 +277,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
               :src="getImageUrl(item.item_img)"
               alt="item image"
               style="height: 60px; cursor: pointer;"
-              @click="openImageDialog(getImageUrl(item.item_img))"
+              @click="openImageDialog({ iditem: item.iditem, url: getImageUrl(item.item_img) })"
             />
           </td>
 
@@ -354,7 +354,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
                             :src="getImageUrl(recipeItem.item_img)"
                             alt="ingredient image"
                             style="height: 40px; cursor: pointer;"
-                            @click="openImageDialog(getImageUrl(recipeItem.item_img))"
+                            @click="openImageDialog({ iditem: recipeItem.iditem, url: getImageUrl(recipeItem.item_img) })"
                           />
                         </span>
                         <!-- Colonne "Prix moyen" avec input -->
@@ -411,8 +411,9 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
   <!-- Dialog to show image -->
   <v-dialog v-model="dialog" max-width="600px">
     <v-card>
+      <v-card-text>{{ selectedImage.iditem }}</v-card-text>
       <v-card-text class="d-flex justify-center">
-        <img :src="selectedImage" alt="Large item image" style="max-width: 100%; max-height: 80vh;" />
+        <img :src="selectedImage.url" alt="Large item image" style="max-width: 100%; max-height: 80vh;" />
       </v-card-text>
       <v-card-actions>
         <v-spacer></v-spacer>
