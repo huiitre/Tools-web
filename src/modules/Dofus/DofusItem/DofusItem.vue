@@ -24,7 +24,7 @@ const headers: Array<{
   { title: 'Type', value: 'item_type_name', sortable: true, key: 'item_type_name', align: 'center' },
   { title: 'Nom', value: 'item_name', sortable: true, key: 'item_name', align: 'center' },
   { title: 'Niveau', value: 'item_level', sortable: true, key: 'item_level', align: 'center' },
-  { title: 'Prix moyen', value: 'item_average_price', sortable: true, key: 'item_average_price', align: 'center' },
+  { title: 'Prix unitaire', value: 'item_average_price', sortable: true, key: 'item_average_price', align: 'center' },
   { title: 'Prix craft', value: 'craft_price', sortable: true, key: 'craft_price', align: 'center' }
 ];
 const recipeHeaders: Array<{
@@ -41,7 +41,7 @@ const recipeHeaders: Array<{
   { title: 'Type', value: 'item_type_name', align: 'center', sortable: false },
   { title: 'Nom', value: 'item_name', align: 'center', sortable: false },
   { title: 'Niveau', value: 'item_level', align: 'center', sortable: false },
-  { title: 'Prix moyen', value: 'item_average_price', sortable: false, key: 'item_average_price', align: 'center' },
+  { title: 'Prix unitaire', value: 'item_average_price', sortable: false, key: 'item_average_price', align: 'center' },
   { title: 'Quantité', value: 'item_quantity', align: 'center', sortable: false },
   { title: 'Prix total', value: 'total_price', key: 'total_price', align: 'center' },
 ];
@@ -317,7 +317,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
                   icon="mdi-alert-circle"
                   color="red"
                   style="font-size: 20px; margin-right: 4px;"
-                  title="Certains ingrédients ont un prix moyen nul ou à 0."
+                  title="Certains ingrédients ont un prix unitaire nul ou à 0."
                 ></v-icon>
                 <span>{{ item[header.value] }}</span>
               </div>

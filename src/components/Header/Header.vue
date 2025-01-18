@@ -2,9 +2,32 @@
 import { useFetchUserInfos } from '@/modules/Login/hooks/useFetchUserInfos'
 import router from '@/router/router';
 import store from '@/store/store';
-import { computed, ref } from 'vue';
+import { computed, Ref, ref, watch } from 'vue';
+
+import changelog from '@/CHANGELOG.js'
 
 const appVersion = __APP_VERSION__;
+const releaseNotes: Ref<any> = ref([])
+const showReleaseNotes = ref(false)
+
+const fetchReleaseNote = async () => {
+  try {
+    releaseNotes.value = changelog.map((entry: any) => ({
+      ...entry,
+      isCurrent: entry.version == appVersion,
+      isLatest: entry.version == changelog[0].version,
+    }));
+  } catch (err) {
+    console.error("%c Header.vue || err : ", 'background:red;color:#fff;', err);
+    releaseNotes.value = [];
+  }
+};
+
+watch(showReleaseNotes, (newValue) => {
+  if (newValue) {
+    fetchReleaseNote();
+  }
+});
 
 const drawer = ref(false)
 const toggleDrawer = () => drawer.value = !drawer.value
@@ -95,7 +118,7 @@ const handleDisconnect = () => {
         </router-link>
       </v-app-bar-title>
       <v-spacer></v-spacer>
-      <v-btn class="text-caption font-weight-light" style="pointer-events: none;">
+      <v-btn class="text-caption font-weight-light" @click="showReleaseNotes = true">
         {{ appVersion }}
       </v-btn>
     </v-app-bar>
@@ -108,6 +131,45 @@ const handleDisconnect = () => {
       <v-btn v-on:click="handleDisconnect">Déconnexion</v-btn>
     </router-link> -->
   </div>
+  <v-dialog v-model="showReleaseNotes" max-width="700px">
+    <v-card>
+      <!-- Titre principal -->
+      <v-card-title class="headline text-center text-h5 font-weight-bold bg-success text-white">
+        Notes de version - {{ appVersion }}
+      </v-card-title>
+
+      <v-card-text>
+        <!-- Liste des versions -->
+        <div v-for="(release, index) in releaseNotes" :key="index" class="mb-6">
+          <!-- Version avec background colorisé -->
+          <div
+            class="d-inline-block rounded-lg px-3 py-2 font-weight-bold text-subtitle-1 bg-grey-lighten-3"
+          >
+            {{ release.version }} - {{ new Date(release.releaseDate).toLocaleDateString('fr-FR').replace(/\//g, '-') }}
+          </div>
+
+          <!-- Notes -->
+          <ul class="mt-2 pl-4 text-body-2">
+            <li
+              v-for="(note, idx) in release.notes"
+              :key="idx"
+              class="mb-2"
+            >
+              <span class="font-weight-bold">{{ note.split(':')[0] }}:</span>
+              <span> {{ note.split(':').slice(1).join(':') }}</span>
+            </li>
+          </ul>
+        </div>
+      </v-card-text>
+
+      <!-- Actions -->
+      <v-card-actions>
+        <v-spacer></v-spacer>
+        <v-btn color="primary" variant="text" @click="showReleaseNotes = false">Fermer</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
 </template>
 
 <style lang="scss" scoped>
