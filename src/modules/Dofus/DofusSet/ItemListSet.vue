@@ -182,7 +182,7 @@ const handleCustomAddItem = (item: any) => {
                   <v-text-field
                     :disabled="readonly"
                     :model-value="formatPrice(item.item_average_price)"
-                    label="Prix moyen"
+                    label="Prix unitaire"
                     @input="(event: any) => {
                       item.item_average_price = sanitizeInput(event.target.value, 0)
                     }"
@@ -200,7 +200,7 @@ const handleCustomAddItem = (item: any) => {
                     }"
                   >
                   </v-text-field>
-                  <span class="text-caption font-weight-bold">Prix moyen multiplié :</span>
+                  <span class="text-caption font-weight-bold">Prix unitaire multiplié :</span>
                   <span>{{ formatPrice(item.item_average_price * item.multiplier) }} Kamas</span>
                 </div>
 
@@ -266,7 +266,7 @@ const handleCustomAddItem = (item: any) => {
                             text-color="white"
                             variant="flat"
                           >
-                            Prix total : {{ formatPrice(ingredient.total_quantity_required * (ingredient.item_average_price || 0)) }}
+                            Prix total : {{ formatPrice((ingredient.total_quantity_required * (item.multiplier || 1)) * (ingredient.item_average_price || 0)) }}
                           </v-chip>
                           <v-chip
                             density="comfortable"
@@ -320,7 +320,7 @@ const handleCustomAddItem = (item: any) => {
                         @input="(event: any) => {
                           ingredient.item_average_price = sanitizeInput(event.target.value, 0)
                         }"
-                        label="Prix moyen"
+                        label="Prix unitaire"
                         @keydown.enter.prevent="(event: any) => {
                           event.target.blur();
                         }"
