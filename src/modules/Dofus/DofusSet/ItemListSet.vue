@@ -2,6 +2,7 @@
 import { defineProps, ref } from 'vue';
 import { useMutationAveragePrice } from '../hooks/useMutationAveragePrice';
 import toast from '@/services/toast';
+import { copyToClipboard } from '@/utils/Core/string';
 
 const timeoutFn = globalThis.setTimeout;
 
@@ -104,6 +105,14 @@ const handleCustomAddItem = (item: any) => {
   emit('add-custom-item', [item]);
 }
 
+const handleCopyToClipboard = async(name: string) => {
+  const result = await copyToClipboard(name)
+  if (result)
+    toast.success(`Nom copié avec succès !`)
+  else
+    toast.error(`Erreur lors de la copie dans le presse-papier`)
+}
+
 </script>
 
 <template>
@@ -132,7 +141,7 @@ const handleCustomAddItem = (item: any) => {
 
             <!-- Bloc Nom et Informations -->
             <div class="flex-grow-1" style="min-width: 0;">
-              <h3 class="text-h6 font-weight-bold m-0" style="white-space: normal; word-break: break-word;">
+              <h3 v-on:click="handleCopyToClipboard(item.item_name)" class="text-h6 font-weight-bold m-0" style="white-space: normal; word-break: break-word;">
                 {{ item.item_name || 'Nom inconnu' }}
               </h3>
               <p class="text-caption m-0">
@@ -278,7 +287,7 @@ const handleCustomAddItem = (item: any) => {
                             Prix Final : {{ formatPrice((ingredient.total_quantity_required * (item.multiplier || 1) - ingredient.quantity_already_obtained) * (ingredient.item_average_price || 0)) }}
                           </v-chip>
                         </div>
-                        <span>{{ ingredient.item_name || 'Nom inconnu' }}</span>
+                        <span v-on:click="handleCopyToClipboard(ingredient.item_name)">{{ ingredient.item_name || 'Nom inconnu' }}</span>
                         <v-chip
                           v-if="ingredient.hasrecipe && !itemList.some(item => item.iditem === ingredient.iditem)"
                           :disabled="readonly"
