@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.4.0',
+    releaseDate: '2025-01-20',
+    notes: [
+      `Dofus : On peut désormais copier le nom d'un objet en cliquant sur ce dernier, dans la recherche d'items et également dans les sets`
+    ]
+  },
+  {
     version: '0.3.3',
     releaseDate: '2025-01-18',
     notes: [

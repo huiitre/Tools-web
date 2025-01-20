@@ -3,6 +3,8 @@
 import { Ref, ref } from 'vue';
 import { useFetchItemListWeb } from '../hooks/useFetchItemList'
 import { useMutationAveragePrice } from '../hooks/useMutationAveragePrice';
+import { copyToClipboard } from '@/utils/Core/string';
+import toast from '@/services/toast';
 
 const loading = ref(false)
 const searchItem = ref('')
@@ -199,6 +201,14 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
   }
 }
 
+const handleCopyToClipboard = async(name: string) => {
+  const result = await copyToClipboard(name)
+  if (result)
+    toast.success(`Nom copié avec succès !`)
+  else
+    toast.error(`Erreur lors de la copie dans le presse-papier`)
+}
+
 </script>
 
 <template>
@@ -324,7 +334,10 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
             </template>
             <!-- Autres colonnes normales -->
             <template v-else>
-              <span :style="{ fontWeight: header.value === 'item_name' ? 'bold' : 'normal' }">
+              <span
+                @click="header.value === 'item_name' ? handleCopyToClipboard(item.item_name) : null"
+                :style="{ fontWeight: header.value === 'item_name' ? 'bold' : 'normal' }"
+              >
                 {{ item[header.value] }}
               </span>
             </template>
@@ -392,7 +405,7 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
                         </template>
                         <!-- Autres colonnes normales -->
                         <template v-else>
-                          <span>
+                          <span @click="header.value === 'item_name' ? handleCopyToClipboard(recipeItem[header.value]) : null">
                             {{ recipeItem[header.value] }}
                           </span>
                         </template>
