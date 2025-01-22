@@ -5,6 +5,8 @@ import store from '@/store/store';
 import { computed, Ref, ref, watch } from 'vue';
 
 import changelog from '@/CHANGELOG.js'
+import toast from '@/services/toast';
+import { useMutationAddFeedback } from './hooks/useMutationFeedback';
 
 const appVersion = __APP_VERSION__;
 const releaseNotes: Ref<any> = ref([])
@@ -28,6 +30,32 @@ watch(showReleaseNotes, (newValue) => {
     fetchReleaseNote();
   }
 });
+
+const showBugReportDialog = ref(false)
+const bugReportMessage = ref('')
+const submitBugReport = async() => {
+  if (bugReportMessage.value.trim() === '') {
+    toast.error('Veuillez entrer un message avant de soumettre.');
+    return;
+  }
+
+  try {
+    await useMutationAddFeedback(bugReportMessage.value.trim());
+    toast.success('Votre message a bien été envoyé. Merci pour votre retour !');
+    closeDialog();
+  } catch (error) {
+    toast.error('Une erreur est survenue lors de l’envoi de votre message. Veuillez réessayer.');
+  }
+}
+const closeDialog = () => {
+  showBugReportDialog.value = false
+  bugReportMessage.value = ''
+}
+watch(showBugReportDialog, (val) => {
+  if (!val) {
+    bugReportMessage.value = ''
+  }
+})
 
 const drawer = ref(false)
 const toggleDrawer = () => drawer.value = !drawer.value
@@ -121,16 +149,12 @@ const handleDisconnect = () => {
       <v-btn class="text-caption font-weight-light" @click="showReleaseNotes = true">
         {{ appVersion }}
       </v-btn>
+      <v-btn icon color="grey lighten-1" @click="showBugReportDialog = true">
+        <v-icon>mdi-bug</v-icon>
+      </v-btn>
     </v-app-bar>
-
-    <!-- <v-btn v-on:click="handleTest">TEST /AUTH/ME</v-btn> -->
-    <!-- <router-link to="/">
-      <v-btn>Retour à l'accueil</v-btn>
-    </router-link>
-    <router-link to="/login">
-      <v-btn v-on:click="handleDisconnect">Déconnexion</v-btn>
-    </router-link> -->
   </div>
+
   <v-dialog v-model="showReleaseNotes" max-width="700px">
     <v-card>
       <!-- Titre principal -->
@@ -166,6 +190,36 @@ const handleDisconnect = () => {
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn color="primary" variant="text" @click="showReleaseNotes = false">Fermer</v-btn>
+      </v-card-actions>
+    </v-card>
+  </v-dialog>
+
+  <v-dialog v-model="showBugReportDialog" max-width="500px">
+    <v-card>
+      <!-- Titre principal avec une croix pour fermer -->
+      <v-card-title class="d-flex justify-space-between align-center bg-primary text-white">
+        <span class="headline font-weight-bold">Reporter un bug / Proposer une amélioration</span>
+      </v-card-title>
+
+      <!-- Contenu principal -->
+      <v-card-text>
+        <v-textarea
+          v-model="bugReportMessage"
+          label="Décrivez votre problème ou votre idée d'amélioration"
+          rows="5"
+          outlined
+          dense
+          auto-grow
+          maxlength="500"
+          counter="500"
+          class="mt-3"
+        ></v-textarea>
+      </v-card-text>
+
+      <!-- Actions -->
+      <v-card-actions class="d-flex justify-end">
+        <v-btn color="primary" variant="text" @click="submitBugReport">Envoyer</v-btn>
+        <v-btn variant="text" @click="closeDialog">Annuler</v-btn>
       </v-card-actions>
     </v-card>
   </v-dialog>
