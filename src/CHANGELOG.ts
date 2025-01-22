@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.5.0',
+    releaseDate: '2025-01-23',
+    notes: [
+      `Core : Ajout d'un bouton dans le header pour signaler un bug ou proposer une amélioration`
+    ]
+  },
+  {
     version: '0.4.0',
     releaseDate: '2025-01-20',
     notes: [
