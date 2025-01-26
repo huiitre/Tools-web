@@ -1,5 +1,20 @@
 const changelog: Array<any> = [
   {
+    version: '0.6.1',
+    releaseDate: '2025-01-26',
+    notes: [
+      `Dofus : On surcharge la position de départ des minogolems quand on appuie sur le bouton Continuer`,
+      `Dofus : On décoche les tours joués si le recalcul du résultat est effectué`,
+    ]
+  },
+  {
+    version: '0.6.0',
+    releaseDate: '2025-01-26',
+    notes: [
+      `Dofus : Ajout d'un outil d'aide pour la quête "Une âme en peine", nécessaire pour le dofus pourpre`
+    ]
+  },
+  {
     version: '0.5.0',
     releaseDate: '2025-01-23',
     notes: [
