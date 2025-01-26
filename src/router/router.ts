@@ -14,6 +14,7 @@ import DofusSet from "@/modules/Dofus/DofusSet/DofusSet.vue";
 import Dofus from "@/modules/Dofus/Dofus.vue";
 import NotFound from "@/modules/Common/NotFound.vue";
 import Todolist from "@/modules/Todolist/Todolist.vue";
+import DofusMinogolem from "@/modules/Dofus/DofusMinogolem/DofusMinogolem.vue";
 
 export const routes = [
   {
@@ -64,6 +65,12 @@ export const routes = [
         path: 'set/:setCode?',
         component: DofusSet,
         meta: { requireAuth: true, label: 'Gestion Set' }
+      },
+      {
+        name: 'dofus-une-ame-en-peine',
+        path: 'une-ame-en-peine',
+        component: DofusMinogolem,
+        meta: { requireAuth: true, label: 'Une âme en peine' }
       },
       {
         name: 'dofus-set-shared',
