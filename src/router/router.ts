@@ -15,6 +15,7 @@ import Dofus from "@/modules/Dofus/Dofus.vue";
 import NotFound from "@/modules/Common/NotFound.vue";
 import Todolist from "@/modules/Todolist/Todolist.vue";
 import DofusMinogolem from "@/modules/Dofus/DofusMinogolem/DofusMinogolem.vue";
+import EventGalet from "@/modules/Dofus/EventGalet/EventGalet.vue";
 
 export const routes = [
   {
@@ -71,6 +72,12 @@ export const routes = [
         path: 'une-ame-en-peine',
         component: DofusMinogolem,
         meta: { requireAuth: true, label: 'Une âme en peine' }
+      },
+      {
+        name: 'dofus-event-galet',
+        path: 'event-galet',
+        component: EventGalet,
+        meta: { requireAuth: true, label: 'Event galet' }
       },
       {
         name: 'dofus-set-shared',
