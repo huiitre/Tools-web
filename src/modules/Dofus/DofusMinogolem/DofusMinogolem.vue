@@ -6,6 +6,7 @@ import or from '@/assets/img/Dofus/DofusMinogolem/or.png?url';
 import sang from '@/assets/img/Dofus/DofusMinogolem/sang.png?url';
 import sel from '@/assets/img/Dofus/DofusMinogolem/sel.png?url';
 import seculaire from '@/assets/img/Dofus/DofusMinogolem/seculaire.png?url';
+import DofusMinogolemMap from './DofusMinogolemMap.vue';
 
 // Liste des Minogolems dans le menu de gauche
 const minogolems: Ref<any> = ref([
@@ -450,6 +451,11 @@ const toggleCardState = (index: number) => {
                 </v-row>
               </v-card>
             </v-col>
+
+            <!-- Partie map -->
+            <!-- <v-col cols="12">
+              <DofusMinogolemMap />
+            </v-col> -->
 
           </v-row>
         </v-col>
