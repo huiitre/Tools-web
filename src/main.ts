@@ -35,6 +35,8 @@ const vuetify = createVuetify({
   },
 })
 
+store.dispatch('Core/detectPlatform');
+
 const app = createApp(App)
 app.use(store)
 app.use(router)
