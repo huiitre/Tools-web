@@ -1,5 +1,14 @@
 const changelog: Array<any> = [
   {
+    version: '0.7.0',
+    releaseDate: '2025-02-26',
+    notes: [
+      `Core : Ajout de la note de version sur la page d'accueil`,
+      `Core : Désactivation temporaire du lien qui pointe vers les paramètres`,
+      `Core : Mise en place de l'application en PWA et récupération interne du type de plateforme`,
+    ]
+  },
+  {
     version: '0.6.1',
     releaseDate: '2025-01-26',
     notes: [

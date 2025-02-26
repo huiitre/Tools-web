@@ -23,3 +23,5 @@ export const clearUser = (state: any) => state.user = { ...baseUser }
 export const clearLS = () => LS.clear()
 
 export const setUserModules = (state: any, modules: any) => state.modules = modules
+
+export const setPlatform = (state: any, platform: string) => state.platform = platform

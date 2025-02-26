@@ -12,6 +12,8 @@ const appVersion = __APP_VERSION__;
 const releaseNotes: Ref<any> = ref([])
 const showReleaseNotes = ref(false)
 
+const platform = store.getters['Core/getPlatform']
+
 const fetchReleaseNote = async () => {
   try {
     releaseNotes.value = changelog.map((entry: any) => ({
@@ -89,7 +91,6 @@ const handleDisconnect = () => {
       ></v-list-item>
 
       <v-divider></v-divider>
-
       <v-list nav>
         <v-list-item 
           prepend-icon="mdi-home" 
@@ -101,6 +102,7 @@ const handleDisconnect = () => {
           prepend-icon="mdi-cog" 
           title="Paramètres" 
           value="settings"
+          :disabled="true"
           @click="router.push({ name: 'settings' })"
         ></v-list-item>
         <v-list-item 

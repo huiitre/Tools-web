@@ -7,6 +7,7 @@ import { useFetchDisconnectUser } from '@/modules/Login/hooks/useFetchDisconnect
 import { useFetchUserInfos } from '@/modules/Login/hooks/useFetchUserInfos'
 import { useFetchConnexionWithGoogle } from '@/modules/Login/hooks/useFetchConnexionWithGoogle'
 import client from '@/services/axiosInstance'
+import { isMobileDevice, isPWA } from '@/composables/useDeviceDetection';
 
 const handleLogin = async (authFunction: () => Promise<any>) => {
   try {
@@ -102,4 +103,16 @@ export const insertUser = ({ commit }: any, userInfos: any) => {
 export const clearUser = ({ commit }: any) => {
   commit('clearUser')
   commit('clearLS')
+}
+
+export const detectPlatform = ({ commit }: any) => {
+  let platform = 'desktop';
+
+  if (window && (window as any).process && (window as any).process.type) {
+    platform = 'electron';
+  } else if (isMobileDevice()) {
+    platform = isPWA() ? 'pwa' : 'mobile';
+  }
+
+  commit('setPlatform', platform);
 }

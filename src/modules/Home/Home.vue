@@ -1,13 +1,65 @@
 <script setup lang="ts">
+import { onMounted, ref, Ref } from 'vue';
+import changelog from '@/CHANGELOG.js'
+
+const appVersion = __APP_VERSION__;
+const releaseNotes: Ref<any> = ref([])
+
+const fetchReleaseNote = async () => {
+  try {
+    releaseNotes.value = changelog.map((entry: any) => ({
+      ...entry,
+      isCurrent: entry.version == appVersion,
+      isLatest: entry.version == changelog[0].version,
+    }));
+  } catch (err) {
+    console.error("%c Home.vue || err : ", 'background:red;color:#fff;', err);
+    releaseNotes.value = [];
+  }
+};
+
+onMounted(() => fetchReleaseNote())
 </script>
 
 <template>
-  <!-- <Router-link :to="{ path: '/dofus' }">
-    <button>Dofus</button>
-  </Router-link> -->
-  Lorem ipsum dolor sit amet consectetur adipisicing elit. Ipsum temporibus placeat eaque optio vero velit rem reiciendis fugiat nulla modi qui, cupiditate maiores alias nisi inventore sequi earum laborum vitae expedita mollitia minima. Repellat, officiis quidem, nostrum nihil autem officia dolorem pariatur sequi accusantium possimus atque dolorum explicabo, vitae quas eligendi minima esse ratione quia. Similique, obcaecati! Obcaecati, soluta voluptatum sit beatae at in perspiciatis excepturi dicta asperiores nam incidunt vitae unde. Optio mollitia dolore incidunt earum at deserunt sequi modi adipisci in numquam, quia, ab esse repellendus. Reprehenderit praesentium quaerat animi harum maiores accusantium distinctio saepe voluptatem, quod consequuntur dolorum perferendis! Minima assumenda consectetur est quae porro beatae eaque quis ea voluptatem numquam quo recusandae saepe ipsa quod quibusdam, exercitationem ex id. Consequatur dolorum eius corrupti illo, molestias repellat nisi aspernatur? Harum assumenda ut dignissimos quos voluptatum distinctio eius dolor perspiciatis odio voluptas quas, impedit accusamus provident cupiditate quidem eos fugiat rem ipsa eligendi optio. Exercitationem eveniet aliquam veritatis illo ducimus in a deleniti magnam eaque rem, corrupti dicta explicabo. Blanditiis, ad ipsa minus eum maxime sint cumque cupiditate neque dolorem tenetur ea quo dolore aliquam incidunt optio sunt voluptatem, a quasi similique quis! Sapiente accusantium fugit, quos iste dignissimos cumque amet rerum nobis ut assumenda, molestias in aspernatur. Dignissimos modi repellat, quis quisquam vel velit quos eaque similique? Neque molestiae maiores alias ipsam esse vel assumenda tempore voluptates cumque? Accusantium id ducimus eaque nam maiores, ipsum esse fugiat at ab voluptas autem eligendi velit. Iste incidunt voluptatem eius architecto voluptates fuga culpa perferendis, autem vel ipsam explicabo! Est ad necessitatibus sint inventore fugiat cupiditate cum tenetur veritatis, hic reiciendis nam eveniet atque delectus non! Accusamus, obcaecati assumenda. Rerum quod porro ut ipsa, fuga nihil consequatur quidem recusandae illum placeat, quas nemo amet non ad nesciunt nostrum unde. Repellendus incidunt et voluptatum deserunt alias, blanditiis ipsum neque assumenda quas nesciunt at non fuga obcaecati nostrum voluptates debitis magnam optio perferendis sint quae inventore! Reiciendis unde consequuntur velit ipsam recusandae. Nobis, aperiam cumque. Autem dicta voluptate earum minus culpa nostrum suscipit voluptas voluptatibus quod vel adipisci, ullam ut error veritatis. Mollitia cumque illum maxime iure aliquid corrupti possimus assumenda totam at adipisci sapiente, facere quisquam, veniam quas nihil ducimus, officiis obcaecati et blanditiis dolore consequatur quia. Facilis, vel ipsum obcaecati distinctio voluptatibus tenetur unde dolorum quisquam possimus amet maxime ipsam id accusamus atque laudantium, quod illo ex harum modi doloremque praesentium sapiente. Hic distinctio fugit, nobis in ad dolor voluptas amet nulla, eum officiis voluptatem quaerat repellat vel, iusto dignissimos deserunt obcaecati iste reprehenderit dolorem fugiat animi. Aperiam numquam consequatur cum, similique possimus optio quibusdam vero sed dolorum corporis deserunt adipisci a minima quisquam sit itaque eligendi quasi quaerat. Et itaque sunt animi illum odit quasi non veniam, dignissimos ipsam? Rerum sed porro beatae quasi esse ratione sapiente mollitia autem incidunt qui dolorem, repudiandae quos laudantium, in nulla non sit, illum reprehenderit officiis adipisci error placeat nesciunt? Itaque animi iure molestiae, possimus distinctio optio, dicta modi sapiente voluptatem nam a!
+  <div id="home">
+    <v-container fluid>
+      <v-row justify="center">
+        <!-- Ajustez la largeur de la colonne selon vos besoins -->
+        <v-col cols="12" md="8">
+          <v-card>
+            <!-- Titre principal -->
+            <v-card-title class="headline text-center text-h5 font-weight-bold bg-success text-white">
+              Notes de version - {{ appVersion }}
+            </v-card-title>
+  
+            <v-card-text>
+              <!-- Liste des versions -->
+              <div v-for="(release, index) in releaseNotes" :key="index" class="mb-6">
+                <!-- Version avec background colorisé -->
+                <div class="d-inline-block rounded-lg px-3 py-2 font-weight-bold text-subtitle-1 bg-grey-lighten-3">
+                  {{ release.version }} - {{ new Date(release.releaseDate).toLocaleDateString('fr-FR').replace(/\//g, '-') }}
+                </div>
+  
+                <!-- Notes -->
+                <ul class="mt-2 pl-4 text-body-2">
+                  <li v-for="(note, idx) in release.notes" :key="idx" class="mb-2">
+                    <span class="font-weight-bold">{{ note.split(':')[0] }}:</span>
+                    <span> {{ note.split(':').slice(1).join(':') }}</span>
+                  </li>
+                </ul>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+    </v-container>
+  </div>
 </template>
 
 <style lang="scss" scoped>
-
+#home {
+  width: 100%;
+  margin: 2rem 0;
+}
 </style>
