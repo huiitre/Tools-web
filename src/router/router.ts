@@ -16,6 +16,7 @@ import NotFound from "@/modules/Common/NotFound.vue";
 import Todolist from "@/modules/Todolist/Todolist.vue";
 import DofusMinogolem from "@/modules/Dofus/DofusMinogolem/DofusMinogolem.vue";
 import EventGalet from "@/modules/Dofus/EventGalet/EventGalet.vue";
+import SavingAllocation from "@/modules/SavingAllocation/SavingAllocation.vue";
 
 export const routes = [
   {
@@ -87,7 +88,14 @@ export const routes = [
         meta: { requireAuth: true, label: 'Set Partagé' },
       },
     ]
-  }/* ,
+  },
+  {
+    name: 'repartition-d\'epargne',
+    path: '/repartition-epargne',
+    component: SavingAllocation,
+    meta: { requireAuth: true, idmodule: 4 }
+  }
+  /* ,
   {
     name: 'todolist',
     path: '/todolist',

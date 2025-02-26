@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.8.0',
+    releaseDate: '2025-02-26',
+    notes: [
+      `Répartition d'épargne : Création du composant initial`,
+    ]
+  },
+  {
     version: '0.7.0',
     releaseDate: '2025-02-26',
     notes: [
