@@ -73,12 +73,12 @@ export const routes = [
         component: DofusMinogolem,
         meta: { requireAuth: true, label: 'Une âme en peine' }
       },
-      {
+      /* {
         name: 'dofus-event-galet',
         path: 'event-galet',
         component: EventGalet,
         meta: { requireAuth: true, label: 'Event galet' }
-      },
+      }, */
       {
         name: 'dofus-set-shared',
         path: 'set/shared/:token',
