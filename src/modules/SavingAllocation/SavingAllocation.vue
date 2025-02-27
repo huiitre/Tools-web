@@ -1,144 +1,198 @@
 <template>
-  <v-container class="fill-height d-flex justify-center align-center">
-    <v-card class="pa-4" max-width="400">
-      <v-card-title class="text-h5 text-center">Répartition d'épargne</v-card-title>
-      <v-card-text>
-        <!-- Input du montant total -->
-        <v-text-field
-          v-model="totalAmount"
-          label="Montant total (en €)"
-          type="number"
-          :rules="[maxAmountRule]"
-          outlined
-          maxlength="5"
-          counter="5"
-        ></v-text-field>
+  <div id="saving-allocation">
+    <div class="s__recap">
 
-        <!-- Liste des lignes d'allocation -->
-        <div v-for="(allocation, index) in allocations" :key="index" class="d-flex align-center mb-2">
-          <v-text-field
-            v-model="allocation.name"
-            label="Nom de l'épargne"
-            outlined
-            class="flex-grow-1"
-          ></v-text-field>
-          <v-text-field
-            v-model="allocation.percentage"
-            label="Pourcentage (%)"
-            type="number"
-            outlined
-            style="width: 120px;"
-          ></v-text-field>
-          <v-btn icon color="red" @click="removeAllocation(index)">
-            <v-icon>mdi-close</v-icon>
-          </v-btn>
+      <div class="s__r__allocationList">
+        <div class="s__r__a__elem">
+          <div class="s__r__a__e__libelle">ETF MSCI World (25%):&nbsp;</div>
+          <div class="s__r__a__e__value">10,000 €</div>
         </div>
+        <div class="s__r__a__elem">
+          <div class="s__r__a__e__libelle">ETF Europe (15%):&nbsp;</div>
+          <div class="s__r__a__e__value">6,000 €</div>
+        </div>
+        <div class="s__r__a__elem">
+          <div class="s__r__a__e__libelle">Obligations d'État (25%):&nbsp;</div>
+          <div class="s__r__a__e__value">10,000 €</div>
+        </div>
+        <div class="s__r__a__elem">
+          <div class="s__r__a__e__libelle">Obligations Entreprises (15%):&nbsp;</div>
+          <div class="s__r__a__e__value">6,000 €</div>
+        </div>
+        <div class="s__r__a__elem">
+          <div class="s__r__a__e__libelle">Compte courant Fortuneo (10%):&nbsp;</div>
+          <div class="s__r__a__e__value">4,000 €</div>
+        </div>
+        <div class="s__r__a__elem">
+          <div class="s__r__a__e__libelle">Bitcoin &amp; Ethereum (10%):&nbsp;</div>
+          <div class="s__r__a__e__value">4,000 €</div>
+        </div>
+      </div>
 
-        <!-- Bouton pour ajouter une nouvelle ligne -->
-        <v-btn variant="text" color="primary" @click="addAllocation">
-          <v-icon left>mdi-plus</v-icon> Ajouter une épargne
+      <div class="s__r__infos">
+        <div class="s__r__total s__r__elem">
+          <div class="s__r__e__libelle">Total (%) : &nbsp;</div>
+          <div class="s__r__e__value">85,45%</div>
+        </div>
+        <div class="s__r__restant s__r__elem">
+          <div class="s__r__e__libelle">Restant : &nbsp;</div>
+          <div class="s__r__e__value">245,45 € (25,45%)</div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="s__amount">
+
+      <div class="s__a__amount-field">
+        <input type="number" step="any" placeholder="Montant à allouer" class="s__a__a__field" />
+        <span class="s__a__a__euro">€</span>
+      </div>
+
+      <div class="s__a__actions">
+        <v-btn class="s__a__a__btn s__a__a__reset" icon>
+          <v-icon>mdi-delete</v-icon>
         </v-btn>
+      </div>
 
-        <!-- Affichage des totaux -->
-        <div class="mt-4">
-          <div>Total % : {{ sumPercentage }}%</div>
-          <div v-if="sumPercentage < 100">
-            Reste à répartir : {{ 100 - sumPercentage }}% soit {{ remainingAmount.toFixed(2) }}€
-          </div>
-          <div v-else-if="sumPercentage > 100" class="error--text">
-            La somme des pourcentages dépasse 100% !
-          </div>
-        </div>
+    </div>
 
-        <!-- Bouton de validation -->
-        <v-btn color="success" class="mt-4" @click="calculateAllocations" :disabled="!canValidate">
-          Valider
-        </v-btn>
-
-        <!-- Affichage des résultats -->
-        <div v-if="results.length" class="mt-4">
-          <div class="text-h6">Répartition</div>
-          <v-list dense>
-            <v-list-item v-for="(result, index) in results" :key="index">
-              <v-list-item-content>
-                <v-list-item-title>
-                  {{ result.name }} : {{ result.amount.toFixed(2) }}€
-                </v-list-item-title>
-              </v-list-item-content>
-            </v-list-item>
-          </v-list>
-        </div>
-      </v-card-text>
-    </v-card>
-  </v-container>
+    <div class="s__action"></div>
+    <div class="s__allocationList"></div>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed } from 'vue';
 
-interface Allocation {
-  name: string;
-  percentage: number | null;
-}
 
-const totalAmount = ref<number | null>(null);
-const allocations = ref<Allocation[]>([]);
-const results = ref<{ name: string; amount: number }[]>([]);
-
-// Règle de validation pour limiter le montant à 5 chiffres (max 99999)
-const maxAmountRule = (value: number | null) => {
-  if (value === null || value === 0) return true;
-  return value <= 99999 || 'Le montant ne doit pas dépasser 99999';
-};
-
-// Somme des pourcentages saisis
-const sumPercentage = computed(() => {
-  return allocations.value.reduce((sum, alloc) => sum + (alloc.percentage ? Number(alloc.percentage) : 0), 0);
-});
-
-// Montant restant si la somme des pourcentages est inférieure à 100
-const remainingAmount = computed(() => {
-  if (totalAmount.value === null || totalAmount.value === 0) return 0;
-  return ((100 - sumPercentage.value) * totalAmount.value) / 100;
-});
-
-// Ajoute une nouvelle ligne d'allocation
-const addAllocation = () => {
-  allocations.value.push({ name: '', percentage: null });
-};
-
-// Retire une ligne d'allocation
-const removeAllocation = (index: number) => {
-  allocations.value.splice(index, 1);
-};
-
-// On peut valider si :
-// - Un montant total a été saisi et > 0
-// - La somme des pourcentages n'excède pas 100
-// - Au moins une ligne d'allocation existe et chaque ligne possède un nom et un pourcentage
-const canValidate = computed(() => {
-  return (
-    totalAmount.value !== null &&
-    totalAmount.value > 0 &&
-    sumPercentage.value <= 100 &&
-    allocations.value.length > 0 &&
-    allocations.value.every(alloc => alloc.name.trim() !== '' && alloc.percentage !== null)
-  );
-});
-
-// Calcule pour chaque allocation le montant en euros
-const calculateAllocations = () => {
-  if (!canValidate.value || totalAmount.value === null) return;
-  results.value = allocations.value.map(alloc => {
-    const pct = alloc.percentage ? Number(alloc.percentage) : 0;
-    const amount = (totalAmount.value! * pct) / 100;
-    return { name: alloc.name, amount };
-  });
-};
 </script>
 
 <style scoped>
-.fill-height {
-  min-height: 100vh;
+#saving-allocation {
+  width: 400px;
+  max-width: 100%; /* Si la fenêtre est plus petite, il prend toute la largeur */
+  margin: 2rem auto;
+  padding: 1rem;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 20px;
+  box-shadow: 0 4px 8px #00000033;
+
+  .s__recap {
+    padding: 1rem;
+    background-color: #8b2dff59;
+    border: 2px solid #8b2dffb1;
+    margin-bottom: 1rem;
+
+    .s__r__allocationList {
+      margin-bottom: 1.2rem;
+
+      .s__r__a__elem {
+        display: flex;
+        font-size: 0.9rem;
+        justify-content: space-between;
+
+        &:not(:last-child) {
+          margin-bottom: 0.2rem;
+        }
+
+        .s__r__a__e__libelle {
+          
+        }
+        .s__r__a__e__value {
+          font-weight: bold;
+        }
+      }
+    }
+
+    .s__r__infos {
+
+      .s__r__elem {
+        display: flex;
+        font-style: italic;
+        font-size: 0.8rem;
+
+        &:not(:last-child) {
+          margin-bottom: 0.2rem;
+        }
+
+        & .s__r__e__libelle {
+          
+        }
+        & .s__r__e__value {
+          font-weight: bold;
+        }
+      }
+      .s__r__total {
+
+      }
+      .s__r__restant {
+
+      }
+    }
+  }
+
+
+  .s__amount {
+    display: flex;
+    gap: 1rem;
+
+    .s__a__amount-field {
+      position: relative;
+
+      .s__a__a__field {
+        width: 100%;
+        padding: 1rem;
+        font-size: 1.2rem;
+        border: 2px solid #8b2dff59;
+        border-radius: 10px;
+        box-shadow: inset 0 1px 3px #0000001a;
+        transition: border-color 0.3s, box-shadow 0.3s;
+        position: relative;
+        text-align: right;
+        font-weight: bold;
+        padding-right: 2.5rem;
+        -moz-appearance: textfield;
+
+        &::-webkit-outer-spin-button,
+        &::-webkit-inner-spin-button {
+          -webkit-appearance: none;
+          margin: 0;
+        }
+
+        &:focus {
+          border-color: #8b2dffb1;
+          outline: none;
+          box-shadow: 0 0 8px #8b2dffb1;
+        }
+      }
+      .s__a__a__euro {
+        position: absolute;
+        right: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 1.5rem;
+        color: #7b7b7b;
+        font-weight: bold;
+      }
+    }
+    .s__a__actions {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+
+      .s__a__a__btn {
+        height: 100%;
+        border-radius: 8px;
+
+        &.s__a__a__reset {
+          background-color: #ff000050;
+          border: 2px solid #f44336;
+          color: #f44336;
+        }
+      }
+    }
+  }
 }
 </style>
