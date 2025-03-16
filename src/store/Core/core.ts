@@ -11,7 +11,7 @@ const state = {
   user: { ...baseUser },
   isLoading: false,
   modules: [],
-  platform: ''
+  platform: 'desktop'
 };
 export default {
   namespaced: true,

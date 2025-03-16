@@ -11,6 +11,8 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
+store.dispatch('Core/detectPlatform');
+
 const vuetify = createVuetify({
   components,
   directives,
