@@ -59,12 +59,19 @@ export default defineConfig({
         additionalData: `
           @use "@/assets/styles/_vars.css";
           @use "@/assets/styles/reset.scss";
+          @use "@/assets/styles/light-icon.css";
         `
       }
     },
   },
   server: {
-    hmr: true
+    hmr: true,
+    host: true,
+    /* https: {
+      key: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.1.30-key.pem')),
+      cert: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.1.30.pem'))
+    }, */
+    port: 5173,
   },
   logLevel: 'info',
   define: {

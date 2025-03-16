@@ -1,5 +1,13 @@
 const changelog: Array<any> = [
   {
+    version: '0.8.1',
+    releaseDate: '2025-03-16',
+    notes: [
+      `Core : Suppression d'un doublon de chargement du bouton de connexion avec google`,
+      `Core : Chargement de certains fichiers css en local afin d'éviter certains blocages liés à la latence de unpkg`,
+    ]
+  },
+  {
     version: '0.8.0',
     releaseDate: '2025-02-26',
     notes: [
