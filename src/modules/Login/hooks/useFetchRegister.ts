@@ -1,4 +1,4 @@
-import client from "@/services/axiosInstance";
+import { clientV2 } from "@/services/axiosInstance";
 
 export type useFetchRegisterType = {
   email: string;
@@ -7,5 +7,5 @@ export type useFetchRegisterType = {
   name: string
 }
 export const useFetchRegister = async (credentials: useFetchRegisterType) => {
-  return await client.post('/core/auth/register', credentials)
+  return await clientV2.post('/core/auth/register', credentials)
 }

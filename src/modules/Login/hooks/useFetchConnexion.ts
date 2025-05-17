@@ -1,9 +1,9 @@
-import client from "@/services/axiosInstance";
+import { clientV2 } from "@/services/axiosInstance";
 
 export type useFetchConnexionType = {
   email: string;
   password: string
 }
 export const useFetchConnexion = async (credentials: useFetchConnexionType) => {
-  return await client.post('/core/auth/login', { ...credentials })
+  return await clientV2.post('/core/auth/login', { ...credentials })
 }

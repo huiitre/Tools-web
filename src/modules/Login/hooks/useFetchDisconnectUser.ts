@@ -1,5 +1,5 @@
-import client from "@/services/axiosInstance";
+import { clientV2 } from "@/services/axiosInstance";
 
 export const useFetchDisconnectUser = async () => {
-  return await client.get('/core/auth/logout', { headers: { requireToken: true } })
+  return await clientV2.get('/core/auth/logout', { headers: { requireToken: true } })
 }
