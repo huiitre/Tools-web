@@ -169,7 +169,7 @@ onMounted(() => {
         <br />
 
         <!-- Rendu conditionnel selon la plateforme -->
-        <div v-if="platform === 'mobile'">
+        <div v-if="/* platform === 'mobile' */false">
           <!-- Bouton personnalisé pour mobile (Android ou iOS) -->
           <v-btn
             color="info"
