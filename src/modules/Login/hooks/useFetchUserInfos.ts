@@ -1,5 +1,5 @@
-import client from "@/services/axiosInstance";
+import { clientV2 } from "@/services/axiosInstance";
 
 export const useFetchUserInfos = async () => {
-  return await client.get('/core/auth/me', { headers: { requireToken: true } })
+  return await clientV2.get('/core/auth/me', { headers: { requireToken: true } })
 }

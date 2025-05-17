@@ -1,7 +1,7 @@
-import client from "@/services/axiosInstance";
+import { clientV1 } from "@/services/axiosInstance";
 
 export const useMutationCreateSet = async () => {
-  return await client.post(`/dofus/set/add`, {}, {
+  return await clientV1.post(`/dofus/set/add`, {}, {
     headers: {
       requireToken: true
     }
@@ -19,7 +19,7 @@ export const useMutationEditSet = async (id: any, columns: Record<string, { valu
     }, {} as Record<string, { value: any; type: string }>),
   };
 
-  return await client.patch(`/dofus/set/${id}/update`, payload, {
+  return await clientV1.patch(`/dofus/set/${id}/update`, payload, {
     headers: {
       requireToken: true,
     },
@@ -27,7 +27,7 @@ export const useMutationEditSet = async (id: any, columns: Record<string, { valu
 };
 
 export const useMutationDeleteSet = async (id: any) => {
-  return await client.delete(`/dofus/set/${id}/delete`, {
+  return await clientV1.delete(`/dofus/set/${id}/delete`, {
     headers: {
       requireToken: true
     }
@@ -35,7 +35,7 @@ export const useMutationDeleteSet = async (id: any) => {
 }
 
 export const useMutationAddItemsToSet = async (id: any, items: any) => {
-  return await client.post(`/dofus/set/${id}/item/add`, {
+  return await clientV1.post(`/dofus/set/${id}/item/add`, {
     list: items
   }, {
     headers: {
@@ -45,7 +45,7 @@ export const useMutationAddItemsToSet = async (id: any, items: any) => {
 }
 
 export const useMutationDeleteItemsToSet = async (id: any, items: any) => {
-  return await client.delete(`/dofus/set/${id}/item/delete`, {
+  return await clientV1.delete(`/dofus/set/${id}/item/delete`, {
     data: {
       list: items
     },
@@ -56,7 +56,7 @@ export const useMutationDeleteItemsToSet = async (id: any, items: any) => {
 };
 
 export const useMutationMultiplier = async (idset: any, iditem: number, multiplier: number) => {
-  return await client.patch(`/dofus/set/${idset}/${iditem}/multiplier/${multiplier}`, {}, {
+  return await clientV1.patch(`/dofus/set/${idset}/${iditem}/multiplier/${multiplier}`, {}, {
     headers: {
       requireToken: true
     }
@@ -64,7 +64,7 @@ export const useMutationMultiplier = async (idset: any, iditem: number, multipli
 }
 
 export const useMutationQuantityAlreadyObtained = async (idset: any, idrecipe_item_has_set: number, quantity: number) => {
-  return await client.patch(`/dofus/set/${idset}/recipe/${idrecipe_item_has_set}/${quantity}`, {}, {
+  return await clientV1.patch(`/dofus/set/${idset}/recipe/${idrecipe_item_has_set}/${quantity}`, {}, {
     headers: {
       requireToken: true
     }
@@ -72,7 +72,7 @@ export const useMutationQuantityAlreadyObtained = async (idset: any, idrecipe_it
 }
 
 export const useMutationCreateShareLink = async(idset: number) => {
-  return await client.post(`/dofus/set/${idset}/share`, {}, {
+  return await clientV1.post(`/dofus/set/${idset}/share`, {}, {
     headers: {
       requireToken: true
     }

@@ -41,8 +41,6 @@ const handleLogin = async (action: string, payload: any) => {
     store.commit('Core/isLoading', true);
     const result = await store.dispatch(action, payload);
 
-    if (!result?.status) throw result.msg;
-
     //* récupération des modules
     const { data } = await store.dispatch('Core/getUserModules');
     store.commit('Core/setUserModules', data);

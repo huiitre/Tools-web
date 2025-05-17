@@ -6,19 +6,17 @@ import store from '../store'
 import { useFetchDisconnectUser } from '@/modules/Login/hooks/useFetchDisconnectUser'
 import { useFetchUserInfos } from '@/modules/Login/hooks/useFetchUserInfos'
 import { useFetchConnexionWithGoogle } from '@/modules/Login/hooks/useFetchConnexionWithGoogle'
-import client from '@/services/axiosInstance'
+import { clientV2 } from '@/services/axiosInstance'
 import { isMobileDevice, isPWA } from '@/composables/useDeviceDetection';
 
 const handleLogin = async (authFunction: () => Promise<any>) => {
   try {
     const { data } = await authFunction();
 
-    if (!data.status) throw new Error(data.msg);
-
     const userInfos = createUserInfos(data.data);
     store.dispatch('Core/insertUser', userInfos);
 
-    return { status: data.status, msg: 'Connexion réussie !' };
+    return { msg: 'Connexion réussie !' };
   } catch (err: any) {
     store.dispatch('Core/clearUser');
     throw { status: 0, msg: err.message };
@@ -39,10 +37,8 @@ export const register = ({ commit }: any, credentials: { email: string; password
   return new Promise(async(resolve, reject) => {
     try {
       const { data } = await useFetchRegister(credentials)
-      if (!data.status)
-        throw new Error(data.msg)
       
-      resolve({ status: data.status, msg: data.msg })
+      resolve({ msg: data.msg })
     } catch (err: any) {
       reject({ status: 0, msg: err.message })
     }
@@ -53,10 +49,8 @@ export const disconnectUser = async() => {
   return new Promise(async(resolve, reject) => {
     try {
       const { data } = await useFetchDisconnectUser()
-      if (!data.status)
-        throw new Error(data.msg)
 
-      resolve({ status: data.status, msg: data.msg })
+      resolve({ msg: data.msg })
     } catch(err: any) {
       reject({ status: 0, msg: err.message })
     } finally {
@@ -71,10 +65,8 @@ export const getInfosUser = ({ commit }: any) => {
   return new Promise(async(resolve, reject) => {
     try {
       const { data } = await useFetchUserInfos()
-      if (!data.status)
-        throw new Error(data.msg)
 
-      resolve({ status: data.status, data: data.data })
+      resolve({ data: data.data })
     } catch (err: any) {
       store.dispatch('Core/clearUser')
       router.push('/')
@@ -85,9 +77,7 @@ export const getInfosUser = ({ commit }: any) => {
 
 export const getUserModules = async({ commit }: any) => {
   try {
-    const { data } = await client.get('core/module/getusermodule', { headers: { requireToken: true } })
-    if (!data.status)
-      throw data.msg
+    const { data } = await clientV2.get('core/user/getusermodule', { headers: { requireToken: true } })
     return data
   } catch(err) {
     throw err

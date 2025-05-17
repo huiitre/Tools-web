@@ -37,10 +37,6 @@ const shareSet = async () => {
     shareLink.value = ''; // Réinitialiser le lien
     const { data } = await useMutationCreateShareLink(props.idset)
 
-    if (!data.status) {
-      throw new Error(data.msg || 'Erreur inconnue');
-    }
-
     shareLink.value = data.data.link;
   } catch (error) {
     console.error('Erreur lors du partage du set:', error);

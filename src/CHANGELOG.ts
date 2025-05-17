@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.9.0',
+    releaseDate: '2025-05-17',
+    notes: [
+      `Core : Ajout de l'appel vers l'api V2`
+    ]
+  },
+  {
     version: '0.8.1',
     releaseDate: '2025-03-16',
     notes: [

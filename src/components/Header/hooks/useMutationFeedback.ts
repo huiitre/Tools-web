@@ -1,5 +1,5 @@
-import client from "@/services/axiosInstance";
+import { clientV2 } from "@/services/axiosInstance";
 
 export const useMutationAddFeedback = async (message: string) => {
-  return await client.post('/core/feedback/add', { message }, { headers: { requireToken: true } })
+  return await clientV2.post('/core/feedback/add', { message }, { headers: { requireToken: true } })
 }

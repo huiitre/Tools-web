@@ -1,5 +1,5 @@
-import client from "@/services/axiosInstance";
+import { clientV1 } from "@/services/axiosInstance";
 
 export const useFetchEventGalet = async () => {
-  return await client.get(`/dofus/item/event-galet/calculate`, { headers: { requireToken: true } })
+  return await clientV1.get(`/dofus/item/event-galet/calculate`, { headers: { requireToken: true } })
 }
