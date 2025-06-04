@@ -142,7 +142,7 @@ router.beforeEach(async(to, from, next) => {
       store.commit('Core/isLoading', true)
       const result = await store.dispatch('Core/getInfosUser');
 
-      if (!result?.status)
+      if (result?.status === 0)
         throw result?.msg
 
       //* récupération des modules
