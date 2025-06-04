@@ -5,7 +5,6 @@ import store from '@/store/store';
 import { computed } from 'vue';
 
 const isLogged = computed(() => store.getters['Core/isLogged'])
-console.log("%c App.vue #8 || isLogged : ", 'background:red;color:#fff;font-weight:bold;', isLogged.value);
 
 const body = document.querySelector('body')
 body?.classList.add('main-theme')

@@ -3,29 +3,17 @@
     <div class="s__recap">
 
       <div class="s__r__allocationList">
-        <div class="s__r__a__elem">
-          <div class="s__r__a__e__libelle">ETF MSCI World (25%):&nbsp;</div>
-          <div class="s__r__a__e__value">10,000 €</div>
-        </div>
-        <div class="s__r__a__elem">
-          <div class="s__r__a__e__libelle">ETF Europe (15%):&nbsp;</div>
-          <div class="s__r__a__e__value">6,000 €</div>
-        </div>
-        <div class="s__r__a__elem">
-          <div class="s__r__a__e__libelle">Obligations d'État (25%):&nbsp;</div>
-          <div class="s__r__a__e__value">10,000 €</div>
-        </div>
-        <div class="s__r__a__elem">
-          <div class="s__r__a__e__libelle">Obligations Entreprises (15%):&nbsp;</div>
-          <div class="s__r__a__e__value">6,000 €</div>
-        </div>
-        <div class="s__r__a__elem">
-          <div class="s__r__a__e__libelle">Compte courant Fortuneo (10%):&nbsp;</div>
-          <div class="s__r__a__e__value">4,000 €</div>
-        </div>
-        <div class="s__r__a__elem">
-          <div class="s__r__a__e__libelle">Bitcoin &amp; Ethereum (10%):&nbsp;</div>
-          <div class="s__r__a__e__value">4,000 €</div>
+        <div
+          class="s__r__a__elem"
+          v-for="asso in displayAllocations"
+          :key="asso.id"
+        >
+          <div class="s__r__a__e__libelle">
+            {{ asso.name }} ({{ asso.percent }}%) :
+          </div>
+          <div class="s__r__a__e__value">
+            {{ asso.calculatedAmount.toLocaleString('fr-FR', { minimumFractionDigits: 2 }) }} €
+          </div>
         </div>
       </div>
 
@@ -62,7 +50,7 @@
       </div>
 
       <div class="s__a__add-allocation">
-        <v-btn icon color="primary">
+        <v-btn icon color="primary" @click="addAllocation">
           <v-icon>mdi-plus</v-icon>
         </v-btn>
       </div>
@@ -92,6 +80,8 @@
           <v-text-field
             v-model="asso.percent"
             outlined
+            type="number"
+            hide-spin-buttons
             counter="50"
             density="compact"
             variant="solo"
@@ -104,7 +94,7 @@
           </v-text-field>
         </v-col>
         <v-col cols="2" class="d-flex justify-end">
-          <v-btn icon color="red" tile rounded small>
+          <v-btn icon color="red" tile rounded small @click="removeAllocation(asso.id)">
             <v-icon>mdi-trash-can</v-icon>
           </v-btn>
         </v-col>
@@ -115,6 +105,7 @@
 </template>
 
 <script setup lang="ts">
+import { watch } from 'vue';
 import { ref, computed, Ref } from 'vue';
 
 //* règles de l'input principal
@@ -139,19 +130,19 @@ const remainingPercent = computed(() => Number((100 - totalPercent.value).toFixe
 const remainingAmount = computed(() => Number(((amount.value || 0) - ((amount.value || 0) * totalPercent.value / 100)).toFixed(2)));
 
 const isRowInError = (asso: any) => {
-    const nomErrors = nomRules.value
-      .map(rule => rule(asso.name))
-      .filter(result => result !== true)
-    const percentErrors = pourcentageRules.value
-      .map(rule => rule(asso.percent))
-      .filter(result => result !== true)
-    return nomErrors.length > 0 || percentErrors.length > 0
-  }
+  const nomErrors = nomRules.value
+    .map(rule => rule(asso.name))
+    .filter(result => result !== true)
+  const percentErrors = pourcentageRules.value
+    .map(rule => rule(asso.percent))
+    .filter(result => result !== true)
+  return nomErrors.length > 0 || percentErrors.length > 0
+}
 
 const totalPercent = computed(() => {
   let sum = 0;
   // On ne considère que les lignes sans erreur
-  assoList.value.forEach(asso => {
+  assoList.value.forEach((asso: any) => {
     if (!isRowInError(asso)) {
       sum += Number(asso.percent);
       if (sum > 100) sum = 100; // On plafonne à 100%
@@ -164,7 +155,7 @@ const extraErrorIds = computed(() => {
   let sum = 0;
   const extraIds: any = [];
   // Parcourir uniquement les lignes valides
-  assoList.value.filter(asso => !isRowInError(asso)).forEach(asso => {
+  assoList.value.filter((asso: any) => !isRowInError(asso)).forEach((asso: any) => {
     if (sum < 100) {
       if (sum + Number(asso.percent) <= 100) {
         sum += Number(asso.percent);
@@ -182,50 +173,58 @@ const extraErrorIds = computed(() => {
 const errorIds = computed(() => {
   // IDs des lignes qui échouent les règles existantes
   const ruleErrorIds = assoList.value
-    .filter(asso => isRowInError(asso))
-    .map(asso => asso.id);
+    .filter((asso: any) => isRowInError(asso))
+    .map((asso: any) => asso.id);
   // Union des IDs provenant des règles et des lignes en excès
   return [...new Set([...ruleErrorIds, ...extraErrorIds.value])];
 });
 
-const assoList = ref([
-  {
-    id: 1,
-    name: 'ETF MSCI World',
-    percent: 25,
-    amount: 10000,
-  },
-  {
-    id: 2,
-    name: 'ETF Europe',
-    percent: 15,
-    amount: 6000,
-  },
-  {
-    id: 3,
-    name: 'Obligations d\'État',
-    percent: 25,
-    amount: 10000,
-  },
-  {
-    id: 4,
-    name: 'Obligations Entreprises',
-    percent: 15,
-    amount: 6000,
-  },
-  {
-    id: 5,
-    name: 'Compte courant Fortuneo',
-    percent: 10,
-    amount: 4000,
-  },
-  {
-    id: 6,
-    name: 'Bitcoin & Ethereum',
-    percent: 10,
-    amount: 4000,
-  },
-])
+const STORAGE_KEY = 'TOOLS_SAVING_ALLOCATION_DATA';
+const storedAssoList = localStorage.getItem(STORAGE_KEY);
+const assoList = ref(storedAssoList ? JSON.parse(storedAssoList) : []);
+
+watch(assoList, (newList) => {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(newList));
+}, { deep: true });
+
+const displayAllocations = computed(() => {
+  return assoList.value.map((asso: any) => {
+    const calculatedAmount = amount.value
+      ? Number(((amount.value * (asso.percent || 0)) / 100).toFixed(2))
+      : 0;
+    return {
+      ...asso,
+      calculatedAmount
+    };
+  });
+});
+
+let uniqueId = 1000;
+
+const getUniqueName = (baseName = 'Nouveau') => {
+  const existingNames = assoList.value.map((a: any) => a.name);
+  if (!existingNames.includes(baseName)) return baseName;
+
+  let i = 1;
+  while (existingNames.includes(`${baseName} (${i})`)) {
+    i++;
+  }
+  return `${baseName} (${i})`;
+};
+
+const addAllocation = () => {
+  const newAsso = {
+    id: ++uniqueId,
+    name: getUniqueName(),
+    percent: 0,
+    amount: 0
+  };
+  assoList.value.push(newAsso);
+};
+
+const removeAllocation = (id: number) => {
+  assoList.value = assoList.value.filter((asso: any) => asso.id !== id);
+};
 
 </script>
 

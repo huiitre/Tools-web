@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import { useFetchUserInfos } from '@/modules/Login/hooks/useFetchUserInfos'
 import router from '@/router/router';
 import store from '@/store/store';
 import { computed, Ref, ref, watch } from 'vue';
