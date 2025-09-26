@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.10.0',
+    releaseDate: '2025-09-27',
+    notes: [
+      `Core : Ajout Création du module Health avec suivi sommaire`
+    ]
+  },
+  {
     version: '0.9.0',
     releaseDate: '2025-05-17',
     notes: [

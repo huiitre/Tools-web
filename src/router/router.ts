@@ -18,6 +18,10 @@ import DofusMinogolem from "@/modules/Dofus/DofusMinogolem/DofusMinogolem.vue";
 import EventGalet from "@/modules/Dofus/EventGalet/EventGalet.vue";
 import SavingAllocation from "@/modules/SavingAllocation/SavingAllocation.vue";
 
+import Weight from "@/modules/Health/Weight/Weight.vue";
+import WeightAdd from "@/modules/Health/Weight/WeightAdd.vue";
+import WeightHistory from "@/modules/Health/Weight/WeightHistory.vue";
+
 export const routes = [
   {
     name: 'home',
@@ -94,6 +98,27 @@ export const routes = [
     path: '/repartition-epargne',
     component: SavingAllocation,
     meta: { requireAuth: true, idmodule: 4 }
+  },
+  {
+    name: 'healthy',
+    path: '/health/weight',
+    component: Weight, // composant parent (layout)
+    meta: { requireAuth: true },
+    redirect: { name: 'health-weight-add' },
+    children: [
+      {
+        name: 'health-weight-add',
+        path: 'add',
+        component: WeightAdd,
+        meta: { requireAuth: true, label: 'Ajouter un poids' }
+      },
+      {
+        name: 'health-weight-history',
+        path: 'history',
+        component: WeightHistory,
+        meta: { requireAuth: true, label: 'Historique' }
+      }
+    ]
   }
   /* ,
   {
