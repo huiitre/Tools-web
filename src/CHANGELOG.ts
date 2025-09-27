@@ -1,6 +1,6 @@
 const changelog: Array<any> = [
   {
-    version: '0.10.0',
+    version: '0.11.0',
     releaseDate: '2025-09-27',
     notes: [
       `Healthy : Ajout de la vue calendrier et de la vue graphique`
