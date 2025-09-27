@@ -3,7 +3,14 @@ const changelog: Array<any> = [
     version: '0.10.0',
     releaseDate: '2025-09-27',
     notes: [
-      `Core : Ajout Création du module Health avec suivi sommaire`
+      `Healthy : Ajout de la vue calendrier et de la vue graphique`
+    ]
+  },
+  {
+    version: '0.10.0',
+    releaseDate: '2025-09-27',
+    notes: [
+      `Healthy : Ajout Création du module Health avec suivi sommaire`
     ]
   },
   {

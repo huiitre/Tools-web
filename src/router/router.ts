@@ -21,6 +21,8 @@ import SavingAllocation from "@/modules/SavingAllocation/SavingAllocation.vue";
 import Weight from "@/modules/Health/Weight/Weight.vue";
 import WeightAdd from "@/modules/Health/Weight/WeightAdd.vue";
 import WeightHistory from "@/modules/Health/Weight/WeightHistory.vue";
+import WeightCalendar from "@/modules/Health/Weight/WeightCalendar.vue";
+import WeightChart from "@/modules/Health/Weight/WeightChart.vue";
 
 export const routes = [
   {
@@ -104,19 +106,31 @@ export const routes = [
     path: '/health/weight',
     component: Weight, // composant parent (layout)
     meta: { requireAuth: true },
-    redirect: { name: 'health-weight-add' },
+    redirect: { name: 'healthy-weight-add' },
     children: [
       {
-        name: 'health-weight-add',
+        name: 'healthy-weight-add',
         path: 'add',
         component: WeightAdd,
-        meta: { requireAuth: true, label: 'Ajouter un poids' }
+        meta: { requireAuth: true, label: 'Ajouter' }
       },
       {
         name: 'health-weight-history',
         path: 'history',
         component: WeightHistory,
         meta: { requireAuth: true, label: 'Historique' }
+      },
+      {
+        name: 'health-weight-calendar',
+        path: 'calendar',
+        component: WeightCalendar,
+        meta: { requireAuth: true, label: 'Calendrier' }
+      },
+      {
+        name: 'health-weight-chart',
+        path: 'chart',
+        component: WeightChart,
+        meta: { requireAuth: true, label: 'Graphique' }
       }
     ]
   }
