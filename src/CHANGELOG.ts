@@ -1,5 +1,13 @@
 const changelog: Array<any> = [
   {
+    version: '0.12.0',
+    releaseDate: '2025-09-30',
+    notes: [
+      `Dofus : Passage de l'api Dofus en V2`,
+      `Dofus : Correctif lors de la suppression d'un set, le set sélectionné est remis à null`,
+    ]
+  },
+  {
     version: '0.11.0',
     releaseDate: '2025-09-27',
     notes: [

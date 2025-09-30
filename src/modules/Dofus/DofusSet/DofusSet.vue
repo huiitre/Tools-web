@@ -165,6 +165,8 @@ const handleDeleteSet = async() => {
     setToDelete.value = null;
     deleteSetDialog.value = false;
 
+    selectedSet.value = null;
+
     toast.success("Set supprimé avec succès.");
   } catch (err) {
     console.log("%c DofusSet.vue #56 || err : ", "background:red;color:#fff;font-weight:bold;", err);
