@@ -40,8 +40,6 @@ const loadingGlobal = ref(false);
 const handleCreateSet = async() => {
   try {
     const { data }: any = await useMutationCreateSet()
-    if (!data?.status)
-      throw data
     setList.value.push(data.data)
   } catch(err) {
     console.log("%c DofusSet.vue #11 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
@@ -71,8 +69,6 @@ const handleEditSet = async() => {
         type: "string",
       },
     })
-    if (!data?.status)
-      throw data
 
     const { data: data2 } = await useFetchSetById(setToEdit.value.idset)
     if (!data2?.status)
@@ -116,8 +112,6 @@ const handleArchiveSet = async(set: any) => {
         type: "boolean",
       },
     })
-    if (!data?.status)
-      throw data
 
     const index = setList.value.findIndex((item) => item.idset === set.idset);
     if (index !== -1) {
@@ -141,8 +135,6 @@ const handleUnarchiveSet = async(set: any) => {
         type: "boolean",
       },
     })
-    if (!data?.status)
-      throw data
 
     const index = setList.value.findIndex((item) => item.idset === set.idset);
     if (index !== -1) {
@@ -164,8 +156,6 @@ const handleDeleteSet = async() => {
     if (!setToDelete.value) return;
 
     const { data } = await useMutationDeleteSet(setToDelete.value.idset);
-
-    if (!data?.status) throw data;
 
     const index = setList.value.findIndex((item) => item.idset === setToDelete.value.idset);
     if (index !== -1) {
@@ -198,8 +188,6 @@ const handleAddItemsToSet = async(data: any) => {
     loadingGlobal.value = true
     const idItems = data.map((item: any) => item.iditem);
     const result = await useMutationAddItemsToSet(selectedSet.value.idset, idItems)
-    if (!result.data?.status)
-      throw result.data
 
     await fetchSet(selectedSet.value.idset)
   } catch(err) {
@@ -215,8 +203,6 @@ const handleDeleteItemToSet = async(item: any) => {
     loadingGlobal.value = true
     const iditem = item.iditem;
     const result = await useMutationDeleteItemsToSet(selectedSet.value.idset, [iditem])
-    if (!result.data?.status)
-      throw result.data
 
     await fetchSet(selectedSet.value.idset)
   } catch(err) {
@@ -232,8 +218,6 @@ const handleMultiplierUpdate = async(item: any) => {
     const iditem = item.iditem;
     const multiplier = item.multiplier;
     const result = await useMutationMultiplier(selectedSet.value.idset, iditem, multiplier)
-    if (!result.data?.status)
-      throw result.data
 
     await fetchSet(selectedSet.value.idset)
   } catch(err) {
@@ -245,8 +229,6 @@ const handleUpdateQtyAlreadyObtained = async(item: any) => {
   if (isReadonly()) return;
   try {
     const result = await useMutationQuantityAlreadyObtained(selectedSet.value.idset, item.idrecipe_item_has_set, item.quantity_already_obtained)
-    if (!result.data?.status)
-      throw result.data
 
     // await fetchSet(selectedSet.value.idset)
   } catch(err) {
@@ -258,8 +240,6 @@ const fetchSet = async(idset: any) => {
   try {
     const idSet = idset || selectedSet.value?.idset;
     const { data } = await useFetchSetById(idSet)
-    if (!data?.status)
-      throw data
     selectedSet.value = data.data
   } catch(err) {
     console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
@@ -287,8 +267,6 @@ const fetchSetInfo = async (setCode: string | undefined) => {
 const fetchSetInfoShared = async(token: string) => {
   try {
     const { data } = await useFetchSharedSetByToken(token)
-    if (!data?.status)
-      throw data
     selectedSet.value = data.data
   } catch(err) {
     console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
@@ -300,8 +278,6 @@ onMounted(async() => {
   try {
     loadingGlobal.value = true
     const { data } = await useFetchSetList()
-    if (!data?.status)
-      throw data
     setList.value = data.data
 
     if (route.name === 'dofus-set-shared' && route.params.token)

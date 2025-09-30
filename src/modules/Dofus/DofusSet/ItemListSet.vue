@@ -38,7 +38,6 @@ const handlePriceUpdate = async(item: any) => {
 
   try {
     const { data } = await useMutationAveragePrice(item.iditem, averagePrice);
-    if (!data?.status) throw data?.msg ? data?.msg : 'Erreur useMutationAveragePrice'
     emit('fetch-set');
   } catch(err) {
     console.log("%c ItemListSet.vue #44 || err : ", 'background:red;color:#fff;font-weight:bold;', err);

@@ -32,9 +32,6 @@ const updateAddItemsList = async(query: string) => {
     addItems.loadingSearch = true
     const { data } = await useFetchItemListWeb({ search: query, onlyCraftable: true, sortBy :[{ key: "item_name", order: "asc" }] })
 
-    if (!data?.status)
-      throw data
-
     if (data.data.length > 0) {
       const existingItemIds = new Set(props.itemListSet.map((item: any) => item.iditem)); // IDs déjà dans le set
       const itemsMap = new Map();
