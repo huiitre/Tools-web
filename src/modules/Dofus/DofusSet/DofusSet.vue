@@ -71,8 +71,6 @@ const handleEditSet = async() => {
     })
 
     const { data: data2 } = await useFetchSetById(setToEdit.value.idset)
-    if (!data2?.status)
-      throw data2
 
     const index = setList.value.findIndex((item) => item.idset === setToEdit.value.idset);
     if (index !== -1) {

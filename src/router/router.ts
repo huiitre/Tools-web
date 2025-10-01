@@ -23,6 +23,7 @@ import WeightAdd from "@/modules/Health/Weight/WeightAdd.vue";
 import WeightHistory from "@/modules/Health/Weight/WeightHistory.vue";
 import WeightCalendar from "@/modules/Health/Weight/WeightCalendar.vue";
 import WeightChart from "@/modules/Health/Weight/WeightChart.vue";
+import DofusConfig from "@/modules/Dofus/DofusConfig/DofusConfig.vue";
 
 export const routes = [
   {
@@ -92,6 +93,12 @@ export const routes = [
         component: DofusSet,
         props: { readonly: true },
         meta: { requireAuth: true, label: 'Set Partagé' },
+      },
+      {
+        name: 'dofus-config',
+        path: 'configuration',
+        component: DofusConfig,
+        meta: { requireAuth: true, label: 'Configuration' },
       },
     ]
   },

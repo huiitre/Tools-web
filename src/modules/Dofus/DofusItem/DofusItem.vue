@@ -187,7 +187,6 @@ const loadItems = async({ page, itemsPerPage, sortBy, search }: any) => {
     loading.value = true
     toggleAllRowsExpansion()
     const { data } = await useFetchItemListWeb({ page, itemsPerPage, sortBy, search })
-    if (!data?.status) throw data?.msg
 
     const itemsFormateds = formatItems(data.data)
 

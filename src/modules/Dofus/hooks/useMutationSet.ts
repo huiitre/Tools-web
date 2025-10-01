@@ -8,15 +8,16 @@ export const useMutationCreateSet = async () => {
   })
 }
 
-export const useMutationEditSet = async (id: any, columns: Record<string, { value: any; type: string }>) => {
+export const useMutationEditSet = async (
+  id: any,
+  columns: Record<string, { value: any; type: string }>
+) => {
   const payload = {
-    columns: Object.keys(columns).reduce((acc, key) => {
-      acc[key] = {
-          value: columns[key].value,
-          type: columns[key].type,
-      };
-      return acc;
-    }, {} as Record<string, { value: any; type: string }>),
+    columns: Object.keys(columns).map((key) => ({
+      column: key,
+      value: columns[key].value,
+      type: columns[key].type,
+    })),
   };
 
   return await clientV2.put(`/dofus/set/${id}/update`, payload, {

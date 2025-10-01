@@ -48,7 +48,7 @@ const handleLogin = async (action: string, payload: any) => {
     router.push('/');
     toast.success(result.msg);
   } catch (err: any) {
-    toast.error(err.msg);
+    toast.error(err?.msg || err?.message || 'Une erreur est survenue');
   } finally {
     store.commit('Core/isLoading', false);
     toast.clearAll();

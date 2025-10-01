@@ -1,9 +1,13 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue';
+import { computed, ref, watch, provide } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import store from '@/store/store'
 
 const router = useRouter();
 const route = useRoute();
+
+const userModule = computed(() => store.getters['Core/getUserModules']?.find((module: any) => module.code === 'dofus') || null);
+provide('userModule', userModule.value)
 
 // Calculer les onglets à partir des routes enfants
 const tabs = computed(() => {
