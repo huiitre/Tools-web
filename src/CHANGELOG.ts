@@ -1,13 +1,5 @@
 const changelog: Array<any> = [
   {
-    version: '0.13.1',
-    releaseDate: '2025-10-04',
-    notes: [
-      `TODOLIST : Correctif d'affichage sur pc`,
-      `CORE : Correctif d'affichage du numéro de version dans le header`,
-    ]
-  },
-  {
     version: '0.13.2',
     releaseDate: '2025-10-04',
     notes: [
@@ -18,6 +10,14 @@ const changelog: Array<any> = [
       `TODOLIST : Sauvegarde les modifications même après avoir appuyé à l'extérieur de l'élément, après l'édition d'une liste ou d'une tâche`,
       `TODOLIST : Ajouter un scroll une fois qu'une liste ou une tâche est ajoutée`,
       `TODOLIST : Ajout d'un message de confirmation avant la suppression d'une liste ou d'une tâche`,
+    ]
+  },
+  {
+    version: '0.13.1',
+    releaseDate: '2025-10-04',
+    notes: [
+      `TODOLIST : Correctif d'affichage sur pc`,
+      `CORE : Correctif d'affichage du numéro de version dans le header`,
     ]
   },
   {
