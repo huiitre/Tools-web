@@ -8,6 +8,19 @@ const changelog: Array<any> = [
     ]
   },
   {
+    version: '0.13.2',
+    releaseDate: '2025-10-04',
+    notes: [
+      `TODOLIST : Correctif d'affichage sur pc`,
+      `TODOLIST : Ajout d'un bouton d'annulation et de suppression lorsqu'on modifie une liste ou une tâche`,
+      `TODOLIST : Ajout d'une marge entre le nom et la desc d'une tâche`,
+      `TODOLIST : Agrandissement en hauteur de l'icone qui ouvre le menu panel d'une liste de tâches`,
+      `TODOLIST : Sauvegarde les modifications même après avoir appuyé à l'extérieur de l'élément, après l'édition d'une liste ou d'une tâche`,
+      `TODOLIST : `,
+      `TODOLIST : `,
+    ]
+  },
+  {
     version: '0.13.0',
     releaseDate: '2025-10-04',
     notes: [

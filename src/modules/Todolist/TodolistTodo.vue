@@ -81,7 +81,16 @@ onBeforeUnmount(() => {
 function handleOutsideClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest(".todo-item")) {
-    closePanel()
+    if (isEditing.value && editDraft.value) {
+      const todo = todos.value.find(t => t.idtodo === editDraft.value.idtodo)
+      if (todo) {
+        saveEdit(todo)
+      } else {
+        closePanel()
+      }
+    } else {
+      closePanel()
+    }
   }
 }
 function openActions(todoId: number) {
@@ -139,7 +148,22 @@ const handleAddTodo = async () => {
   }
 }
 const handleItemClick = (todoId: number) => {
-  if (openedTodoId.value && openedTodoId.value !== todoId) closePanel()
+  // Si on est en édition sur un autre todo
+  if (isEditing.value && editDraft.value && openedTodoId.value !== todoId) {
+    const current = todos.value.find(t => t.idtodo === editDraft.value.idtodo)
+    if (current) {
+      saveEdit(current) // ⚡ sauvegarde avant de changer
+    } else {
+      closePanel()
+    }
+    return
+  }
+
+  // Si un panneau est juste ouvert (non édition) → ferme
+  if (openedTodoId.value && openedTodoId.value !== todoId) {
+    closePanel()
+    return
+  }
 }
 async function handleDelete(todo: any) {
   try {
@@ -273,7 +297,10 @@ function getTodoStyles(todo: any) {
             </option>
           </select>
         </div>
-        <i class="fa fa-check action-icon validate" @click.stop="saveEdit(todo)"></i>
+        <div class="edit-actions">
+          <i class="fa fa-times action-icon cancel" @click.stop="closePanel()"></i>
+          <i class="fa fa-check action-icon validate" @click.stop="saveEdit(todo)"></i>
+        </div>
       </div>
 
     </div>
@@ -286,7 +313,7 @@ function getTodoStyles(todo: any) {
   flex-direction: column;
   align-items: center;
   gap: 1rem;
-  padding: 16px;
+  padding: 1rem;
 
   & .todolist-title {
     font-size: 1.6rem;
@@ -338,6 +365,7 @@ function getTodoStyles(todo: any) {
       .todo-name {
         font-weight: bold;
         font-size: 1.1rem;
+        margin-bottom: 0.5rem;
       }
 
       .todo-desc {
@@ -390,6 +418,11 @@ function getTodoStyles(todo: any) {
       }
     }
 
+    .edit-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 2rem;
+    }
     .action-icon {
       font-size: 2rem;
       cursor: pointer;
@@ -413,7 +446,11 @@ function getTodoStyles(todo: any) {
 
       &.validate {
         color: #008000;
-        align-self: flex-end;
+        /* align-self: flex-end; */
+      }
+      &.cancel {
+        color: #731818;
+        /* align-self: flex-end; */
       }
     }
   }

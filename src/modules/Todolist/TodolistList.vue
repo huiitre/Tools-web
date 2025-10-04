@@ -73,7 +73,16 @@ const filteredLists = computed(() => {
 function handleOutsideClick(e: MouseEvent) {
   const target = e.target as HTMLElement
   if (!target.closest(".todolist-item")) {
-    closePanel()
+    if (isEditing.value && editDraft.value) {
+      const list = lists.value.find(l => l.idtodolist === editDraft.value.idtodolist)
+      if (list) {
+        saveEdit(list)
+      } else {
+        closePanel()
+      }
+    } else {
+      closePanel()
+    }
   }
 }
 function openActions(listId: number) {
@@ -186,7 +195,23 @@ async function saveEdit(list: any) {
   closePanel()
 }
 function goToListDetail(list: any) {
+  if (isEditing.value && editDraft.value && openedListId.value !== list.idtodolist) {
+    const current = lists.value.find(l => l.idtodolist === editDraft.value.idtodolist)
+    if (current) {
+      saveEdit(current)
+    }
+    return
+  }
+
+  // Si un panneau est ouvert mais pas en édition → ferme simplement
+  if (openedListId.value !== null && openedListId.value !== list.idtodolist) {
+    closePanel()
+    return
+  }
+
   if (openedListId.value === list.idtodolist) return
+
+  // Navigation classique
   router.push({
     name: "todolist-element",
     params: { idtodolist: list.idtodolist },
@@ -298,6 +323,11 @@ const showAddButton = computed(() => route.name === "todolist-active")
           @click.stop="saveEdit(list)"
           :style="{ color: editDraft.isDark ? '#fff' : '#008000' }"
         ></i>
+        <i
+          class="fa fa-times action-icon cancel"
+          @click.stop="closePanel()"
+          :style="{ color: editDraft.isDark ? '#fff' : '#e53935' }"
+        ></i>
       </div>
     </div>
   </div>
@@ -323,14 +353,14 @@ const showAddButton = computed(() => route.name === "todolist-active")
     min-height: 4rem;
     max-width: 400px;
     border-radius: 12px;
-    padding: 1rem;
+    padding: 0 1rem;
     font-size: 16px;
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     position: relative;
     overflow: hidden;
 
     display: flex;
-    align-items: center;
+    align-items: stretch;
 
     &:not(:last-child) {
       margin-bottom: 1rem;
@@ -361,6 +391,9 @@ const showAddButton = computed(() => route.name === "todolist-active")
       cursor: pointer;
       font-size: 22px;
       flex-shrink: 0;
+      height: 100%;
+      display: flex;
+      align-items: center;
     }
 
     .todolist-actions-panel {
@@ -394,6 +427,17 @@ const showAddButton = computed(() => route.name === "todolist-active")
       align-items: center;
       background: rgba(0, 0, 0, 0.05);
       gap: 0.5rem;
+
+      .action-icon {
+        font-size: 2rem;
+        cursor: pointer;
+        text-shadow: 0 0 2px #000;
+        flex: 0 0 auto;
+
+        &.validate {
+          margin-right: 0.5rem;
+        }
+      }
     }
 
     .edit-input-wrapper {
@@ -429,13 +473,6 @@ const showAddButton = computed(() => route.name === "todolist-active")
       padding: 0;
       background: none;
       cursor: pointer;
-      flex: 0 0 auto;
-    }
-
-    .action-icon.validate {
-      font-size: 22px;
-      cursor: pointer;
-      text-shadow: 0 0 2px #000;
       flex: 0 0 auto;
     }
   }
