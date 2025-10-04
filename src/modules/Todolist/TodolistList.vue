@@ -172,6 +172,11 @@ const handleArchivedList = async (list: any) => {
 }
 const handleDeleteTodolist = async (list: any) => {
   try {
+    const confirmed = window.confirm(`Voulez-vous vraiment supprimer la liste "${list.name}" ?`)
+    if (!confirmed) {
+      closePanel()
+      return
+    }
     await useDeleteTodolist(list.idtodolist)
     closePanel()
     await loadLists() // recharge les listes après suppression

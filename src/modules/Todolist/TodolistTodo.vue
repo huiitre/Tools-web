@@ -116,7 +116,7 @@ function startEdit(todo: any) {
     if (el) {
       el.scrollIntoView({
         behavior: "smooth",
-        block: "center"
+        block: "nearest"
       })
     }
   })
@@ -176,6 +176,11 @@ const handleItemClick = (todoId: number) => {
 }
 async function handleDelete(todo: any) {
   try {
+    const confirmed = window.confirm(`Voulez-vous vraiment supprimer la tâche "${todo.name}" ?`)
+    if (!confirmed) {
+      closePanel()
+      return
+    }
     await useDeleteTodo(todo.idtodo)
     todos.value = todos.value.filter(t => t.idtodo !== todo.idtodo)
     closePanel()
