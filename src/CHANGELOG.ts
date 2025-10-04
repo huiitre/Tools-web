@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.13.0',
+    releaseDate: '2025-10-04',
+    notes: [
+      `Ajout du module TodoList avec gestion des tâches basiques (ajout, modification, suppression, priorité, complétion) V1`,
+    ]
+  },
+  {
     version: '0.12.0',
     releaseDate: '2025-09-30',
     notes: [

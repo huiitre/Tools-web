@@ -24,6 +24,8 @@ import WeightHistory from "@/modules/Health/Weight/WeightHistory.vue";
 import WeightCalendar from "@/modules/Health/Weight/WeightCalendar.vue";
 import WeightChart from "@/modules/Health/Weight/WeightChart.vue";
 import DofusConfig from "@/modules/Dofus/DofusConfig/DofusConfig.vue";
+import TodolistList from "@/modules/Todolist/TodolistList.vue";
+import TodoListTodo from "@/modules/Todolist/TodolistTodo.vue";
 
 export const routes = [
   {
@@ -140,21 +142,43 @@ export const routes = [
         meta: { requireAuth: true, label: 'Graphique' }
       }
     ]
-  }
-  /* ,
+  },
   {
     name: 'todolist',
     path: '/todolist',
     component: Todolist,
+    redirect: { name: 'todolist-active' },
     meta: { requireAuth: true, idmodule: 3 },
     children: [
       {
+        name: 'todolist-active',
+        path: 'active',
+        component: TodolistList,
+        meta: { requireAuth: true, label: 'Actifs' }
+      },
+      {
+        name: 'todolist-archived',
+        path: 'archived',
+        component: TodolistList,
+        meta: { requireAuth: true, label: 'Archivés' }
+      },
+      {
         name: 'todolist-element',
-        path: 'todolist/:todolistCode'
+        path: ':idtodolist',
+        component: TodoListTodo,
+        meta: { requireAuth: true },
+        beforeEnter: (to: any, from: any, next: any) => {
+          // Si on arrive directement depuis un refresh -> redirige vers /active
+          if (!from.name) {
+            next({ name: 'todolist-active' })
+          } else {
+            next()
+          }
+        }
       }
     ]
   },
-  {
+  /* {
     path: '/:catchAll(.*)*', // Catch-all pour toutes les URL non correspondantes
     name: 'NotFound',
     component: NotFound,
