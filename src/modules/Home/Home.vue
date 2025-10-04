@@ -2,7 +2,8 @@
 import { onMounted, ref, Ref } from 'vue';
 import changelog from '@/CHANGELOG.js'
 
-const appVersion = __APP_VERSION__;
+const lastChangelog = changelog[0] || { version: 'unknown' };
+const appVersion = lastChangelog.version;
 const releaseNotes: Ref<any> = ref([])
 
 const fetchReleaseNote = async () => {

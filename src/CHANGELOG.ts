@@ -1,9 +1,17 @@
 const changelog: Array<any> = [
   {
+    version: '0.13.1',
+    releaseDate: '2025-10-04',
+    notes: [
+      `TODOLIST : Correctif d'affichage sur pc`,
+      `CORE : Correctif d'affichage du numéro de version dans le header`,
+    ]
+  },
+  {
     version: '0.13.0',
     releaseDate: '2025-10-04',
     notes: [
-      `Ajout du module TodoList avec gestion des tâches basiques (ajout, modification, suppression, priorité, complétion) V1`,
+      `TODOLIST : Ajout du module TodoList avec gestion des tâches basiques (ajout, modification, suppression, priorité, complétion) V1`,
     ]
   },
   {

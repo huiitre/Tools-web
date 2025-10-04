@@ -7,7 +7,8 @@ import changelog from '@/CHANGELOG.js'
 import toast from '@/services/toast';
 import { useMutationAddFeedback } from './hooks/useMutationFeedback';
 
-const appVersion = __APP_VERSION__;
+const lastChangelog = changelog[0] || { version: 'unknown' };
+const appVersion = lastChangelog.version;
 const releaseNotes: Ref<any> = ref([])
 const showReleaseNotes = ref(false)
 
