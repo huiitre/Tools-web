@@ -47,6 +47,7 @@ const isEditing = ref(false)
 const editDraft = ref<any | null>(null)
 const editInputRef = ref<HTMLInputElement | null>(null)
 const todolist = ref<any | null>(null)
+const todoRefs = new Map<number, HTMLElement>()
 
 // --- Chargement ---
 async function loadTodos() {
@@ -110,6 +111,14 @@ function startEdit(todo: any) {
   nextTick(() => {
     editInputRef.value?.focus()
     editInputRef.value?.select()
+
+    const el = todoRefs.get(todo.idtodo)
+    if (el) {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      })
+    }
   })
 }
 
@@ -254,6 +263,7 @@ function getTodoStyles(todo: any) {
       @touchstart="swipe.onTouchStart"
       @touchend="swipe.onTouchEnd($event, todo.idtodo)"
       @click="handleItemClick(todo.idtodo)"
+      :ref="(el: any) => { if (el) todoRefs.set(todo.idtodo, el) }"
     >
       <!-- Affichage normal -->
       <div v-if="openedTodoId !== todo.idtodo" class="todo-header">

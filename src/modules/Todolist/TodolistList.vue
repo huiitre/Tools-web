@@ -48,6 +48,7 @@ onBeforeUnmount(() => {
 const openedListId = ref<number | null>(null)
 const isEditing = ref(false)
 const editDraft = ref<any | null>(null)
+const listRefs = new Map<number, HTMLElement>()
 
 // --- Filters & Sort ---
 const filteredLists = computed(() => {
@@ -133,6 +134,14 @@ function startEdit(list: any) {
     if (el instanceof HTMLInputElement) {
       el.focus()
       el.select()
+    }
+
+    const domEl = listRefs.get(list.idtodolist)
+    if (domEl) {
+      domEl.scrollIntoView({
+        behavior: "smooth",
+        block: "center"
+      })
     }
   })
 }
@@ -247,6 +256,7 @@ const showAddButton = computed(() => route.name === "todolist-active")
       @touchstart="swipe.onTouchStart"
       @touchend="swipe.onTouchEnd($event, list.idtodolist)"
       @click="goToListDetail(list)"
+      :ref="(el: any) => { if (el) listRefs.set(list.idtodolist, el) }"
     >
       <!-- état normal -->
       <div v-if="openedListId !== list.idtodolist" class="todolist-header">

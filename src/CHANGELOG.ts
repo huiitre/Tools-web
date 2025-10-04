@@ -16,8 +16,7 @@ const changelog: Array<any> = [
       `TODOLIST : Ajout d'une marge entre le nom et la desc d'une tâche`,
       `TODOLIST : Agrandissement en hauteur de l'icone qui ouvre le menu panel d'une liste de tâches`,
       `TODOLIST : Sauvegarde les modifications même après avoir appuyé à l'extérieur de l'élément, après l'édition d'une liste ou d'une tâche`,
-      `TODOLIST : `,
-      `TODOLIST : `,
+      `TODOLIST : Ajouter un scroll une fois qu'une liste ou une tâche est ajoutée`,
     ]
   },
   {
