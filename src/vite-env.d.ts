@@ -10,4 +10,12 @@ declare module '*.vue' {
   export default component;
 }
 
+declare module 'virtual:pwa-register' {
+  export function registerSW(options?: {
+    immediate?: boolean
+    onNeedRefresh?: () => void
+    onOfflineReady?: () => void
+  }): (reloadPage?: boolean) => Promise<void>
+}
+
 declare const __APP_VERSION__: string;

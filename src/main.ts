@@ -11,6 +11,10 @@ import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
 
+// PWA auto-update
+import { registerSW } from 'virtual:pwa-register'
+
+// Détection plateforme
 store.dispatch('Core/detectPlatform');
 
 const vuetify = createVuetify({
@@ -37,10 +41,21 @@ const vuetify = createVuetify({
   },
 })
 
-store.dispatch('Core/detectPlatform');
+// --- PWA auto update ---
+const updateSW = registerSW({
+  immediate: true,
+  onNeedRefresh() {
+    // Recharge automatiquement quand une nouvelle version est dispo
+    updateSW(true)
+  },
+  onOfflineReady() {
+    console.log('PWA prête pour utilisation hors-ligne 🚀')
+  }
+})
 
+// --- Création de l’app ---
 const app = createApp(App)
 app.use(store)
 app.use(router)
 app.use(vuetify)
-app.mount("#app");
+app.mount('#app')

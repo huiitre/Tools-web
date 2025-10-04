@@ -1,5 +1,12 @@
 const changelog: Array<any> = [
   {
+    version: '0.14.0',
+    releaseDate: '2025-10-04',
+    notes: [
+      `CORE : Ajout d'un rechargement à chaud quand une nouvelle version de l'application est disponible (PWA)`,
+    ]
+  },
+  {
     version: '0.13.2',
     releaseDate: '2025-10-04',
     notes: [
