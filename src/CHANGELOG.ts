@@ -1,5 +1,14 @@
 const changelog: Array<any> = [
   {
+    version: '0.15.0',
+    releaseDate: '2025-10-05',
+    notes: [
+      `DOFUS : Ajout d'un bouton pour copier le nom d'une ressource dans le presse-papier, dans le résumé d'un set`,
+      `DOFUS : Ajout d'un tri des ressources dans le résumé d'un set, par ordre alphabétique ou par quantité`,
+      `DOFUS : Ajout du prix unitaire de la ressource dans le résumé ainsi que son prix total restant`,
+    ]
+  },
+  {
     version: '0.14.0',
     releaseDate: '2025-10-04',
     notes: [

@@ -26,6 +26,7 @@ import WeightChart from "@/modules/Health/Weight/WeightChart.vue";
 import DofusConfig from "@/modules/Dofus/DofusConfig/DofusConfig.vue";
 import TodolistList from "@/modules/Todolist/TodolistList.vue";
 import TodoListTodo from "@/modules/Todolist/TodolistTodo.vue";
+import DofusMinotororLab from "@/modules/Dofus/DofusMinotororLab/DofusMinotororLab.vue";
 
 export const routes = [
   {
@@ -102,6 +103,12 @@ export const routes = [
         component: DofusConfig,
         meta: { requireAuth: true, label: 'Configuration' },
       },
+      /* {
+        name: 'dofus-minotororlab',
+        path: 'minotororlab',
+        component: DofusMinotororLab,
+        meta: { requireAuth: true, label: 'Labyrinthe du Minotoror' },
+      }, */
     ]
   },
   {
