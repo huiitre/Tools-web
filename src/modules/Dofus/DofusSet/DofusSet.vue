@@ -221,7 +221,7 @@ const handleToggleResource = async({ iditem, checked }: { iditem: number; checke
       // On cherche si cet item contient la ressource cochée
       for (const ingredient of item.recipe) {
         if (ingredient.iditem === iditem) {
-          const newQty = checked ? ingredient.total_quantity_required : 0;
+          const newQty = checked ? ingredient.total_quantity_required * item.multiplier : 0;
 
           await useMutationQuantityAlreadyObtained(
             selectedSet.value.idset,

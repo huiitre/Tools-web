@@ -134,7 +134,7 @@ const handleToggleIngredient = async(item: any, ingredient: any, checked: boolea
   try {
     // calcule la nouvelle quantité
     const newQty = checked
-      ? ingredient.total_quantity_required // cochée → au max
+      ? ingredient.total_quantity_required * item.multiplier // cochée → au max
       : 0; // décochée → reset
 
     await useMutationQuantityAlreadyObtained(
