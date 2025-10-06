@@ -385,6 +385,24 @@ const handleToggleIngredient = async(item: any, ingredient: any, checked: boolea
                     <div class="d-flex align-center" style="flex-shrink: 0; gap: 8px;">
                       <v-text-field
                         :disabled="readonly"
+                        v-model="ingredient.item_average_price"
+                        density="compact"
+                        variant="outlined"
+                        style="width: 100px; height: 40px;"
+                        type="text"
+                        label="Prix unitaire"
+                        @update:model-value="(value: any) => {
+                          ingredient.item_average_price = sanitizeInput(value, 0)
+                        }"
+                        @keydown.enter.prevent="(event: any) => {
+                          event.target.blur();
+                        }"
+                        @blur="() => {
+                          handlePriceUpdate(ingredient)
+                        }"
+                      />
+                      <v-text-field
+                        :disabled="readonly"
                         v-model="ingredient.quantity_already_obtained"
                         density="compact"
                         variant="outlined"
