@@ -163,7 +163,7 @@ const sortedResources = computed(() => {
       const res = a.name.localeCompare(b.name);
       return sortDirection.value === 'asc' ? res : -res;
     } else {
-      const res = a.remaining - b.remaining;
+      const res = a.total - b.total;
       return sortDirection.value === 'asc' ? res : -res;
     }
   });
