@@ -386,6 +386,7 @@ function getTodoStyles(todo: any) {
       .todo-desc {
         font-size: 0.9rem;
         opacity: 0.7;
+        white-space: pre-line;
       }
     }
 
