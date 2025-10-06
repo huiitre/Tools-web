@@ -65,7 +65,7 @@ watch(showShareDialog, (newValue) => {
 const showCompleteResources = ref(false);
 
 // Tri dynamique
-const sortKey = ref<'name' | 'quantity'>('name');
+const sortKey = ref<'name' | 'quantity' | 'price'>('name');
 const sortDirection = ref<'asc' | 'desc'>('asc');
 
 // ---------- Calculs dynamiques ----------
@@ -162,10 +162,14 @@ const sortedResources = computed(() => {
     if (sortKey.value === 'name') {
       const res = a.name.localeCompare(b.name);
       return sortDirection.value === 'asc' ? res : -res;
-    } else {
+    } else if (sortKey.value === 'quantity') {
       const res = a.total - b.total;
       return sortDirection.value === 'asc' ? res : -res;
+    } else if (sortKey.value === 'price') {
+      const res = a.totalPriceRemaining - b.totalPriceRemaining;
+      return sortDirection.value === 'asc' ? res : -res;
     }
+    return 0;
   });
 
   return arr;
@@ -182,7 +186,7 @@ const filteredResources = computed(() => {
 
 // ---------- Méthodes d’UI ----------
 
-const toggleSort = (key: 'name' | 'quantity') => {
+const toggleSort = (key: 'name' | 'quantity' | 'price') => {
   if (sortKey.value === key) {
     sortDirection.value = sortDirection.value === 'asc' ? 'desc' : 'asc';
   } else {
@@ -345,6 +349,22 @@ const handleToggleCheckbox = (resource: any, checked: boolean) => {
         "
       >
         Quantité
+      </v-btn>
+
+      <!-- ✅ Nouveau bouton tri par prix -->
+      <v-btn
+        variant="outlined"
+        color="cyan"
+        @click="toggleSort('price')"
+        :append-icon="
+          sortKey === 'price'
+            ? sortDirection === 'asc'
+              ? 'mdi-arrow-up'
+              : 'mdi-arrow-down'
+            : ''
+        "
+      >
+        Prix restant
       </v-btn>
     </v-card-text>
 
