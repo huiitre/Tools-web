@@ -3,6 +3,7 @@ import { defineProps, ref } from 'vue';
 import { useMutationAveragePrice } from '../hooks/useMutationAveragePrice';
 import toast from '@/services/toast';
 import { copyToClipboard } from '@/utils/Core/string';
+import { useMutationQuantityAlreadyObtained } from '../hooks/useMutationSet';
 
 const timeoutFn = globalThis.setTimeout;
 
@@ -15,6 +16,10 @@ const props = defineProps({
     type: Boolean,
     default: false,
     required: false
+  },
+  idset: {
+    type: Number,
+    required: true
   }
 });
 
@@ -23,23 +28,29 @@ const isReadonly = () => {
     toast.warning('Les modifications sont désactivées pour ce set.');
     return true;
   }
-}
+};
 
-const emit = defineEmits(['fetch-set', 'delete-item', 'update-multiplier', 'update-qty-already-obtained', 'add-custom-item']);
+const emit = defineEmits([
+  'fetch-set',
+  'delete-item',
+  'update-multiplier',
+  'update-qty-already-obtained',
+  'add-custom-item'
+]);
 
 const handleDelete = (item: any) => {
   emit('delete-item', item);
 };
 
-const handlePriceUpdate = async(item: any) => {
+const handlePriceUpdate = async (item: any) => {
   if (isReadonly()) return;
-  console.log('Prix mis à jour pour l\'item', item.item_name, ':', item.item_average_price);
+  console.log("Prix mis à jour pour l'item", item.item_name, ':', item.item_average_price);
   const averagePrice = item.item_average_price || 0;
 
   try {
-    const { data } = await useMutationAveragePrice(item.iditem, averagePrice);
+    await useMutationAveragePrice(item.iditem, averagePrice);
     emit('fetch-set');
-  } catch(err) {
+  } catch (err) {
     console.log("%c ItemListSet.vue #44 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
   }
 };
@@ -59,9 +70,11 @@ const handleQtyAlreadyObtainedUpdate = (ingredient: any, timeout: number = 0) =>
 };
 
 const calculateTotalCraft = (item: any): number => {
-  return item.recipe?.reduce((total: number, ingredient: any) => {
-    return total + (ingredient.total_quantity_required * (ingredient.item_average_price || 0));
-  }, 0) || 0;
+  return (
+    item.recipe?.reduce((total: number, ingredient: any) => {
+      return total + ingredient.total_quantity_required * (ingredient.item_average_price || 0);
+    }, 0) || 0
+  );
 };
 
 const calculateTotalCraftMultiplied = (item: any): number => {
@@ -70,48 +83,71 @@ const calculateTotalCraftMultiplied = (item: any): number => {
 };
 
 const formatPrice = (price: number): string => {
-  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 };
 
 const sanitizeInput = (value: any, min: number = 1, max: number | null = null): number => {
-    const sanitizedValue = value.replace(/[^\d]/g, ''); // Supprime tous les caractères non numériques
+  const sanitizedValue = value.replace(/[^\d]/g, '');
+  const numericValue = parseInt(sanitizedValue, 10) || 0;
 
-    const numericValue = parseInt(sanitizedValue, 10) || 0; // Convertit en nombre, retourne 0 si NaN
+  if (max !== null && max < min) {
+    console.error('Max value is less than min value. Adjust your parameters.');
+    return min;
+  }
 
-    if (max !== null && max < min) {
-        console.error("Max value is less than min value. Adjust your parameters.");
-        return min; // Retourne la valeur minimale par sécurité
-    }
-
-    if (max !== null) {
-        const constrainedValue = Math.min(max, Math.max(min, numericValue)); // Contraint entre min et max
-        return constrainedValue;
-    }
-
-    const constrainedValue = Math.max(min, numericValue); // Contraint uniquement par min
+  if (max !== null) {
+    const constrainedValue = Math.min(max, Math.max(min, numericValue));
     return constrainedValue;
+  }
+
+  const constrainedValue = Math.max(min, numericValue);
+  return constrainedValue;
 };
 
 const calculateTotalCraftFinal = (item: any): number => {
-  return item.recipe?.reduce((total: number, ingredient: any) => {
-    const remainingQuantity = Math.max(0, ingredient.total_quantity_required * (item.multiplier || 1) - ingredient.quantity_already_obtained);
-    return total + (remainingQuantity * (ingredient.item_average_price || 0));
-  }, 0) || 0;
+  return (
+    item.recipe?.reduce((total: number, ingredient: any) => {
+      const remainingQuantity = Math.max(
+        0,
+        ingredient.total_quantity_required * (item.multiplier || 1) -
+          ingredient.quantity_already_obtained
+      );
+      return total + remainingQuantity * (ingredient.item_average_price || 0);
+    }, 0) || 0
+  );
 };
 
 const handleCustomAddItem = (item: any) => {
   if (isReadonly()) return;
   emit('add-custom-item', [item]);
-}
+};
 
-const handleCopyToClipboard = async(name: string) => {
-  const result = await copyToClipboard(name)
-  if (result)
-    toast.success(`Nom copié avec succès !`)
-  else
-    toast.error(`Erreur lors de la copie dans le presse-papier`)
-}
+const handleCopyToClipboard = async (name: string) => {
+  const result = await copyToClipboard(name);
+  if (result) toast.success(`Nom copié avec succès !`);
+  else toast.error(`Erreur lors de la copie dans le presse-papier`);
+};
 
+const handleToggleIngredient = async(item: any, ingredient: any, checked: boolean | null) => {
+  if (isReadonly()) return;
+
+  try {
+    // calcule la nouvelle quantité
+    const newQty = checked
+      ? ingredient.total_quantity_required // cochée → au max
+      : 0; // décochée → reset
+
+    await useMutationQuantityAlreadyObtained(
+      props.idset,
+      ingredient.idrecipe_item_has_set,
+      newQty
+    );
+    ingredient.quantity_already_obtained = newQty;
+  } catch (err) {
+    console.log('%c ItemListSet.vue #ajax || Erreur update', 'background:red;color:#fff;font-weight:bold;', err);
+    toast.error('Erreur lors de la mise à jour de la ressource.');
+  }
+};
 </script>
 
 <template>
@@ -124,68 +160,59 @@ const handleCopyToClipboard = async(name: string) => {
           cols="12"
           md="6"
         >
-          <v-card
-            class="item-card bg-blue-grey-lighten-1"
-            outlined
-          >
-            <!-- Header de la carte -->
+          <v-card class="item-card bg-blue-grey-lighten-1" outlined>
             <v-card-title class="d-flex justify-space-between align-center" style="gap: 16px;">
-            <!-- Image de l'item -->
-            <v-avatar size="64">
-              <v-img 
-                :src="item.item_img || 'https://via.placeholder.com/64'" 
-                alt="item-image" 
-              />
-            </v-avatar>
+              <v-avatar size="64">
+                <v-img :src="item.item_img || 'https://via.placeholder.com/64'" alt="item-image" />
+              </v-avatar>
 
-            <!-- Bloc Nom et Informations -->
-            <div class="flex-grow-1" style="min-width: 0;">
-              <h3 v-on:click="handleCopyToClipboard(item.item_name)" class="text-h6 font-weight-bold m-0" style="white-space: normal; word-break: break-word;">
-                {{ item.item_name || 'Nom inconnu' }}
-              </h3>
-              <p class="text-caption m-0">
-                {{ item.item_type_name || 'Type inconnu' }} - Niveau {{ item.item_level || 'N/A' }}
-              </p>
-            </div>
+              <div class="flex-grow-1" style="min-width: 0;">
+                <h3
+                  v-on:click="handleCopyToClipboard(item.item_name)"
+                  class="text-h6 font-weight-bold m-0"
+                  style="white-space: normal; word-break: break-word;"
+                >
+                  {{ item.item_name || 'Nom inconnu' }}
+                </h3>
+                <p class="text-caption m-0">
+                  {{ item.item_type_name || 'Type inconnu' }} - Niveau
+                  {{ item.item_level || 'N/A' }}
+                </p>
+              </div>
 
-            <!-- Input Multiplicateur et Icône poubelle -->
-            <div class="d-flex align-center">
-              <!-- Input Multiplicateur -->
-              <v-text-field
-                :disabled="readonly"
-                v-model="item.multiplier"
-                type="text"
-                label="Multiplicateur"
-                density="compact"
-                variant="outlined"
-                style="width: 100px; height: 50px; margin-right: 16px;"
-                @update:model-value="(event: any) => {
-                  item.multiplier = sanitizeInput(event, 1, 9999)
-                }"
-                @keydown.enter.prevent="(event: any) => {
-                  event.target.blur();
-                }"
-                @blur="() => {
-                  handleMultiplierUpdate(item)
-                }"
-              />
+              <div class="d-flex align-center">
+                <v-text-field
+                  :disabled="readonly"
+                  v-model="item.multiplier"
+                  type="text"
+                  label="Multiplicateur"
+                  density="compact"
+                  variant="outlined"
+                  style="width: 100px; height: 50px; margin-right: 16px;"
+                  @update:model-value="(event: any) => {
+                    item.multiplier = sanitizeInput(event, 1, 9999)
+                  }"
+                  @keydown.enter.prevent="(event: any) => {
+                    event.target.blur();
+                  }"
+                  @blur="() => {
+                    handleMultiplierUpdate(item)
+                  }"
+                />
 
-              <!-- Icône poubelle -->
-              <v-icon
-                :disabled="readonly"
-                color="red"
-                style="font-size: 40px; cursor: pointer;"
-                @click.stop="handleDelete(item)"
-              >
-                mdi-delete
-              </v-icon>
-            </div>
-          </v-card-title>
+                <v-icon
+                  :disabled="readonly"
+                  color="red"
+                  style="font-size: 40px; cursor: pointer;"
+                  @click.stop="handleDelete(item)"
+                >
+                  mdi-delete
+                </v-icon>
+              </div>
+            </v-card-title>
 
             <v-card-subtitle class="bg-blue-grey-lighten-2">
-              <!-- Section d'informations calculées -->
               <div class="d-flex flex-column mb-4 pa-2">
-                <!-- Prix moyen -->
                 <div class="d-flex justify-space-between align-center">
                   <v-text-field
                     :disabled="readonly"
@@ -206,13 +233,11 @@ const handleCopyToClipboard = async(name: string) => {
                     @blur="() => {
                       handlePriceUpdate(item)
                     }"
-                  >
-                  </v-text-field>
+                  ></v-text-field>
                   <span class="text-caption font-weight-bold">Prix unitaire multiplié :</span>
                   <span>{{ formatPrice(item.item_average_price * item.multiplier) }} Kamas</span>
                 </div>
 
-                <!-- Total du craft -->
                 <div class="d-flex justify-space-between align-center">
                   <span class="text-caption font-weight-bold">Craft :</span>
                   <span>
@@ -230,33 +255,47 @@ const handleCopyToClipboard = async(name: string) => {
                   </span>
                 </div>
 
-                <!-- Total du craft multiplié -->
                 <div class="d-flex justify-space-between align-center">
                   <span class="text-caption font-weight-bold">Craft multiplié :</span>
                   <span>{{ formatPrice(calculateTotalCraftMultiplied(item)) }} Kamas</span>
                 </div>
 
-                <!-- Total du craft -->
                 <div class="d-flex justify-space-between align-center">
                   <span class="font-weight-bold">Total craft :</span>
-                  <span class="font-weight-bold">{{ formatPrice(calculateTotalCraftFinal(item)) }} Kamas</span>
+                  <span class="font-weight-bold">
+                    {{ formatPrice(calculateTotalCraftFinal(item)) }} Kamas
+                  </span>
                 </div>
               </div>
             </v-card-subtitle>
 
-            <!-- Contenu : Liste des ingrédients -->
             <v-card-text class="ingredient-list">
               <v-list dense class="bg-blue-grey-lighten-3 pb-2">
-                <template v-for="(ingredient, i) in item.recipe" :key="ingredient.idrecipe_item_has_set || `ingredient-${i}`">
+                <template
+                  v-for="(ingredient, i) in item.recipe"
+                  :key="ingredient.idrecipe_item_has_set || `ingredient-${i}`"
+                >
                   <v-list-item
                     class="ingredient-item"
                     :class="{
-                      'text-success': ingredient.quantity_already_obtained >= (ingredient.total_quantity_required * item.multiplier)
+                      'text-success':
+                        ingredient.quantity_already_obtained >=
+                        ingredient.total_quantity_required * item.multiplier
                     }"
                   >
-                    <!-- Partie gauche : Image et nom -->
-                    <div class="d-flex align-center" style="flex-shrink: 1; gap: 8px; min-width: 0;">
-                      <!-- Image -->
+                    <div
+                      class="d-flex align-center"
+                      style="flex-shrink: 1; gap: 8px; min-width: 0;"
+                    >
+                      <!-- ✅ Checkbox blanche dynamique -->
+                      <v-checkbox
+                        density="compact"
+                        hide-details
+                        color="white"
+                        :model-value="ingredient.quantity_already_obtained >= (ingredient.total_quantity_required * item.multiplier)"
+                        @update:model-value="(checked: boolean | null) => handleToggleIngredient(item, ingredient, checked)"
+                      />
+
                       <v-avatar size="32">
                         <v-img
                           :src="ingredient.item_img || 'https://via.placeholder.com/32'"
@@ -264,9 +303,12 @@ const handleCopyToClipboard = async(name: string) => {
                         />
                       </v-avatar>
 
-                      <!-- Nom -->
-                      <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                        <div style="position: absolute; bottom: 38px; left: 5px; display: flex; gap: 8px;">
+                      <div
+                        style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"
+                      >
+                        <div
+                          style="position: absolute; bottom: 38px; left: 5px; display: flex; gap: 8px;"
+                        >
                           <v-chip
                             density="comfortable"
                             size="x-small"
@@ -274,7 +316,14 @@ const handleCopyToClipboard = async(name: string) => {
                             text-color="white"
                             variant="flat"
                           >
-                            Prix total : {{ formatPrice((ingredient.total_quantity_required * (item.multiplier || 1)) * (ingredient.item_average_price || 0)) }}
+                            Prix total :
+                            {{
+                              formatPrice(
+                                ingredient.total_quantity_required *
+                                  (item.multiplier || 1) *
+                                  (ingredient.item_average_price || 0)
+                              )
+                            }}
                           </v-chip>
                           <v-chip
                             density="comfortable"
@@ -283,12 +332,28 @@ const handleCopyToClipboard = async(name: string) => {
                             text-color="white"
                             variant="flat"
                           >
-                            Prix Final : {{ formatPrice((ingredient.total_quantity_required * (item.multiplier || 1) - ingredient.quantity_already_obtained) * (ingredient.item_average_price || 0)) }}
+                            Prix Final :
+                            {{
+                              formatPrice(
+                                (ingredient.total_quantity_required *
+                                  (item.multiplier || 1) -
+                                  ingredient.quantity_already_obtained) *
+                                  (ingredient.item_average_price || 0)
+                              )
+                            }}
                           </v-chip>
                         </div>
-                        <span v-on:click="handleCopyToClipboard(ingredient.item_name)">{{ ingredient.item_name || 'Nom inconnu' }}</span>
+                        <span
+                          v-on:click="handleCopyToClipboard(ingredient.item_name)"
+                        >
+                          {{ ingredient.item_name || 'Nom inconnu' }}
+                        </span>
+
                         <v-chip
-                          v-if="ingredient.hasrecipe && !itemList.some(item => item.iditem === ingredient.iditem)"
+                          v-if="
+                            ingredient.hasrecipe &&
+                            !itemList.some(item => item.iditem === ingredient.iditem)
+                          "
                           :disabled="readonly"
                           density="comfortable"
                           size="x-small"
@@ -300,9 +365,11 @@ const handleCopyToClipboard = async(name: string) => {
                         >
                           Ajouter
                         </v-chip>
-                        <!-- Affiche "Ajouté" avec une icône de validation -->
                         <v-chip
-                          v-else-if="ingredient.hasrecipe && itemList.some(item => item.iditem === ingredient.iditem)"
+                          v-else-if="
+                            ingredient.hasrecipe &&
+                            itemList.some(item => item.iditem === ingredient.iditem)
+                          "
                           density="comfortable"
                           size="x-small"
                           color="success"
@@ -315,29 +382,7 @@ const handleCopyToClipboard = async(name: string) => {
                       </div>
                     </div>
 
-                    <!-- Partie droite : Inputs et icônes -->
                     <div class="d-flex align-center" style="flex-shrink: 0; gap: 8px;">
-                      <!-- Input prix moyen -->
-                      <v-text-field
-                        :disabled="readonly"
-                        :model-value="formatPrice(ingredient.item_average_price)"
-                        density="compact"
-                        variant="outlined"
-                        style="width: 100px; height: 40px;"
-                        type="text"
-                        @input="(event: any) => {
-                          ingredient.item_average_price = sanitizeInput(event.target.value, 0)
-                        }"
-                        label="Prix unitaire"
-                        @keydown.enter.prevent="(event: any) => {
-                          event.target.blur();
-                        }"
-                        @blur="(event: any) => {
-                          handlePriceUpdate(ingredient)
-                        }"
-                      />
-
-                      <!-- Input quantité obtenue -->
                       <v-text-field
                         :disabled="readonly"
                         v-model="ingredient.quantity_already_obtained"
@@ -345,26 +390,26 @@ const handleCopyToClipboard = async(name: string) => {
                         variant="outlined"
                         style="width: 75px; height: 40px;"
                         type="text"
+                        label="Quantité"
                         @update:model-value="(value: any) => {
                           ingredient.quantity_already_obtained = sanitizeInput(value, 0, ingredient.total_quantity_required * item.multiplier)
                         }"
                         @keydown.enter.prevent="(event: any) => {
                           event.target.blur();
                         }"
-                        @blur="(event: any) => {
-                          //todo ici on fait l'update
+                        @blur="() => {
                           handleQtyAlreadyObtainedUpdate(ingredient)
                         }"
-                        label="Quantité"
                       />
-                      <span style="font-size: 20px; margin-left: 8px;">/ {{ formatPrice(ingredient.total_quantity_required * item.multiplier) }}</span>
+                      <span style="font-size: 20px; margin-left: 8px;">
+                        / {{ formatPrice(ingredient.total_quantity_required * item.multiplier) }}
+                      </span>
                     </div>
                   </v-list-item>
                   <v-divider v-if="i < item.recipe.length - 1" />
                 </template>
               </v-list>
             </v-card-text>
-
           </v-card>
         </v-col>
       </v-row>
@@ -382,7 +427,7 @@ const handleCopyToClipboard = async(name: string) => {
 }
 
 .text-right input {
-  text-align: right; /* Aligne le contenu de l'input à droite */
+  text-align: right;
 }
 
 .v-list-item {
@@ -394,25 +439,30 @@ const handleCopyToClipboard = async(name: string) => {
   padding: 16px;
 }
 .v-col {
-  margin-right: 16px; /* Ajoute une marge entre les colonnes */
+  margin-right: 16px;
 }
 .v-chip-add-item {
   position: absolute;
-  top: 40px; /* Ajustez la position verticale */
-  left: 40px; /* Ajustez la position horizontale */
+  top: 40px;
+  left: 40px;
   z-index: 10;
 }
-
 
 .ingredient-item ::v-deep(.v-list-item__content) {
   display: flex !important;
   justify-content: space-between !important;
   width: 100% !important;
-  // overflow: inherit !important;
   padding-top: 0.5rem !important;
 }
+
 .ingredient-list {
   font-size: 0.8rem !important;
   font-weight: bold !important;
+}
+
+/* ✅ Force la couleur blanche de la checkbox */
+.white-checkbox :deep(.v-selection-control__input),
+.white-checkbox :deep(.v-icon) {
+  color: white !important;
 }
 </style>

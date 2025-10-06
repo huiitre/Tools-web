@@ -212,13 +212,46 @@ const handleDeleteItemToSet = async(item: any) => {
   }
 }
 
+const handleToggleResource = async({ iditem, checked }: { iditem: number; checked: boolean }) => {
+  if (isReadonly()) return;
+
+  try {
+    // On parcourt tous les items du set
+    for (const item of selectedSet.value.items) {
+      // On cherche si cet item contient la ressource cochée
+      for (const ingredient of item.recipe) {
+        if (ingredient.iditem === iditem) {
+          const newQty = checked ? ingredient.total_quantity_required : 0;
+
+          await useMutationQuantityAlreadyObtained(
+            selectedSet.value.idset,
+            ingredient.idrecipe_item_has_set,
+            newQty
+          );
+
+          ingredient.quantity_already_obtained = newQty;
+          //? pas testé mais ça pourrait faire l'affaire si jamais => await fetchSet(selectedSet.value.idset)
+        }
+      }
+    }
+
+    toast.success(
+      checked
+        ? "Ressource cochée : quantité mise au maximum."
+        : "Ressource décochée : quantité remise à zéro."
+    );
+  } catch (err) {
+    console.error("Erreur handleToggleResource :", err);
+    toast.error("Erreur lors de la mise à jour des quantités.");
+  }
+}
+
 const handleMultiplierUpdate = async(item: any) => {
   if (isReadonly()) return;
   try {
     const iditem = item.iditem;
     const multiplier = item.multiplier;
-    const result = await useMutationMultiplier(selectedSet.value.idset, iditem, multiplier)
-
+    await useMutationMultiplier(selectedSet.value.idset, iditem, multiplier)
     await fetchSet(selectedSet.value.idset)
   } catch(err) {
     console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
@@ -228,8 +261,7 @@ const handleMultiplierUpdate = async(item: any) => {
 const handleUpdateQtyAlreadyObtained = async(item: any) => {
   if (isReadonly()) return;
   try {
-    const result = await useMutationQuantityAlreadyObtained(selectedSet.value.idset, item.idrecipe_item_has_set, item.quantity_already_obtained)
-
+    await useMutationQuantityAlreadyObtained(selectedSet.value.idset, item.idrecipe_item_has_set, item.quantity_already_obtained)
     // await fetchSet(selectedSet.value.idset)
   } catch(err) {
     console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
@@ -445,6 +477,7 @@ onMounted(async() => {
 
     <div class="d__container d__center">
       <ItemListSet
+        :idset="selectedSet ? selectedSet.idset : 0"
         :itemList="selectedSet ? selectedSet.items : []"
         @fetch-set="fetchSet"
         @update-multiplier="handleMultiplierUpdate"
@@ -456,18 +489,19 @@ onMounted(async() => {
     </div>
 
     <div class="d__container d__right">
-      <Resume
-        :itemList="selectedSet ? selectedSet.items : []"
-        :isVisible="selectedSet ? true : false"
-        :readonly="readonly"
-        :idset="selectedSet ? selectedSet.idset : null"
-      />
       <AddItemSet
         v-if="!readonly"
         :isVisible="selectedSet ? true : false"
         :itemListSet="selectedSet ? selectedSet.items : []"
         @add-items="handleAddItemsToSet"
         :readonly="readonly"
+      />
+      <Resume
+        :itemList="selectedSet ? selectedSet.items : []"
+        :isVisible="selectedSet ? true : false"
+        :readonly="readonly"
+        :idset="selectedSet ? selectedSet.idset : null"
+        @toggle-resource="handleToggleResource"
       />
     </div>
   </div>

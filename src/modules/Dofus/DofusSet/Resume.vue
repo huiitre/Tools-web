@@ -4,7 +4,7 @@ import { useMutationCreateShareLink } from '../hooks/useMutationSet';
 import { copyToClipboard } from '@/utils/Core/string';
 import toast from '@/services/toast';
 
-const emit = defineEmits(['']);
+const emit = defineEmits(['toggle-resource']);
 
 const props = defineProps({
   isVisible: {
@@ -172,14 +172,10 @@ const sortedResources = computed(() => {
 });
 
 const filteredResources = computed(() => {
-  // clone pour éviter toute mutation involontaire
   const baseList = [...sortedResources.value];
-
   if (showCompleteResources.value) {
-    // afficher TOUTES les ressources, triées
     return baseList;
   } else {
-    // n’afficher que celles incomplètes
     return baseList.filter((res) => res.obtained < res.total);
   }
 });
@@ -197,6 +193,12 @@ const toggleSort = (key: 'name' | 'quantity') => {
 
 const formatPrice = (price: number): string => {
   return price.toLocaleString('fr-FR');
+};
+
+// ---------- Événements ----------
+
+const handleToggleCheckbox = (resource: any, checked: boolean) => {
+  emit('toggle-resource', { iditem: resource.id, checked: checked });
 };
 </script>
 
@@ -358,15 +360,26 @@ const formatPrice = (price: number): string => {
           }"
         >
           <div class="d-flex align-center justify-space-between w-100">
-            <!-- Image + nom -->
+            <!-- Checkbox + image + nom -->
             <div class="d-flex align-center" style="gap: 8px;">
+              <v-checkbox
+                density="compact"
+                hide-details
+                :model-value="resource.obtained >= resource.total"
+                @update:model-value="(checked: any) => handleToggleCheckbox(resource, checked)"
+              />
               <v-avatar size="32">
                 <v-img
                   :src="resource.item_img || 'https://via.placeholder.com/32'"
                   alt="resource-image"
                 />
               </v-avatar>
-              <span class="truncate" @click="handleCopyResourceName(resource.name)">{{ resource.name }}</span>
+              <span
+                class="truncate"
+                @click="handleCopyResourceName(resource.name)"
+              >
+                {{ resource.name }}
+              </span>
             </div>
 
             <!-- Quantités -->

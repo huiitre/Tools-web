@@ -1,5 +1,13 @@
 const changelog: Array<any> = [
   {
+    version: '0.16.0',
+    releaseDate: '2025-10-05',
+    notes: [
+      `DOFUS : Dans le résumé d'un set, on tri par quantité totale des ressources et non plus par la quantité restante`,
+      `DOFUS : Ajout d'un bouton pour compléter/annuler complètement une ressource, dans un set d'objet ainsi que dans le résumé à droite`,
+    ]
+  },
+  {
     version: '0.15.0',
     releaseDate: '2025-10-05',
     notes: [
