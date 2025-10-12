@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineProps, ref } from 'vue';
+import { defineProps, ref, computed } from 'vue';
 import { useMutationAveragePrice } from '../hooks/useMutationAveragePrice';
 import toast from '@/services/toast';
 import { copyToClipboard } from '@/utils/Core/string';
@@ -21,6 +21,56 @@ const props = defineProps({
     type: Number,
     required: true
   }
+});
+
+type SortKey = 'name' | 'level' | 'created_at';
+type SortDir = 'asc' | 'desc';
+
+const sortKey = ref<SortKey>('created_at'); // par défaut tri par date
+const sortDir = ref<SortDir>('desc');       // les plus récents en haut
+
+const toggleSort = (key: SortKey) => {
+  if (sortKey.value === key) {
+    sortDir.value = sortDir.value === 'asc' ? 'desc' : 'asc';
+  } else {
+    sortKey.value = key;
+    sortDir.value = 'asc';
+  }
+};
+
+const sortArrow = (key: SortKey) => {
+  if (sortKey.value !== key) return 'mdi-swap-vertical';
+  return sortDir.value === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down';
+};
+
+const sortedItemList = computed(() => {
+  if (!Array.isArray(props.itemList)) return [];
+
+  const list = [...props.itemList];
+
+  return list.sort((a: any, b: any) => {
+    let aVal: any;
+    let bVal: any;
+
+    switch (sortKey.value) {
+      case 'name':
+        aVal = (a.item_name || '').toLowerCase();
+        bVal = (b.item_name || '').toLowerCase();
+        break;
+      case 'level':
+        aVal = a.item_level || 0;
+        bVal = b.item_level || 0;
+        break;
+      case 'created_at':
+        aVal = new Date(a.created_at || 0).getTime();
+        bVal = new Date(b.created_at || 0).getTime();
+        break;
+    }
+
+    if (aVal < bVal) return sortDir.value === 'asc' ? -1 : 1;
+    if (aVal > bVal) return sortDir.value === 'asc' ? 1 : -1;
+    return 0;
+  });
 });
 
 const isReadonly = () => {
@@ -153,9 +203,42 @@ const handleToggleIngredient = async(item: any, ingredient: any, checked: boolea
 <template>
   <div class="d__container d__center">
     <div v-if="Array.isArray(itemList) && itemList.length > 0" class="item-cards">
+      <!-- 🔽 Boutons de tri -->
+      <div
+        v-if="Array.isArray(itemList) && itemList.length > 0"
+        class="d-flex justify-center mb-4"
+        style="gap: 12px;"
+      >
+        <v-btn
+          variant="tonal"
+          color="primary"
+          @click="toggleSort('name')"
+          :append-icon="sortArrow('name')"
+        >
+          Nom
+        </v-btn>
+
+        <v-btn
+          variant="tonal"
+          color="primary"
+          @click="toggleSort('level')"
+          :append-icon="sortArrow('level')"
+        >
+          Niveau
+        </v-btn>
+
+        <v-btn
+          variant="tonal"
+          color="primary"
+          @click="toggleSort('created_at')"
+          :append-icon="sortArrow('created_at')"
+        >
+          Date d’ajout
+        </v-btn>
+      </div>
       <v-row dense>
         <v-col
-          v-for="(item, index) in itemList"
+          v-for="(item, index) in sortedItemList"
           :key="item.iditem_has_set || `item-${index}`"
           cols="12"
           md="6"
