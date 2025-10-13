@@ -2,6 +2,8 @@
 <script setup lang="ts">
 import { onMounted, ref, computed } from 'vue';
 import { useFetchWeightLogs } from '../hooks/useFetchWeightLog';
+import { useDeleteWeightLog } from '../hooks/useMutationWeightLog';
+import toast from '@/services/toast';
 
 type WeightLog = {
   id: number;
@@ -61,6 +63,22 @@ async function load() {
     error.value = e?.response?.data?.msg || e?.message || 'Erreur lors du chargement.';
   } finally {
     loading.value = false;
+  }
+}
+
+async function handleDelete(item: WeightLog) {
+  const ok = window.confirm(
+    `Supprimer la mesure du ${formatDateTime(item.loggedAt)} (${item.weightKg} kg) ?`
+  );
+  if (!ok) return;
+
+  try {
+    await useDeleteWeightLog(item.id);
+    items.value = items.value.filter(i => i.id !== item.id);
+    toast.success('Mesure supprimée avec succès.');
+  } catch (err) {
+    console.error(err);
+    toast.error('Erreur lors de la suppression.');
   }
 }
 
@@ -127,6 +145,13 @@ onMounted(load);
                 </v-icon>
                 {{ it.delta > 0 ? '+' : '' }}{{ it.delta }} kg
               </v-chip>
+              <v-btn
+                icon="mdi-delete"
+                size="small"
+                color="red"
+                variant="text"
+                @click="handleDelete(it)"
+              ></v-btn>
             </div>
           </div>
 
