@@ -132,8 +132,20 @@ function nextMonth() {
 const selectedEntry = computed<WeightLog | null>(() => (selectedDate.value ? byDay.value[selectedDate.value] || null : null));
 const selectedDateLabel = computed(() => {
   if (!selectedDate.value) return '';
-  const d = parseISO(selectedDate.value + 'T00:00:00');
-  return d.toLocaleDateString(undefined, { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+  const entry = selectedEntry.value;
+  if (!entry) return '';
+  const d = new Date(entry.loggedAt);
+  const datePart = d.toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: '2-digit',
+    month: 'long',
+    year: 'numeric'
+  });
+  const timePart = d.toLocaleTimeString(undefined, {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+  return `${datePart} - ${timePart}`;
 });
 
 function selectDay(key: string, has: boolean) {
@@ -204,8 +216,12 @@ function deltaText(delta: number | null): string {
       <div class="cal-footer" v-if="selectedDate">
         <div class="footer-date">{{ selectedDateLabel }}</div>
         <div class="footer-values" v-if="selectedEntry">
-          <span class="value"><v-icon class="mr-1" size="16">mdi-scale-bathroom</v-icon>{{ Number(selectedEntry.weightKg).toFixed(3) }} kg</span>
-          <span v-if="selectedEntry.notes" class="note"><v-icon class="mr-1" size="16">mdi-note-text</v-icon>{{ selectedEntry.notes }}</span>
+          <span class="value">
+            <v-icon class="mr-1" size="16">mdi-scale-bathroom</v-icon>{{ Number(selectedEntry.weightKg).toFixed(3) }} kg
+          </span>
+          <span v-if="selectedEntry.notes" class="note">
+            <v-icon class="mr-1" size="16">mdi-note-text</v-icon>{{ selectedEntry.notes }}
+          </span>
         </div>
       </div>
       <div class="cal-footer hint" v-else>
