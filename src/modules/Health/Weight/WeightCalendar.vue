@@ -55,14 +55,18 @@ const monthLabel = computed(() =>
     .toLocaleDateString(undefined, { month: 'long', year: 'numeric' })
 );
 
-// map des mesures (la plus récente par jour)
-const byDay = computed<Record<string, WeightLog>>(() => {
-  const map: Record<string, WeightLog> = {};
+// map des mesures (toutes les entrées par jour)
+const byDay = computed<Record<string, WeightLog[]>>(() => {
+  const map: Record<string, WeightLog[]> = {};
   for (const it of items.value) {
     const key = ymd(parseISO(it.loggedAt));
-    if (!map[key] || +parseISO(it.loggedAt) > +parseISO(map[key].loggedAt)) {
-      map[key] = it;
-    }
+    if (!map[key]) map[key] = [];
+    map[key].push(it);
+  }
+
+  // trier chaque journée du plus ancien au plus récent
+  for (const key in map) {
+    map[key].sort((a, b) => +new Date(a.loggedAt) - +new Date(b.loggedAt));
   }
   return map;
 });
@@ -73,7 +77,7 @@ interface GridCell {
   inMonth: boolean;
   key: string;
   has: boolean;
-  weight?: number;
+  entries?: WeightLog[];
   delta: number | null; // <-- explicit
 }
 
@@ -90,7 +94,11 @@ const grid = computed<GridCell[]>(() => {
   const monthDays: { key: string; weight: number }[] = [];
   for (let d = new Date(monthStart); d <= monthEnd; d.setDate(d.getDate() + 1)) {
     const k = ymd(d);
-    if (byDay.value[k]) monthDays.push({ key: k, weight: byDay.value[k].weightKg });
+    const entries = byDay.value[k];
+    if (entries && entries.length > 0) {
+      const last = entries[entries.length - 1]; // on prend la dernière mesure du jour
+      monthDays.push({ key: k, weight: last.weightKg });
+    }
   }
   monthDays.sort((a, b) => a.key.localeCompare(b.key));
   const deltas: Record<string, number | null> = {};
@@ -105,13 +113,13 @@ const grid = computed<GridCell[]>(() => {
     d.setDate(start.getDate() + i);
     const key = ymd(d);
     const inMonth = d.getMonth() === currentMonth.value;
-    const entry = byDay.value[key];
+    const entries = byDay.value[key] || [];
     cells.push({
       date: d,
       inMonth,
       key,
-      has: !!entry,
-      weight: entry?.weightKg,
+      has: entries.length > 0,
+      entries, // on garde le tableau complet
       delta: deltas[key] ?? null
     });
   }
@@ -129,23 +137,21 @@ function nextMonth() {
   else { currentMonth.value = m; }
 }
 
-const selectedEntry = computed<WeightLog | null>(() => (selectedDate.value ? byDay.value[selectedDate.value] || null : null));
+// toutes les entrées du jour sélectionné
+const selectedEntries = computed<WeightLog[]>(() => {
+  return selectedDate.value ? byDay.value[selectedDate.value] || [] : [];
+});
+
+// libellé de la date (sans heure)
 const selectedDateLabel = computed(() => {
   if (!selectedDate.value) return '';
-  const entry = selectedEntry.value;
-  if (!entry) return '';
-  const d = new Date(entry.loggedAt);
-  const datePart = d.toLocaleDateString(undefined, {
+  const d = new Date(selectedDate.value + 'T00:00:00');
+  return d.toLocaleDateString(undefined, {
     weekday: 'long',
     day: '2-digit',
     month: 'long',
     year: 'numeric'
   });
-  const timePart = d.toLocaleTimeString(undefined, {
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-  return `${datePart} - ${timePart}`;
 });
 
 function selectDay(key: string, has: boolean) {
@@ -194,8 +200,14 @@ function deltaText(delta: number | null): string {
           @click="selectDay(cell.key, cell.has)"
         >
           <!-- Poids + delta -->
-          <div v-if="cell.has" class="weight">
-            {{ Number(cell.weight).toFixed(1) }}<span class="unit">kg</span>
+          <div v-if="cell.has" class="weights">
+            <div
+              v-for="(w, i) in cell.entries"
+              :key="w.id"
+              class="weight"
+            >
+              {{ Number(w.weightKg).toFixed(1) }}<span class="unit">kg</span>
+            </div>
           </div>
           <div v-if="cell.has && cell.delta !== null" class="delta" :class="deltaClass(cell.delta)">
             <v-icon size="14" class="mr-1">{{ deltaIcon(cell.delta) }}</v-icon>
@@ -215,15 +227,24 @@ function deltaText(delta: number | null): string {
       <!-- Pied : date sélectionnée bien visible -->
       <div class="cal-footer" v-if="selectedDate">
         <div class="footer-date">{{ selectedDateLabel }}</div>
-        <div class="footer-values" v-if="selectedEntry">
-          <span class="value">
-            <v-icon class="mr-1" size="16">mdi-scale-bathroom</v-icon>{{ Number(selectedEntry.weightKg).toFixed(3) }} kg
-          </span>
-          <span v-if="selectedEntry.notes" class="note">
-            <v-icon class="mr-1" size="16">mdi-note-text</v-icon>{{ selectedEntry.notes }}
-          </span>
+
+        <div
+          v-for="entry in selectedEntries"
+          :key="entry.id"
+          class="footer-values"
+        >
+          <div class="value">
+            {{ new Date(entry.loggedAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' }) }}
+            -
+            <v-icon class="mr-1" size="16">mdi-scale-bathroom</v-icon>
+            {{ Number(entry.weightKg).toFixed(3) }} kg
+          </div>
+          <div v-if="entry.notes" class="note mt-1">
+            <v-icon class="mr-1" size="16">mdi-note-text</v-icon>{{ entry.notes }}
+          </div>
         </div>
       </div>
+
       <div class="cal-footer hint" v-else>
         Touchez une case pour afficher la date sélectionnée.
       </div>
