@@ -30,7 +30,7 @@ export const useFetchDofusAlmanax = async (days: number = 365) => {
     "range[size]": days,
     timezone: "Europe/Paris"
   }
-  const data = await axios.get<DofusAlmanaxApi>(url, { params })
+  const data = await axios.get<any[]>(url, { params })
   return data?.data ?? []
 }
 
