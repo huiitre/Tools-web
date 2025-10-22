@@ -27,6 +27,7 @@ import DofusConfig from "@/modules/Dofus/DofusConfig/DofusConfig.vue";
 import TodolistList from "@/modules/Todolist/TodolistList.vue";
 import TodoListTodo from "@/modules/Todolist/TodolistTodo.vue";
 import DofusMinotororLab from "@/modules/Dofus/DofusMinotororLab/DofusMinotororLab.vue";
+import DofusAlmanax from "@/modules/Dofus/DofusAlmanax/DofusAlmanax.vue";
 
 export const routes = [
   {
@@ -64,8 +65,14 @@ export const routes = [
     path: '/dofus',
     component: Dofus,
     meta: { requireAuth: true, idmodule: 1 },
-    redirect: { name: 'dofus-item' },
+    redirect: { name: 'dofus-almanax' },
     children: [
+      {
+        name: 'dofus-almanax',
+        path: 'almanax',
+        component: DofusAlmanax,
+        meta: { requireAuth: true, label: 'Almanax' }
+      },
       {
         name: 'dofus-item',
         path: 'item',

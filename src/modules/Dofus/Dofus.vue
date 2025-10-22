@@ -1,10 +1,36 @@
 <script setup lang="ts">
-import { computed, ref, watch, provide } from 'vue';
+import { computed, ref, watch, provide, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import store from '@/store/store'
+import dayjs from "dayjs"
+import LS from '@/services/localStorage';
 
 const router = useRouter();
 const route = useRoute();
+
+const LS_KEY_FAVORITES = "dofus_almanax_favorites"
+
+const hasTodayFavorite = ref(false)
+
+function checkTodayFavorite() {
+  const savedFavorites = LS.get(LS_KEY_FAVORITES)
+  if (!Array.isArray(savedFavorites)) {
+    hasTodayFavorite.value = false
+    return
+  }
+
+  const todayKey = dayjs().format("YYYY-MM-DD")
+  hasTodayFavorite.value = savedFavorites.some(f => f.date === todayKey)
+}
+
+onMounted(() => {
+  checkTodayFavorite()
+  window.addEventListener("storage", checkTodayFavorite)
+})
+
+onUnmounted(() => {
+  window.removeEventListener("storage", checkTodayFavorite)
+})
 
 const userModule = computed(() => store.getters['Core/getUserModules']?.find((module: any) => module.code === 'dofus') || null);
 provide('userModule', userModule.value)
@@ -77,7 +103,14 @@ watch(currentTab, (newValue) => {
         :key="tab.value"
         :value="tab.value"
       >
-        {{ tab.label }}
+        <span>
+          {{ tab.label }}
+          <i
+            v-if="tab.label === 'Almanax' && hasTodayFavorite"
+            class="fa-solid fa-bell favorite-icon"
+            title="Almanax favori aujourd'hui"
+          ></i>
+        </span>
       </v-tab>
     </v-tabs>
 
@@ -88,5 +121,10 @@ watch(currentTab, (newValue) => {
 <style scoped>
 .dofus-card {
   width: 100%;
+}
+.favorite-icon {
+  margin-left: 6px;
+  color: #f5c518;
+  font-size: 0.85em;
 }
 </style>
