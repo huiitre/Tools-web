@@ -396,8 +396,8 @@ onMounted(async () => {
 
 <style scoped>
 .almanax {
-  --fs-xs: 9px;
-  --fs-s: 10px;
+  --fs-xs: 12px;
+  --fs-s: 13px;
   --fs-base: 11px;
   --pad: 0.3rem;
   --gap: 0.35rem;
@@ -495,8 +495,8 @@ onMounted(async () => {
   align-items: center;
 }
 .item__img {
-  width: 24px;
-  height: 24px;
+  width: 30px;
+  height: 30px;
   border-radius: 6px;
   object-fit: contain;
   background: #f3f3f3;
