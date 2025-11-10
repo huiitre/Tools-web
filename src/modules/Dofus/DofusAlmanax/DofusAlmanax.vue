@@ -13,6 +13,8 @@ import { copyToClipboard } from "@/utils/Core/string"
 import LS from "@/services/localStorage"
 import isSameOrAfter from "dayjs/plugin/isSameOrAfter"
 
+import { initGapi, requestAccessToken } from '@/services/googleApi'
+
 // 🔧 Activation du plugin isBetween
 dayjs.extend(isBetween)
 dayjs.extend(isSameOrAfter)
@@ -56,6 +58,36 @@ const calendarDays = computed(() => {
   }
   return arr
 })
+
+// ======= Google agenda =======
+async function addToCalendar(dateKey: string) {
+  const entry = almanaxMap.value[dateKey]
+  if (!entry) return toast.error('Aucune donnée Almanax pour cette date')
+
+  try {
+    await initGapi()
+    const token = await requestAccessToken()
+    window.gapi.client.setToken({ access_token: token })
+
+    const event = {
+      summary: `Almanax - ${entry.bonus?.type?.name || 'Bonus inconnu'}`,
+      description: entry.bonus?.description || '',
+      start: { date: entry.date },
+      end: { date: entry.date },
+    }
+
+    const res = await window.gapi.client.calendar.events.insert({
+      calendarId: 'primary',
+      resource: event,
+    })
+
+    toast.success('Ajouté à ton Google Agenda ✅')
+    console.log('✅ event créé :', res.result)
+  } catch (err) {
+    console.error('Erreur Calendar', err)
+    toast.error('Erreur lors de l’ajout à Google Calendar')
+  }
+}
 
 // ======= Favoris =======
 const isFavorite = (dateKey: string) => favorites.value.some(f => f.date === dateKey)
@@ -260,8 +292,12 @@ onMounted(async () => {
       >
         <div class="day__header">
           <span class="day__num">{{ cell.day }}</span>
-          <button class="fav-btn" :class="{ active: isFavorite(cell.dateKey) }" @click.stop="toggleFavorite(cell.dateKey)">
-            <span v-if="isFavorite(cell.dateKey)">★</span><span v-else>☆</span>
+          <button
+            class="calendar-btn"
+            @click.stop="addToCalendar(cell.dateKey)"
+            title="Ajouter à mon agenda"
+          >
+            <i class="fa-solid fa-calendar-plus"></i>
           </button>
         </div>
 
@@ -409,6 +445,19 @@ onMounted(async () => {
   flex-direction: column;
   gap: var(--gap);
   font-size: var(--fs-base);
+}
+
+.calendar-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0;
+  color: #bbb;
+}
+.calendar-btn:hover {
+  color: #2196f3;
 }
 
 .almanax__header {
