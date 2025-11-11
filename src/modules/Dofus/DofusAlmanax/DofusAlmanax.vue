@@ -47,7 +47,17 @@ const handleCopyToClipboard = async(name: string) => {
 
 // ======= Jours du mois =======
 const calendarDays = computed(() => {
-  const arr: { day: number; dateKey: string; isToday: boolean }[] = []
+  const arr: { day: number | null; dateKey: string | null; isToday: boolean }[] = []
+
+  const firstDayOfMonth = dayjs(new Date(year.value, month.value, 1))
+  const startWeekday = (firstDayOfMonth.day() + 6) % 7 // 🧭 Lundi=0, Mardi=1... Dimanche=6
+
+  // ➕ Cases vides avant le 1er jour du mois
+  for (let i = 0; i < startWeekday; i++) {
+    arr.push({ day: null, dateKey: null, isToday: false })
+  }
+
+  // 🗓️ Jours du mois
   for (let d = 1; d <= daysInMonth.value; d++) {
     const date = dayjs(new Date(year.value, month.value, d))
     arr.push({
@@ -56,6 +66,7 @@ const calendarDays = computed(() => {
       isToday: date.isSame(today, "day"),
     })
   }
+
   return arr
 })
 
@@ -255,7 +266,7 @@ onMounted(async () => {
     favorites.value = savedFavorites
   }
   cleanupFavorites()
-  await Promise.all([fetchAllAlmanax(), fetchBonuses()])
+  await Promise.all([fetchAllAlmanax()/* , fetchBonuses() */])
   await fetchPricesForCurrentMonth()
 })
 </script>
@@ -284,73 +295,95 @@ onMounted(async () => {
       <div class="weekday" v-for="w in ['L','Ma','Me','J','V','S','D']" :key="w">{{ w }}</div>
 
       <div
-        v-for="cell in calendarDays"
-        :key="cell.dateKey"
+        v-for="(cell, index) in calendarDays"
+        :key="cell.dateKey || 'empty-' + index"
         class="day"
-        :class="{ today: cell.isToday, hasData: !!almanaxMap[cell.dateKey] }"
-        :style="{ opacity: getOpacity(cell.dateKey) }"
+        :class="{
+          today: !!cell.dateKey && cell.isToday,
+          hasData: !!(cell.dateKey && almanaxMap[cell.dateKey])
+        }"
+        :style="{ opacity: cell.dateKey ? getOpacity(cell.dateKey) : 0.25 }"
       >
-        <div class="day__header">
-          <span class="day__num">{{ cell.day }}</span>
-          <button
-            class="calendar-btn"
-            @click.stop="addToCalendar(cell.dateKey)"
-            title="Ajouter à mon agenda"
-          >
-            <i class="fa-solid fa-calendar-plus"></i>
-          </button>
-        </div>
+        <!-- 🧠 Important : on vérifie d’abord qu’on a une vraie date -->
+        <template v-if="cell.dateKey">
+          <div class="day__header">
+            <span class="day__num">{{ cell.day }}</span>
 
-        <template v-if="almanaxMap[cell.dateKey]">
-          <div class="item">
-            <img
-              v-if="almanaxMap[cell.dateKey].tribute?.item?.image_urls?.icon"
-              :src="almanaxMap[cell.dateKey].tribute.item.image_urls.icon"
-              alt="item"
-              class="item__img"
-              loading="lazy"
-            />
-            <div class="item__meta">
-              <div class="item__name" @click="handleCopyToClipboard(almanaxMap[cell.dateKey].tribute?.item?.name)">{{ almanaxMap[cell.dateKey].tribute?.item?.name }}</div>
+            <button
+              v-if="dayjs(cell.dateKey).isSameOrAfter(today, 'day')"
+              class="calendar-btn"
+              @click.stop="addToCalendar(cell.dateKey)"
+              title="Ajouter à mon agenda"
+            >
+              <i class="fa-solid fa-calendar-plus"></i>
+            </button>
+          </div>
 
-              <div class="row tiny">
-                <span v-if="almanaxMap[cell.dateKey].tribute?.quantity">x{{ almanaxMap[cell.dateKey].tribute.quantity }}</span>
-                <span class="sep">•</span>
-                <span>💰 {{ fmt(almanaxMap[cell.dateKey].reward_kamas) }} ₭</span>
-              </div>
+          <!-- S’il y a bien un almanax pour ce jour -->
+          <template v-if="almanaxMap[cell.dateKey]">
+            <div class="item">
+              <img
+                v-if="almanaxMap[cell.dateKey].tribute?.item?.image_urls?.icon"
+                :src="almanaxMap[cell.dateKey].tribute.item.image_urls.icon"
+                alt="item"
+                class="item__img"
+                loading="lazy"
+              />
+              <div class="item__meta">
+                <div
+                  class="item__name"
+                  @click="handleCopyToClipboard(almanaxMap[cell.dateKey].tribute?.item?.name)"
+                >
+                  {{ almanaxMap[cell.dateKey].tribute?.item?.name }}
+                </div>
 
-              <div
-                v-if="almanaxMap[cell.dateKey]._tools?.item_average_price && almanaxMap[cell.dateKey]._tools?.item_average_price > 0"
-                class="row tiny muted"
-              >
-                <i
-                  v-if="getProfitState(almanaxMap[cell.dateKey]) === 'profit'"
-                  class="fa-solid fa-arrow-down arrow profit"
-                ></i>
-                <i
-                  v-else-if="getProfitState(almanaxMap[cell.dateKey]) === 'loss'"
-                  class="fa-solid fa-arrow-up arrow loss"
-                ></i>
-
-                <span class="avg">
-                  {{ fmt(getTotalPrice(almanaxMap[cell.dateKey])) }} ₭
-                  <span class="total" v-if="getTotalPrice(almanaxMap[cell.dateKey])">
-                    ({{ fmt(almanaxMap[cell.dateKey]._tools?.item_average_price) }} ₭ /u)
+                <div class="row tiny">
+                  <span v-if="almanaxMap[cell.dateKey].tribute?.quantity">
+                    x{{ almanaxMap[cell.dateKey].tribute.quantity }}
                   </span>
-                </span>
+                  <span class="sep">•</span>
+                  <span>💰 {{ fmt(almanaxMap[cell.dateKey].reward_kamas) }} ₭</span>
+                </div>
+
+                <div
+                  v-if="almanaxMap[cell.dateKey]._tools?.item_average_price && almanaxMap[cell.dateKey]._tools?.item_average_price > 0"
+                  class="row tiny muted"
+                >
+                  <i
+                    v-if="getProfitState(almanaxMap[cell.dateKey]) === 'profit'"
+                    class="fa-solid fa-arrow-down arrow profit"
+                  ></i>
+                  <i
+                    v-else-if="getProfitState(almanaxMap[cell.dateKey]) === 'loss'"
+                    class="fa-solid fa-arrow-up arrow loss"
+                  ></i>
+
+                  <span class="avg">
+                    {{ fmt(getTotalPrice(almanaxMap[cell.dateKey])) }} ₭
+                    <span class="total" v-if="getTotalPrice(almanaxMap[cell.dateKey])">
+                      ({{ fmt(almanaxMap[cell.dateKey]._tools?.item_average_price) }} ₭ /u)
+                    </span>
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div class="bonus">
-            <strong>{{ almanaxMap[cell.dateKey].bonus?.type?.name }}:</strong>
-            <br />
-            {{ almanaxMap[cell.dateKey].bonus?.description }}
-          </div>
+            <div class="bonus">
+              <strong>{{ almanaxMap[cell.dateKey].bonus?.type?.name }}:</strong>
+              <br />
+              {{ almanaxMap[cell.dateKey].bonus?.description }}
+            </div>
+          </template>
+
+          <!-- S’il n’y a pas de données pour ce jour -->
+          <template v-else>
+            <div class="no-data">—</div>
+          </template>
         </template>
 
+        <!-- 🩶 Case vide (avant le 1er du mois) -->
         <template v-else>
-          <div class="no-data">—</div>
+          <div class="no-data"> </div>
         </template>
       </div>
     </div>
