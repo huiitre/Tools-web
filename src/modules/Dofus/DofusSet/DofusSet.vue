@@ -475,35 +475,40 @@ onMounted(async() => {
       </v-list>
     </div>
 
-    <div class="d__container d__center">
-      <ItemListSet
-        :idset="selectedSet ? selectedSet.idset : 0"
-        :itemList="selectedSet ? selectedSet.items : []"
-        @fetch-set="fetchSet"
-        @update-multiplier="handleMultiplierUpdate"
-        @delete-item="handleDeleteItemToSet"
-        @update-qty-already-obtained="handleUpdateQtyAlreadyObtained"
-        @add-custom-item="handleAddItemsToSet"
-        :readonly="readonly"
-      />
+    <div class="d__container d__main">
+      <!-- BLOC DU HAUT : Resume + AddItemSet côte à côte -->
+      <div class="top-row">
+          <AddItemSet
+            v-if="!readonly"
+            :isVisible="selectedSet ? true : false"
+            :itemListSet="selectedSet ? selectedSet.items : []"
+            @add-items="handleAddItemsToSet"
+            :readonly="readonly"
+          />
+          <Resume
+            :itemList="selectedSet ? selectedSet.items : []"
+            :isVisible="selectedSet ? true : false"
+            :readonly="readonly"
+            :idset="selectedSet ? selectedSet.idset : null"
+            @toggle-resource="handleToggleResource"
+          />
+      </div>
+
+      <!-- BLOC DU BAS : Items -->
+      <div class="bottom-row">
+        <ItemListSet
+          :idset="selectedSet ? selectedSet.idset : 0"
+          :itemList="selectedSet ? selectedSet.items : []"
+          @fetch-set="fetchSet"
+          @update-multiplier="handleMultiplierUpdate"
+          @delete-item="handleDeleteItemToSet"
+          @update-qty-already-obtained="handleUpdateQtyAlreadyObtained"
+          @add-custom-item="handleAddItemsToSet"
+          :readonly="readonly"
+        />
+      </div>
     </div>
 
-    <div class="d__container d__right">
-      <AddItemSet
-        v-if="!readonly"
-        :isVisible="selectedSet ? true : false"
-        :itemListSet="selectedSet ? selectedSet.items : []"
-        @add-items="handleAddItemsToSet"
-        :readonly="readonly"
-      />
-      <Resume
-        :itemList="selectedSet ? selectedSet.items : []"
-        :isVisible="selectedSet ? true : false"
-        :readonly="readonly"
-        :idset="selectedSet ? selectedSet.idset : null"
-        @toggle-resource="handleToggleResource"
-      />
-    </div>
   </div>
 </template>
 
@@ -559,7 +564,29 @@ onMounted(async() => {
       padding: 0 1rem;
     }
 
-    &.d__center {
+    &.d__main {
+      padding: 0 1rem;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .top-row {
+      // display: flex;
+      width: 100%;
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .top-row-left {
+      flex: 1;       // Le résumé prend toute la largeur possible
+    }
+
+    /* .top-row-right {
+      width: 40%;    // AddItemSet garde la même dimension qu'avant
+      max-width: 350px;
+    } */
+
+    .bottom-row {
       width: 100%;
     }
   }

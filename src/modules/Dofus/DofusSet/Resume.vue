@@ -26,6 +26,8 @@ const props = defineProps({
   },
 });
 
+const showResources = ref(false);
+
 const showShareDialog = ref(false);
 const shareLink = ref('');
 const isLoadingShare = ref(false);
@@ -275,147 +277,141 @@ const handleToggleCheckbox = (resource: any, checked: boolean) => {
 
     <v-divider color="white" class="my-4" :thickness="3" />
 
-    <!-- Infos globales -->
-    <v-card-text>
-      <v-row>
-        <v-col cols="12">
-          <div>Nombre d'objets à craft : <strong>{{ totalItemsToCraft }}</strong></div>
-          <div>Prix moyen total du set : <strong>{{ formatPrice(totalSetPrice) }} Kamas</strong></div>
-          <div>Prix du set à craft : <strong>{{ formatPrice(craftableSetPrice) }} Kamas</strong></div>
-          <div>
-            Prix total ajusté (après ressources existantes) :
-            <strong>{{ formatPrice(totalCraftPriceAdjusted) }} Kamas</strong>
-          </div>
+    <!-- LIGNE COMPACTE : infos globales + ressources -->
+    <v-card-text class="mb-2">
+      <v-row class="align-center">
+        <v-col cols="12" class="d-flex flex-wrap" style="gap: 18px;">
+
+          <!-- Infos globales -->
+          <div>Objets : <span class="font-weight-bold">{{ totalItemsToCraft }}</span></div>
+          <div>Prix total : <span class="font-weight-bold">{{ formatPrice(totalSetPrice) }} ₭</span></div>
+          <div>À craft : <span class="font-weight-bold">{{ formatPrice(craftableSetPrice) }} ₭</span></div>
+          <div>Ajusté : <span class="font-weight-bold">{{ formatPrice(totalCraftPriceAdjusted) }} ₭</span></div>
+
+          <!-- Infos ressources -->
+          <div>Ressources : <span class="font-weight-bold">{{ resources.length }}</span></div>
+          <div>Manquantes : <span class="font-weight-bold">{{ resources.filter((r) => r.obtained < r.total).length }}</span></div>
+          <div>Complètes : <span class="font-weight-bold">{{ resources.filter((r) => r.obtained >= r.total).length }}</span></div>
+
         </v-col>
       </v-row>
+
+      <!-- Checkbox juste en dessous -->
+      <div class="mt-2">
+        <v-checkbox
+          v-model="showCompleteResources"
+          label="Afficher ressources complètes"
+          density="compact"
+          color="green"
+          hide-details
+        />
+      </div>
     </v-card-text>
 
     <v-divider color="white" class="my-4" :thickness="3" />
 
-    <!-- Ressources -->
-    <v-card-text>
-      <v-row>
-        <v-col cols="8">
-          <div>Nombre de ressources : <strong>{{ resources.length }}</strong></div>
-          <div>
-            Ressources manquantes :
-            <strong>{{ resources.filter((r) => r.obtained < r.total).length }}</strong>
-          </div>
-          <div>
-            Ressources complètes :
-            <strong>{{ resources.filter((r) => r.obtained >= r.total).length }}</strong>
-          </div>
-        </v-col>
-        <v-col cols="4" class="d-flex align-center justify-end">
-          <v-checkbox
-            v-model="showCompleteResources"
-            label="Afficher ressources complètes"
-            density="compact"
-            color="green"
-          />
-        </v-col>
-      </v-row>
+    <!-- ⬇️ Toggle section -->
+    <v-card-text class="d-flex align-center justify-space-between mb-2"
+                style="cursor: pointer;"
+                @click="showResources = !showResources">
+
+      <span class="text-h6 font-weight-bold">Ressources</span>
+
+      <v-icon size="32" color="white">
+        {{ showResources ? 'mdi-chevron-up' : 'mdi-chevron-down' }}
+      </v-icon>
+
     </v-card-text>
 
-    <v-divider color="white" class="my-4" :thickness="3" />
+    <!-- 🔽 Contenu repliable -->
+    <v-expand-transition>
+      <div v-if="showResources">
 
-    <!-- Boutons de tri -->
-    <v-card-text class="d-flex gap-2 justify-end mb-2">
-      <v-btn
-        variant="outlined"
-        color="cyan"
-        @click="toggleSort('name')"
-        :append-icon="
-          sortKey === 'name'
-            ? sortDirection === 'asc'
-              ? 'mdi-arrow-up'
-              : 'mdi-arrow-down'
-            : ''
-        "
-      >
-        Nom
-      </v-btn>
+        <!-- Boutons de tri -->
+        <v-card-text class="d-flex gap-2 justify-start mb-2">
+          <v-btn
+            variant="outlined"
+            color="white"
+            @click="toggleSort('name')"
+            :append-icon="sortKey === 'name'
+              ? (sortDirection === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down')
+              : ''"
+          >
+            Nom
+          </v-btn>
 
-      <v-btn
-        variant="outlined"
-        color="cyan"
-        @click="toggleSort('quantity')"
-        :append-icon="
-          sortKey === 'quantity'
-            ? sortDirection === 'asc'
-              ? 'mdi-arrow-up'
-              : 'mdi-arrow-down'
-            : ''
-        "
-      >
-        Quantité
-      </v-btn>
+          <v-btn
+            variant="outlined"
+            color="white"
+            @click="toggleSort('quantity')"
+            :append-icon="sortKey === 'quantity'
+              ? (sortDirection === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down')
+              : ''"
+          >
+            Quantité
+          </v-btn>
 
-      <!-- ✅ Nouveau bouton tri par prix -->
-      <v-btn
-        variant="outlined"
-        color="cyan"
-        @click="toggleSort('price')"
-        :append-icon="
-          sortKey === 'price'
-            ? sortDirection === 'asc'
-              ? 'mdi-arrow-up'
-              : 'mdi-arrow-down'
-            : ''
-        "
-      >
-        Prix restant
-      </v-btn>
-    </v-card-text>
+          <v-btn
+            variant="outlined"
+            color="white"
+            @click="toggleSort('price')"
+            :append-icon="sortKey === 'price'
+              ? (sortDirection === 'asc' ? 'mdi-arrow-up' : 'mdi-arrow-down')
+              : ''"
+          >
+            Prix restant
+          </v-btn>
+        </v-card-text>
 
-    <!-- Liste des ressources -->
-    <v-card-text>
-      <v-list class="bg-blue-grey-lighten-1" dense>
-        <v-list-item
-          v-for="resource in filteredResources"
-          :key="resource.id"
-          class="resource-list-item"
-          :class="{
-            'bg-success': resource.obtained >= resource.total && showCompleteResources,
-          }"
-        >
-          <div class="d-flex align-center justify-space-between w-100">
-            <!-- Checkbox + image + nom -->
-            <div class="d-flex align-center" style="gap: 8px;">
-              <v-checkbox
-                density="compact"
-                hide-details
-                :model-value="resource.obtained >= resource.total"
-                @update:model-value="(checked: any) => handleToggleCheckbox(resource, checked)"
-              />
-              <v-avatar size="32">
-                <v-img
-                  :src="resource.item_img || 'https://via.placeholder.com/32'"
-                  alt="resource-image"
-                />
-              </v-avatar>
-              <span
-                class="truncate"
-                @click="handleCopyResourceName(resource.name)"
+        <!-- Liste des ressources -->
+        <v-card-text>
+          <v-row dense>
+            <v-col
+              v-for="resource in filteredResources"
+              :key="resource.id"
+              cols="12"
+              md="3"
+            >
+              <v-list-item
+                class="resource-list-item bg-blue-grey-lighten-1"
+                :class="{
+                  'bg-success': resource.obtained >= resource.total && showCompleteResources,
+                }"
               >
-                {{ resource.name }}
-              </span>
-            </div>
+                <div class="d-flex align-center justify-space-between w-100">
+                  
+                  <div class="d-flex align-center" style="gap: 8px;">
+                    <v-checkbox
+                      density="compact"
+                      hide-details
+                      :model-value="resource.obtained >= resource.total"
+                      @update:model-value="(checked: any) => handleToggleCheckbox(resource, checked)"
+                    />
+                    <v-avatar size="32">
+                      <v-img :src="resource.item_img || 'https://via.placeholder.com/32'" />
+                    </v-avatar>
+                    <span @click="handleCopyResourceName(resource.name)">
+                      {{ resource.name }}
+                    </span>
+                  </div>
 
-            <!-- Quantités -->
-            <div class="text-right">
-              <div>{{ resource.obtained }} / {{ resource.total }}</div>
-              <div class="text-caption">
-                {{ formatPrice(resource.unitPrice) }} ₭ /u
-              </div>
-              <div class="text-caption text-yellow-accent-2">
-                Restant : {{ formatPrice(resource.totalPriceRemaining) }} ₭
-              </div>
-            </div>
-          </div>
-        </v-list-item>
-      </v-list>
-    </v-card-text>
+                  <div class="text-right">
+                    <div>{{ resource.obtained }} / {{ resource.total }}</div>
+                    <div class="text-caption">{{ formatPrice(resource.unitPrice) }} ₭ /u</div>
+                    <div class="text-caption text-yellow-accent-2">
+                      Restant : {{ formatPrice(resource.totalPriceRemaining) }} ₭
+                    </div>
+                  </div>
+
+                </div>
+              </v-list-item>
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+      </div>
+    </v-expand-transition>
+
   </v-card>
 </template>
 

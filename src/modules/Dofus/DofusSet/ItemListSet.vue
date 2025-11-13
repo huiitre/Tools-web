@@ -241,7 +241,7 @@ const handleToggleIngredient = async(item: any, ingredient: any, checked: boolea
           v-for="(item, index) in sortedItemList"
           :key="item.iditem_has_set || `item-${index}`"
           cols="12"
-          md="6"
+          md="4"
         >
           <v-card class="item-card bg-blue-grey-lighten-1" outlined>
             <v-card-title class="d-flex justify-space-between align-center" style="gap: 16px;">
