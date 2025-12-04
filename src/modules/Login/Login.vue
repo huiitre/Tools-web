@@ -201,6 +201,7 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .login-container {
+  background-color: palevioletred;
   display: flex;
   flex-direction: column;
   align-self: center;
