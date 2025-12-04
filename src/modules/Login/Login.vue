@@ -16,8 +16,6 @@ if (import.meta.env.DEV) {
   REDIRECT_URI = 'https://tools.huiitre.fr'
 }
 
-console.log("%c Login.vue #19 || ci test", 'background:blue;color:#fff;font-weight:bold;');
-
 const platform = store.getters['Core/getPlatform'];
 const VITE_GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID_WEB
 
@@ -201,7 +199,6 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 .login-container {
-  background-color: palevioletred;
   display: flex;
   flex-direction: column;
   align-self: center;
