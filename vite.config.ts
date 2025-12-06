@@ -29,6 +29,15 @@ export default defineConfig({
         ]
       },
       workbox: {
+        maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+        navigateFallback: 'index.html',
+        globIgnores: [
+          '**/*worker*.js',
+          '**/ts.worker*.js',
+          '**/editor.worker*.js',
+          '**/index.*.js'
+        ],
         skipWaiting: true,
         clientsClaim: true,
         runtimeCaching: [
@@ -52,6 +61,9 @@ export default defineConfig({
     alias: {
       '@': resolve(__dirname, 'src')
     }
+  },
+  optimizeDeps: {
+    include: ["monaco-editor"]
   },
   css: {
     preprocessorOptions: {

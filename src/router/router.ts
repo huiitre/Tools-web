@@ -28,6 +28,7 @@ import TodolistList from "@/modules/Todolist/TodolistList.vue";
 import TodoListTodo from "@/modules/Todolist/TodolistTodo.vue";
 import DofusMinotororLab from "@/modules/Dofus/DofusMinotororLab/DofusMinotororLab.vue";
 import DofusAlmanax from "@/modules/Dofus/DofusAlmanax/DofusAlmanax.vue";
+import DofusQueryLab from "@/modules/Dofus/DofusQueryLab/DofusQueryLab.vue";
 
 export const routes = [
   {
@@ -90,6 +91,12 @@ export const routes = [
         path: 'une-ame-en-peine',
         component: DofusMinogolem,
         meta: { requireAuth: true, label: 'Une âme en peine' }
+      },
+      {
+        name: 'dofus-query-lab',
+        path: 'query-lab',
+        component: DofusQueryLab,
+        meta: { requireAuth: true, label: 'Query Lab' }
       },
       /* {
         name: 'dofus-event-galet',
