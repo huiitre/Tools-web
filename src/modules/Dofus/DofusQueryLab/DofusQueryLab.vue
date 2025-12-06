@@ -586,7 +586,7 @@ async function createNewQuery() {
     const defaultPayload = {
       title: "Nouvelle requête",
       description: "",
-      sqlRaw: "select * from item order by name limit 100"
+      sqlRaw: "select count(*) from item"
     }
 
     // 1️⃣ Création en base
