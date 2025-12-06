@@ -436,7 +436,8 @@ async function saveChanges() {
     await useMutationUpdateQuery(selectedQuery.value.id, {
       title: tempTitle.value,
       description: tempDescription.value,
-      sqlRaw: newSql
+      sqlRaw: newSql,
+      isPublic: selectedQuery.value.isPublic
     })
 
     // Mise à jour locale
@@ -822,7 +823,7 @@ async function createNewQuery() {
   border-left: 1px solid #444;
   overflow: hidden;
   transition: width 0.25s ease;
-  z-index: 2;
+  z-index: 4;
 }
 
 .right-panel.open {
