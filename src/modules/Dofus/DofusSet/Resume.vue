@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, defineEmits, defineProps, ref, Ref, watch } from 'vue';
-import { useMutationCreateShareLink } from '../hooks/useMutationSet';
+import { useMutationCreateShareToken } from '../hooks/useMutationSet';
 import { copyToClipboard } from '@/utils/Core/string';
 import toast from '@/services/toast';
 
@@ -29,15 +29,15 @@ const props = defineProps({
 const showResources = ref(false);
 
 const showShareDialog = ref(false);
-const shareLink = ref('');
+const shareToken = ref('');
 const isLoadingShare = ref(false);
 
 const shareSet = async () => {
   try {
     isLoadingShare.value = true;
-    shareLink.value = '';
-    const { data } = await useMutationCreateShareLink(props.idset);
-    shareLink.value = data.data.link;
+    shareToken.value = '';
+    const { data } = await useMutationCreateShareToken(props.idset);
+    shareToken.value = data.data.token;
   } catch (error) {
     console.error('Erreur lors du partage du set:', error);
   } finally {
@@ -46,10 +46,10 @@ const shareSet = async () => {
 };
 
 const handleCopyToClipboard = async () => {
-  if (!shareLink.value) return;
+  if (!shareToken.value) return;
 
-  const result = await copyToClipboard(shareLink.value);
-  if (result) toast.success(`Lien du set copié dans le presse-papier`);
+  const result = await copyToClipboard(shareToken.value);
+  if (result) toast.success(`Token de partage du set copié dans le presse-papier`);
   else toast.error(`Erreur lors de la copie dans le presse-papier`);
 };
 const handleCopyResourceName = async (name: string) => {
@@ -59,7 +59,7 @@ const handleCopyResourceName = async (name: string) => {
 };
 
 watch(showShareDialog, (newValue) => {
-  if (newValue) shareLink.value = '';
+  if (newValue) shareToken.value = '';
 });
 
 // ---------- États ----------
@@ -244,21 +244,17 @@ const handleToggleCheckbox = (resource: any, checked: boolean) => {
             </v-btn>
 
             <v-text-field
-              v-if="shareLink"
-              v-model="shareLink"
+              v-if="shareToken"
+              v-model="shareToken"
               @click="handleCopyToClipboard"
               @focus="(event: any) => event.target.select()"
-              label="Lien de partage"
+              label="Token à partager"
               readonly
               outlined
               density="compact"
               hide-details
               class="bg-blue-grey-lighten-3 rounded"
             />
-
-            <v-btn color="grey darken-1" variant="flat" block rounded disabled>
-              Exporter le set
-            </v-btn>
           </v-card-text>
 
           <v-card-actions class="justify-end pt-4">
