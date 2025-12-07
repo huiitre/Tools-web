@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, reactive, Ref, watch } from 'vue';
 import { useFetchItemListWeb } from '../hooks/useFetchItemList'
-import { useFetchSetById, useFetchSetList, useFetchSharedSetByToken } from '../hooks/useFetchSet';
+import { useFetchSetById, useFetchSetList } from '../hooks/useFetchSet';
 import { useRoute, useRouter } from 'vue-router';
 import AddItemSet from './AddItemSet.vue';
-import { useMutationAddItemsToSet, useMutationCreateSet, useMutationDeleteItemsToSet, useMutationDeleteSet, useMutationEditSet, useMutationMultiplier, useMutationQuantityAlreadyObtained } from '../hooks/useMutationSet';
+import ImportSetDialog from './ImportSetDialog.vue';
+import { createImportedSet, useMutationAddItemsToSet, useMutationCreateSet, useMutationDeleteItemsToSet, useMutationDeleteSet, useMutationEditSet, useMutationMultiplier, useMutationQuantityAlreadyObtained } from '../hooks/useMutationSet';
 import toast from '@/services/toast';
 import ItemListSet from './ItemListSet.vue';
 import Resume from './Resume.vue';
@@ -278,55 +279,54 @@ const fetchSet = async(idset: any) => {
   }
 }
 
-const fetchSetInfo = async (setCode: string | undefined) => {
-  if (!setCode) {
-    selectedSet.value = null;
-    return;
-  }
-
-  const set = setList.value.find((set) => set.code === setCode);
-
-  console.log("%c DofusSet.vue #224 || set : ", 'background:red;color:#fff;font-weight:bold;',  set);
-
-  if (!set) {
-    selectedSet.value = null;
-    router.push({ name: 'dofus-set', params: {} });
-    return
-  }
-  selectedSet.value = set;
-};
-
-const fetchSetInfoShared = async(token: string) => {
-  try {
-    const { data } = await useFetchSharedSetByToken(token)
-    selectedSet.value = data.data
-  } catch(err) {
-    console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
-    router.push({ name: 'dofus-set', params: {} });
-  }
-}
-
-onMounted(async() => {
+const fetchSets = async () => {
   try {
     loadingGlobal.value = true
     const { data } = await useFetchSetList()
     setList.value = data.data
 
-    if (route.name === 'dofus-set-shared' && route.params.token)
-      await fetchSetInfoShared(route.params.token as string)
-    else
-      fetchSetInfo(route.params.setCode as string | undefined);
   } catch(err) {
     console.log("%c DofusSet.vue #12 || err : ", 'background:red;color:#fff;font-weight:bold;', err);
   } finally {
     loadingGlobal.value = false
   }
+};
+
+onMounted(async() => {
+  await fetchSets()
 })
+const showImportDialog = ref(false);
+const handleImportSet = () => {
+  showImportDialog.value = true;
+}
+const handleCreateImportedSet = async (importedSet: any) => {
+  try {
+    // Appel API pour sauvegarder réellement le set
+    const { data } = await createImportedSet(importedSet);
+
+    console.log("SET IMPORTÉ CRÉÉ :", data);
+
+    // Fermer la popup
+    showImportDialog.value = false;
+
+    // Recharger la liste des sets
+    await fetchSets();
+  } catch (error: any) {
+    console.error("Erreur lors de la création du set importé :", error);
+
+    toast.error("Impossible de créer le set.");
+  }
+};
 
 </script>
 
 <template>
   <div class="dofus-set">
+
+    <ImportSetDialog
+      v-model="showImportDialog"
+      @confirm="handleCreateImportedSet"
+    />
 
     <v-overlay
       :model-value="loadingGlobal"
@@ -397,12 +397,11 @@ onMounted(async() => {
 
         <v-list-item 
           v-if="setFilter !== 'archived'" 
-          disabled
           append-icon="mdi-import" 
-          title="Importer un set" 
+          title="Importer"
           value="import_set"
           class="d__l__set d__l__set-import bg-grey"
-          @click=""
+          @click="handleImportSet"
         ></v-list-item>
 
         <v-list-item 

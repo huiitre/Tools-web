@@ -82,7 +82,7 @@ export const routes = [
       },
       {
         name: 'dofus-set',
-        path: 'set/:setCode?',
+        path: 'set',
         component: DofusSet,
         meta: { requireAuth: true, label: 'Gestion Set' }
       },

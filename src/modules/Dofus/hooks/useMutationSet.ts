@@ -71,10 +71,25 @@ export const useMutationQuantityAlreadyObtained = async (idset: any, idrecipe_it
   })
 }
 
-export const useMutationCreateShareLink = async(idset: number) => {
+export const useMutationCreateShareToken = async(idset: number) => {
   return await clientV2.post(`/dofus/set/${idset}/share`, {}, {
     headers: {
       requireToken: true
     }
   })
 }
+
+export const createImportedSet = async (importPayload: any) => {
+  try {
+    return await clientV2.post(
+      "/dofus/set/import/create",
+      importPayload,
+      {
+        headers: { requireToken: true }
+      }
+    );
+  } catch (err) {
+    console.error("Erreur API createImportedSet :", err);
+    throw err;
+  }
+};
