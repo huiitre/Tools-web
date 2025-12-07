@@ -155,7 +155,7 @@ const source = ref("local");
 
 const sources = [
   { label: "Importer localement", value: "local" },
-  { label: "Importer depuis DofusBook", value: "dofusbook" }
+  { label: "Importer depuis l'atelier DofusBook", value: "dofusbook" }
   // { label: "Importer depuis DofusDB", value: "dofusdb" }
 ];
 
@@ -178,6 +178,7 @@ const resetState = () => {
   step.value = 1;
   error.value = "";
   inputValue.value = "";
+  source.value = "local";
 };
 
 const handleImport = async () => {
