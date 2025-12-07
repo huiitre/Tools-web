@@ -16,8 +16,7 @@
             label="Source de l'import"
             :items="sources"
             v-model="source"
-            item-title="label"
-            item-value="value"
+            item-disabled="disabled"
           />
 
           <!-- Champ token / URL -->
@@ -154,8 +153,9 @@ const error = ref("");
 const source = ref("local");
 
 const sources = [
-  { label: "Importer localement", value: "local" },
-  { label: "Importer depuis l'atelier DofusBook", value: "dofusbook" }
+  { title: "Importer localement", value: "local" },
+  { title: "Importer depuis l'atelier DofusBook", value: "dofusbook-workshop" },
+  { title: "Importer un stuff DofusBook", value: "dofusbook-build", props: { disabled: true } },
   // { label: "Importer depuis DofusDB", value: "dofusdb" }
 ];
 
@@ -186,13 +186,9 @@ const handleImport = async () => {
   isLoading.value = true;
 
   try {
-    const { data } = await getImportData(source.value, inputValue.value/* 'd6bee445f7a501f2cbe2ee94bfb527ff755f1bb7a013887e3a69e39c190daf4e' */);
-
-    console.log("%c ImportSetDialog.vue #119 || data : ", 'background:red;color:#fff;font-weight:bold;', data);
+    const { data } = await getImportData(source.value, inputValue.value);
 
     previewSet.value = data.data;
-
-    console.log("%c ImportSetDialog.vue #121 || previewSet.value : ", 'background:red;color:#fff;font-weight:bold;', previewSet.value);
 
     step.value = 2;
   } catch (err: any) {
