@@ -29,5 +29,9 @@ jobs:
             --build-arg VITE_GOOGLE_API_KEY="${{ secrets.VITE_GOOGLE_API_KEY }}" \
             -t huiitre/tools_web:latest .
 
+          docker tag huiitre/tools_web:latest huiitre/tools_web:qa
+
       - name: Push Docker image
-        run: docker push huiitre/tools_web:latest
+        run: |
+          docker push huiitre/tools_web:latest
+          docker push huiitre/tools_web:qa
