@@ -1,36 +1,54 @@
 <script setup lang="ts">
 import router from '@/router/router';
 import store from '@/store/store';
-import { computed, Ref, ref, watch } from 'vue';
+import { computed, reactive, Ref, ref, watch } from 'vue';
 
-import changelog from '@/CHANGELOG.js'
 import toast from '@/services/toast';
 import { useMutationAddFeedback } from './hooks/useMutationFeedback';
 
-const lastChangelog = changelog[0] || { version: 'unknown' };
-const appVersion = lastChangelog.version;
-const releaseNotes: Ref<any> = ref([])
+const appVersion = ref(store.getters['Core/getVersion']);
+
 const showReleaseNotes = ref(false)
 
-const platform = store.getters['Core/getPlatform']
+function compareSemVer(a: string, b: string) {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
 
-const fetchReleaseNote = async () => {
-  try {
-    releaseNotes.value = changelog.map((entry: any) => ({
-      ...entry,
-      isCurrent: entry.version == appVersion,
-      isLatest: entry.version == changelog[0].version,
-    }));
-  } catch (err) {
-    console.error("%c Header.vue || err : ", 'background:red;color:#fff;', err);
-    releaseNotes.value = [];
+  for (let i = 0; i < 3; i++) {
+    if ((pa[i] || 0) > (pb[i] || 0)) return -1;
+    if ((pa[i] || 0) < (pb[i] || 0)) return 1;
   }
-};
 
-watch(showReleaseNotes, (newValue) => {
-  if (newValue) {
-    fetchReleaseNote();
+  return 0;
+}
+
+const rawNotes = computed(() => store.getters['Core/getReleasesNote']);
+const groupedNotes = computed<any[]>(() => {
+  const groups: any = {};
+
+  for (const entry of rawNotes.value) {
+    const v = entry.version;
+
+    if (!groups[v]) {
+      groups[v] = {
+        version: v,
+        createdAt: entry.createdAt,
+        notes: []
+      };
+    }
+
+    groups[v].notes.push({
+      module: entry.module,
+      description: entry.description,
+      createdAt: entry.createdAt,
+      requiresFrontUpdate: entry.requiresFrontUpdate
+    });
   }
+
+  // Transformer en tableau + tri DESC par version (SemVer possible)
+  return Object.values(groups).sort((a: any, b: any) => {
+    return compareSemVer(a.version, b.version);
+  });
 });
 
 const showBugReportDialog = ref(false)
@@ -149,7 +167,7 @@ const handleDisconnect = () => {
       </v-app-bar-title>
       <v-spacer></v-spacer>
       <v-btn class="text-caption font-weight-light" @click="showReleaseNotes = true">
-        {{ appVersion }}
+        {{ appVersion || '...' }}
       </v-btn>
       <v-btn icon color="grey lighten-1" @click="showBugReportDialog = true">
         <v-icon>mdi-bug</v-icon>
@@ -159,19 +177,19 @@ const handleDisconnect = () => {
 
   <v-dialog v-model="showReleaseNotes" max-width="700px">
     <v-card>
-      <!-- Titre principal -->
       <v-card-title class="headline text-center text-h5 font-weight-bold bg-success text-white">
         Notes de version - {{ appVersion }}
       </v-card-title>
 
       <v-card-text>
-        <!-- Liste des versions -->
-        <div v-for="(release, index) in releaseNotes" :key="index" class="mb-6">
-          <!-- Version avec background colorisé -->
+        <div v-for="(release, index) in groupedNotes" :key="index" class="mb-6">
+          
+          <!-- Titre de la version -->
           <div
             class="d-inline-block rounded-lg px-3 py-2 font-weight-bold text-subtitle-1 bg-grey-lighten-3"
           >
-            {{ release.version }} - {{ new Date(release.releaseDate).toLocaleDateString('fr-FR').replace(/\//g, '-') }}
+            {{ release.version }} - 
+            {{ new Date(release.createdAt).toLocaleDateString('fr-FR').replace(/\//g, '-') }}
           </div>
 
           <!-- Notes -->
@@ -181,14 +199,13 @@ const handleDisconnect = () => {
               :key="idx"
               class="mb-2"
             >
-              <span class="font-weight-bold">{{ note.split(':')[0] }}:</span>
-              <span> {{ note.split(':').slice(1).join(':') }}</span>
+              <strong>{{ note.module }} :</strong>
+              <span>{{ note.description }}</span>
             </li>
           </ul>
         </div>
       </v-card-text>
 
-      <!-- Actions -->
       <v-card-actions>
         <v-spacer></v-spacer>
         <v-btn color="primary" variant="text" @click="showReleaseNotes = false">Fermer</v-btn>

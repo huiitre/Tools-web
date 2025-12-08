@@ -25,3 +25,9 @@ export const clearLS = () => LS.clear()
 export const setUserModules = (state: any, modules: any) => state.modules = modules
 
 export const setPlatform = (state: any, platform: string) => state.platform = platform
+
+export const setVersion = (state: any, version: string) => state.version = version
+export const setRequiresFrontUpdate = (state: any, flag: boolean) => state.requiresFrontUpdate = flag
+export const setReleasesNote = (state: any, notes: any[]) => {
+  state.releasesNote = notes;
+}

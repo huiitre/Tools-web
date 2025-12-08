@@ -11,7 +11,10 @@ const state = {
   user: { ...baseUser },
   isLoading: false,
   modules: [],
-  platform: 'desktop'
+  platform: 'desktop',
+  version: null,
+  requiresFrontUpdate: false,
+  releasesNote: [] as any[]
 };
 export default {
   namespaced: true,
