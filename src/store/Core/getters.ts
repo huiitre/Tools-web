@@ -4,3 +4,6 @@ export const isLoading = (state: any) => state.isLoading
 export const getUserModules = (state: any) => state.modules
 export const getUserInfos = (state: any) => state.user
 export const getPlatform = (state: any) => state.platform
+export const getVersion = (state: any) => state.version
+export const getRequiresFrontUpdate = (state: any) => state.requiresFrontUpdate
+export const getReleasesNote = (state: any) => state.releasesNote

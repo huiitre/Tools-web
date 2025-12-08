@@ -45,7 +45,6 @@ const vuetify = createVuetify({
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    // Recharge automatiquement quand une nouvelle version est dispo
     updateSW(true)
   },
   onOfflineReady() {
@@ -54,8 +53,16 @@ const updateSW = registerSW({
 })
 
 // --- Création de l’app ---
-const app = createApp(App)
-app.use(store)
-app.use(router)
-app.use(vuetify)
-app.mount('#app')
+const app = createApp(App);
+
+(async () => {
+  const latest = await store.dispatch('Core/getLatestVersion');
+  store.commit('Core/setVersion', latest?.version);
+  store.commit('Core/setRequiresFrontUpdate', latest?.requires_front_update);
+
+  app.use(store)
+  app.use(router)
+  app.use(vuetify)
+
+  app.mount('#app')
+})();

@@ -2,19 +2,34 @@
 import Page from '@/router/Page.vue';
 import Header from './components/Header/Header.vue';
 import store from '@/store/store';
-import { computed, onMounted } from 'vue';
+import { computed, onBeforeUnmount, onMounted } from 'vue';
 
 import { initGapi } from "@/services/googleApi"
 import toast from './services/toast';
+
+let updateInterval: number | null = null;
+
 onMounted(async () => {
   try {
     await initGapi()
     console.log("✅ GAPI prêt")
+
+    store.dispatch('Core/getAllReleaseNotes');
+
+    updateInterval = window.setInterval(() => {
+      console.log("✅ Vérification de la version ...")
+      store.dispatch('Core/checkForUpdate');
+    }, 5 * 60 * 1000);
+
   } catch (err) {
     console.error("Erreur init GAPI :", err)
     toast.error("Erreur lors de l'initialisation de Google API")
   }
 })
+
+onBeforeUnmount(() => {
+  if (updateInterval) clearInterval(updateInterval);
+});
 
 const isLogged = computed(() => store.getters['Core/isLogged'])
 

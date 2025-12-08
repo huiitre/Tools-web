@@ -9,12 +9,64 @@ import { useFetchConnexionWithGoogle } from '@/modules/Login/hooks/useFetchConne
 import { clientV2 } from '@/services/axiosInstance'
 import { isMobileDevice, isPWA } from '@/composables/useDeviceDetection';
 
+export const getLatestVersion = async () => {
+  try {
+    const { data } = await clientV2.get('/core/version/latest');
+    return {
+      version: data?.version,
+      requires_front_update: data?.requires_front_update ?? false
+    };
+  } catch (err: any) {
+    console.error('Erreur récupération dernière version :', err);
+    return null;
+  }
+};
+
+export const getAllReleaseNotes = async ({ commit }: any) => {
+  try {
+    const { data } = await clientV2.get('/core/version', { headers: { requireToken: true } });
+    commit('setReleasesNote', data.data || []);
+    return data.data;
+  } catch (err) {
+    console.error("Erreur récupération release notes :", err);
+    commit('setReleasesNote', []);
+    return [];
+  }
+};
+
+export const checkForUpdate = async({ state, commit, dispatch }: any) => {
+  try {
+    const latest = await dispatch('getLatestVersion');
+
+    if (!latest) return;
+
+    const current = state.version;
+
+    // Mise à jour de la version dans tous les cas
+    commit('setVersion', latest?.version);
+
+    // Comparaison si version différente ET flag de mise à jour obligatoire
+    if (
+      current &&
+      latest.version !== current.version &&
+      latest.requires_front_update === true
+    ) {
+      commit('setRequiresFrontUpdate', true);
+    }
+
+  } catch (err) {
+    console.error("Erreur checkForUpdate:", err);
+  }
+}
+
 const handleLogin = async (authFunction: () => Promise<any>) => {
   try {
     const { data } = await authFunction();
 
     const userInfos = createUserInfos(data.data);
     store.dispatch('Core/insertUser', userInfos);
+
+    await store.dispatch('getAllReleaseNotes');
 
     return { msg: 'Connexion réussie !' };
   } catch (err: any) {
