@@ -6,7 +6,9 @@ import { computed, reactive, Ref, ref, watch } from 'vue';
 import toast from '@/services/toast';
 import { useMutationAddFeedback } from './hooks/useMutationFeedback';
 
-const appVersion = ref(store.getters['Core/getVersion']);
+const appVersion = computed(() => store.getters['Core/getVersion'])
+
+const requiresFrontUpdate = computed(() => store.getters['Core/getRequiresFrontUpdate'])
 
 const showReleaseNotes = ref(false)
 
@@ -21,6 +23,8 @@ function compareSemVer(a: string, b: string) {
 
   return 0;
 }
+
+const handleRefresh = () => window.location.reload()
 
 const rawNotes = computed(() => store.getters['Core/getReleasesNote']);
 const groupedNotes = computed<any[]>(() => {
@@ -166,9 +170,26 @@ const handleDisconnect = () => {
         </router-link>
       </v-app-bar-title>
       <v-spacer></v-spacer>
-      <v-btn class="text-caption font-weight-light" @click="showReleaseNotes = true">
+      
+      <v-badge
+        v-if="requiresFrontUpdate"
+        content="1"
+        color="red"
+        offset-x="5"
+        offset-y="5"
+      >
+        <v-btn class="text-caption font-weight-light" @click="showReleaseNotes = true">
+          {{ appVersion || '...' }}
+        </v-btn>
+      </v-badge>
+      <v-btn
+        v-else
+        class="text-caption font-weight-light"
+        @click="showReleaseNotes = true"
+      >
         {{ appVersion || '...' }}
       </v-btn>
+
       <v-btn icon color="grey lighten-1" @click="showBugReportDialog = true">
         <v-icon>mdi-bug</v-icon>
       </v-btn>
@@ -177,7 +198,10 @@ const handleDisconnect = () => {
 
   <v-dialog v-model="showReleaseNotes" max-width="700px">
     <v-card>
-      <v-card-title class="headline text-center text-h5 font-weight-bold bg-success text-white">
+      <v-card-title v-on:click="handleRefresh" v-if="requiresFrontUpdate" class="new-version headline text-center text-h5 font-weight-bold bg-success text-white">
+        Une nouvelle version ({{ appVersion }}) est disponible. Cliquez ici pour mettre à jour le site.
+      </v-card-title>
+      <v-card-title v-else class="headline text-center text-h5 font-weight-bold bg-grey text-white">
         Notes de version - {{ appVersion }}
       </v-card-title>
 
@@ -246,5 +270,10 @@ const handleDisconnect = () => {
 </template>
 
 <style lang="scss" scoped>
-
+.new-version {
+  cursor: pointer;
+  white-space: normal !important;
+  overflow: visible !important;
+  text-overflow: initial !important;
+}
 </style>
