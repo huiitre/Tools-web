@@ -48,7 +48,7 @@ export const checkForUpdate = async({ state, commit, dispatch }: any) => {
     // Comparaison si version différente ET flag de mise à jour obligatoire
     if (
       current &&
-      latest.version !== current.version &&
+      latest.version != current &&
       latest.requires_front_update === true
     ) {
       commit('setRequiresFrontUpdate', true);

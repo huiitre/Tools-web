@@ -20,6 +20,8 @@ onMounted(async () => {
       console.log("✅ Vérification de la version ...")
       store.dispatch('Core/checkForUpdate');
     }, 5 * 60 * 1000);
+    // 5 * 60 * 1000 = 5min
+    // 10 * 1000 = 10sec
 
   } catch (err) {
     console.error("Erreur init GAPI :", err)

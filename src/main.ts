@@ -58,7 +58,6 @@ const app = createApp(App);
 (async () => {
   const latest = await store.dispatch('Core/getLatestVersion');
   store.commit('Core/setVersion', latest?.version);
-  store.commit('Core/setRequiresFrontUpdate', latest?.requires_front_update);
 
   app.use(store)
   app.use(router)
