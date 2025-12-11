@@ -66,7 +66,7 @@ const handleLogin = async (authFunction: () => Promise<any>) => {
     const userInfos = createUserInfos(data.data);
     store.dispatch('Core/insertUser', userInfos);
 
-    await store.dispatch('getAllReleaseNotes');
+    await store.dispatch('Core/getAllReleaseNotes');
 
     return { msg: 'Connexion réussie !' };
   } catch (err: any) {

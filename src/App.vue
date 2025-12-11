@@ -9,12 +9,16 @@ import toast from './services/toast';
 
 let updateInterval: number | null = null;
 
+const isLogged = computed(() => store.getters['Core/isLogged'])
+
 onMounted(async () => {
   try {
     await initGapi()
     console.log("✅ GAPI prêt")
 
-    store.dispatch('Core/getAllReleaseNotes');
+    if (isLogged.value) {
+      store.dispatch('Core/getAllReleaseNotes');
+    }
 
     updateInterval = window.setInterval(() => {
       console.log("✅ Vérification de la version ...")
@@ -32,8 +36,6 @@ onMounted(async () => {
 onBeforeUnmount(() => {
   if (updateInterval) clearInterval(updateInterval);
 });
-
-const isLogged = computed(() => store.getters['Core/isLogged'])
 
 const body = document.querySelector('body')
 body?.classList.add('main-theme')
