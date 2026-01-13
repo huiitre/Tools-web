@@ -21,9 +21,8 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg VITE_TOOLS_API_URL_V1="${{ secrets.VITE_TOOLS_API_URL_V1 }}" \
-            --build-arg VITE_TOOLS_API_URL_V2="${{ secrets.VITE_TOOLS_API_URL_V2 }}" \
-            --build-arg VITE_TOOLS_BACKEND_URL="${{ secrets.VITE_TOOLS_BACKEND_URL }}" \
+            --build-arg VITE_MODE=production \
+            --build-arg VITE_TOOLS_API_BASE_URL="${{ secrets.VITE_TOOLS_API_BASE_URL }}" \
             --build-arg VITE_GOOGLE_CLIENT_ID_WEB="${{ secrets.VITE_GOOGLE_CLIENT_ID_WEB }}" \
             --build-arg VITE_GOOGLE_CLIENT_ID_ANDROID="${{ secrets.VITE_GOOGLE_CLIENT_ID_ANDROID }}" \
             --build-arg VITE_GOOGLE_API_KEY="${{ secrets.VITE_GOOGLE_API_KEY }}" \

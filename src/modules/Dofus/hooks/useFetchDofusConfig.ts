@@ -21,7 +21,7 @@ export const useFetchUpdateItemTypes = (
     return null
   }
 
-  const url = `${import.meta.env.VITE_TOOLS_API_URL_V2}/dofus/configuration/update-item-types?token=${rememberToken}`
+  const url = `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v2/dofus/configuration/update-item-types?token=${rememberToken}`
 
   const eventSource = new EventSource(url, { withCredentials: true })
 
@@ -72,7 +72,7 @@ export const useFetchUpdateItems = (
     return null
   }
 
-  const url = `${import.meta.env.VITE_TOOLS_API_URL_V2}/dofus/configuration/update-items?token=${rememberToken}`
+  const url = `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v2/dofus/configuration/update-items?token=${rememberToken}`
 
   const eventSource = new EventSource(url, { withCredentials: true })
 
@@ -123,7 +123,7 @@ export const useFetchUpdateRecipes = (
     return null
   }
 
-  const url = `${import.meta.env.VITE_TOOLS_API_URL_V2}/dofus/configuration/update-recipes?token=${rememberToken}`
+  const url = `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v2/dofus/configuration/update-recipes?token=${rememberToken}`
 
   const eventSource = new EventSource(url, { withCredentials: true })
 
