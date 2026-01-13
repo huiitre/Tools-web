@@ -21,7 +21,10 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            --build-arg VITE_MODE=production \
+            --build-arg VITE_TOOLS_API_BASE_URL="https://api.tools.huiitre.fr" \
+            --build-arg VITE_GOOGLE_CLIENT_ID_WEB="${{ secrets.VITE_GOOGLE_CLIENT_ID_WEB }}" \
+            --build-arg VITE_GOOGLE_CLIENT_ID_ANDROID="${{ secrets.VITE_GOOGLE_CLIENT_ID_ANDROID }}" \
+            --build-arg VITE_GOOGLE_API_KEY="${{ secrets.VITE_GOOGLE_API_KEY }}" \
             -t huiitre/tools_web:latest .
 
       - name: Push Docker image
