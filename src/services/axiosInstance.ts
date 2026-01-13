@@ -24,6 +24,8 @@ const clientV3 = axios.create({
   }
 })
 
+console.log("%c axiosInstance.ts #27 || import.meta.env.VITE_TOOLS_API_BASE_URL : ", 'background:red;color:#fff;font-weight:bold;', import.meta.env.VITE_TOOLS_API_BASE_URL);
+
 const interceptors = (client: any) => {
   client.interceptors.request.use(async(config: any) => {
 
