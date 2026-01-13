@@ -19,7 +19,7 @@ COPY package*.json ./
 RUN npm install
 
 COPY . .
-RUN npm run build -- --mode ${VITE_MODE}
+RUN npm run build
 
 # --- Runtime stage ------------------------------------------------
 FROM nginx:alpine
