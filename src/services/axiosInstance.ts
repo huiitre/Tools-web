@@ -5,13 +5,20 @@ import router from "@/router/router";
 import toast from "./toast";
 // import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
 const clientV1 = axios.create({
-  baseURL: import.meta.env.VITE_TOOLS_API_URL_V1,
+  baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v1`,
   headers: {
     'Content-Type': 'application/json',
   }
 })
 const clientV2 = axios.create({
-  baseURL: import.meta.env.VITE_TOOLS_API_URL_V2,
+  baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v2`,
+  headers: {
+    'Content-Type': 'application/json',
+  }
+})
+
+const clientV3 = axios.create({
+  baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v3`,
   headers: {
     'Content-Type': 'application/json',
   }
@@ -159,5 +166,6 @@ const interceptors = (client: any) => {
 
 interceptors(clientV1)
 interceptors(clientV2)
+interceptors(clientV3)
 
-export { clientV1, clientV2 };
+export { clientV1, clientV2, clientV3 };
