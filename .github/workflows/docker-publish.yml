@@ -25,6 +25,7 @@ jobs:
             --build-arg VITE_GOOGLE_CLIENT_ID_WEB="${{ secrets.VITE_GOOGLE_CLIENT_ID_WEB }}" \
             --build-arg VITE_GOOGLE_CLIENT_ID_ANDROID="${{ secrets.VITE_GOOGLE_CLIENT_ID_ANDROID }}" \
             --build-arg VITE_GOOGLE_API_KEY="${{ secrets.VITE_GOOGLE_API_KEY }}" \
+            --build-arg VITE_GITHUB_CLIENT_ID="${{ secrets.VITE_GITHUB_CLIENT_ID }}" \
             -t huiitre/tools_web:latest .
 
       - name: Push Docker image
