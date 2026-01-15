@@ -1,75 +1,11 @@
 <script setup lang="ts">
-import Page from '@/router/Page.vue';
-import Header from './components/Header/Header.vue';
-import store from '@/store/store';
-import { computed, onBeforeUnmount, onMounted } from 'vue';
-
-import { initGapi } from "@/services/googleApi"
-import toast from './services/toast';
-
-let updateInterval: number | null = null;
-
-const isLogged = computed(() => store.getters['Core/isLogged'])
-
-onMounted(async () => {
-  try {
-    await initGapi()
-    console.log("✅ GAPI prêt")
-
-    if (isLogged.value) {
-      store.dispatch('Core/getAllReleaseNotes');
-    }
-
-    updateInterval = window.setInterval(() => {
-      console.log("✅ Vérification de la version ...")
-      store.dispatch('Core/checkForUpdate');
-    }, 5 * 60 * 1000);
-    // 5 * 60 * 1000 = 5min
-    // 10 * 1000 = 10sec
-
-  } catch (err) {
-    console.error("Erreur init GAPI :", err)
-    toast.error("Erreur lors de l'initialisation de Google API")
-  }
-})
-
-onBeforeUnmount(() => {
-  if (updateInterval) clearInterval(updateInterval);
-});
-
-const body = document.querySelector('body')
-body?.classList.add('main-theme')
-
-const isLoading = computed(() => store.getters['Core/isLoading'])
+import Page from '@/router/Page.vue'
 </script>
 
 <template>
-  <v-app>
-    <Header v-if="isLogged" />
-
-    <v-main>
-      <router-view v-slot="{ Component }">
-        <!-- <transition name="fade" mode="out-in"> -->
-        <Page>
-          <component :is="Component" />
-        </Page>
-        <!-- </transition> -->
-      </router-view>
-    </v-main>
-    <v-overlay
-      :model-value="isLoading"
-      class="align-center justify-center"
-      persistent
-    >
-      <v-progress-circular
-        color="primary"
-        size="64"
-        indeterminate
-      ></v-progress-circular>
-    </v-overlay>
-  </v-app>
+  <router-view v-slot="{ Component }">
+    <Page>
+      <component :is="Component" />
+    </Page>
+  </router-view>
 </template>
-
-<style scoped>
-
-</style>

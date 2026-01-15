@@ -62,16 +62,11 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
-  optimizeDeps: {
-    include: ["monaco-editor"]
-  },
   css: {
     preprocessorOptions: {
       scss: {
         additionalData: `
-          @use "@/assets/styles/_vars.css";
           @use "@/assets/styles/reset.scss";
-          @use "@/assets/styles/light-icon.css";
         `
       }
     },
