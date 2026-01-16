@@ -7,7 +7,7 @@ const toast = {
 		createToast(message, {
 			hideProgressBar: false,
 			showIcon: true,
-			position: 'bottom-right',
+			position: 'bottom-center',
 			type: 'success',
 			transition: 'bounce',
 			swipeClose: true,
@@ -18,7 +18,7 @@ const toast = {
 		createToast(message, {
 			hideProgressBar: false,
 			showIcon: true,
-			position: 'bottom-right',
+			position: 'bottom-center',
 			type: 'danger',
 			transition: 'bounce',
 			swipeClose: true,
@@ -29,7 +29,7 @@ const toast = {
 		createToast(message, {
 			hideProgressBar: false,
 			showIcon: true,
-			position: 'bottom-right',
+			position: 'bottom-center',
 			type: 'warning',
 			transition: 'bounce',
 			swipeClose: true,
@@ -40,7 +40,7 @@ const toast = {
 		createToast(message, {
 			hideProgressBar: false,
 			showIcon: true,
-			position: 'bottom-right',
+			position: 'bottom-center',
 			type: 'info',
 			transition: 'bounce',
 			swipeClose: true,
@@ -51,7 +51,7 @@ const toast = {
 		createToast(message, {
 			hideProgressBar: false,
 			showIcon: true,
-			position: 'bottom-right',
+			position: 'bottom-center',
 			type: 'info',
 			transition: 'bounce',
 			timeout: -1,
