@@ -4,9 +4,7 @@
 
 <template>
   <div id="home">
-
-    xsdsqdsqd
-
+    
   </div>
 </template>
 

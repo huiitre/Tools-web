@@ -1,17 +1,7 @@
 <script setup lang="ts">
-import { getTheme, toggleTheme } from '@/ui/theme'
-import { ref, onMounted } from 'vue'
+import { RouterLink } from 'vue-router'
 
 const year = new Date().getFullYear()
-const theme = ref<'dark' | 'light'>('dark')
-
-onMounted(() => {
-  theme.value = getTheme()
-})
-
-const onToggleTheme = () => {
-  theme.value = toggleTheme()
-}
 </script>
 
 <template>
@@ -19,28 +9,28 @@ const onToggleTheme = () => {
     <nav class="footer-nav">
       <!-- GAUCHE -->
       <div class="footer-left">
-        <small>© {{ year }} Tools</small>
+        <RouterLink to="/">
+          <small>© {{ year }} Tools</small>
+        </RouterLink>
       </div>
 
       <!-- CENTRE -->
       <ul class="footer-links">
-        <li><a href="/privacy-policy">Confidentialité</a></li>
-        <li><a href="/terms-of-service">Conditions</a></li>
+        <li>
+          <RouterLink to="/privacy-policy">Confidentialité</RouterLink>
+        </li>
+        <li>
+          <RouterLink to="/terms-of-service">Conditions</RouterLink>
+        </li>
       </ul>
 
-      <!-- DROITE : SWITCH PICO -->
-      <div class="footer-theme">
-        <label class="theme-switch">
-          <input
-            type="checkbox"
-            role="switch"
-            :checked="theme === 'dark'"
-            @change="onToggleTheme"
-          />
-          <span class="icon" aria-hidden="true">
-            {{ theme === 'dark' ? '🌙' : '☀️' }}
-          </span>
-        </label>
+      <!-- DROITE -->
+      <div class="footer-right">
+        <span class="app-version">v3.0.0</span>
+
+        <button class="icon-button" aria-label="Feedback">
+          <i class="fa-solid fa-bug" aria-hidden="true"></i>
+        </button>
       </div>
     </nav>
   </footer>
@@ -52,6 +42,7 @@ const onToggleTheme = () => {
   padding: 1rem;
   margin-top: auto;
   border-top: 1px solid var(--pico-muted-border-color);
+  color: var(--pico-color);
 }
 
 /* Mobile first */
@@ -72,17 +63,41 @@ const onToggleTheme = () => {
   list-style: none;
 }
 
-/* Switch discret */
-.theme-switch {
+.footer-right {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  font-size: 0.9rem;
+  gap: 0.75rem;
 }
 
-.theme-switch .icon {
+.app-version {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+}
+
+.icon-button {
+  width: 2rem;
+  height: 2rem;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+
+  color: inherit;
   line-height: 1;
-  user-select: none;
+}
+
+.icon-button > i {
+  display: block;
+  color: currentColor;
+}
+
+.icon-button:hover {
+  color: var(--pico-muted-color);
 }
 
 /* Desktop */
