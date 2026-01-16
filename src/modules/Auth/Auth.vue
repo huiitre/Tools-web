@@ -12,6 +12,7 @@ import { useFetchLogin } from './hooks/useFetchLogin'
 import { useFetchMe } from './hooks/useFetchMe'
 import toast from '@/services/toast'
 import { useFetchLoginWithGoogle } from './hooks/useFetchLoginWithGoogle'
+import { useFetchRegister } from './hooks/useFetchRegister'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -21,12 +22,14 @@ const isRegister = ref(false)
 /* Connexion */
 const loginEmail = ref('')
 const loginPassword = ref('')
+const isConnecting = ref(false)
 
 /* Inscription */
 const registerEmail = ref('')
 const registerUsername = ref('')
 const registerPassword = ref('')
 const registerConfirmPassword = ref('')
+const isSubmittingRegister = ref(false)
 
 // Google OAuth
 const googleBtnRef = ref<HTMLElement | null>(null)
@@ -43,16 +46,22 @@ const renderGoogleButton = async () => {
     client_id: GOOGLE_CLIENT_ID,
     callback: async (response: any) => {
       try {
+        isConnecting.value = true
         const idToken = response?.credential
         if (!idToken) throw new Error('GOOGLE_ID_TOKEN_MISSING')
 
         const { data } = await useFetchLoginWithGoogle({ idToken })
         auth.setToken(data.accessToken)
 
+        const me = await useFetchMe()
+        auth.setUser(me.data)
+
         toast.success('Connexion Google réussie')
         router.push('/')
-      } catch (e: any) {
-        toast.warning("Connexion Google impossible")
+      } catch (error: any) {
+        toast.error(error?.message || 'Erreur lors de la connexion')
+      } finally {
+        isConnecting.value = false
       }
     }
   })
@@ -67,32 +76,64 @@ const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID_WEB
 
 const onLoginSubmit = async () => {
   try {
-    validatePassword(loginPassword.value)
-
+    isConnecting.value = true
     const { data } = await useFetchLogin({
       email: loginEmail.value,
       password: loginPassword.value
     })
     auth.setToken(data.accessToken)
 
+    const me = await useFetchMe()
+    auth.setUser(me.data)
+
     toast.success('Connexion réussie')
     router.push('/')
   } catch (error: any) {
-    
     if (error instanceof PasswordValidationError) {
       toast.warning(error.message)
+      return;
     }
+    toast.error(error?.message || 'Erreur lors de la connexion')
+  } finally {
+    isConnecting.value = false
   }
 }
-const onRegisterSubmit = () => {
+const onRegisterSubmit = async() => {
   try {
+    isSubmittingRegister.value = true
     validatePassword(registerPassword.value, registerConfirmPassword.value)
-  } catch (error) {
+
+    const { data } = await useFetchRegister({
+      name: registerUsername.value,
+      email: registerEmail.value,
+      password: registerPassword.value
+    })
+
+    toast.success(data.message || 'Compte créé avec succès')
+    isRegister.value = false
+
+    loginEmail.value = registerEmail.value
+    loginPassword.value = registerPassword.value
+
+    clearRegisterFields()
+
+  } catch (error: any) {
     if (error instanceof PasswordValidationError) {
-      alert(error.message)
+      toast.warning(error.message)
       return
     }
+
+    toast.error(error?.message || 'Erreur lors de la création du compte')
+  } finally {
+    isSubmittingRegister.value = false
   }
+}
+
+const clearRegisterFields = () => {
+  registerUsername.value = ''
+  registerEmail.value = ''
+  registerPassword.value = ''
+  registerConfirmPassword.value = ''
 }
 
 onMounted(() => {
@@ -135,7 +176,14 @@ watch(isRegister, async (value) => {
         placeholder="Mot de passe"
       />
 
-      <button type="submit">Se connecter</button>
+      <button :aria-busy="isConnecting" type="submit">Se connecter</button>
+
+      <p class="forgot-password-link">
+        <router-link to="/forgot-password">
+          Mot de passe oublié ?
+        </router-link>
+      </p>
+
     </form>
 
     <!-- INSCRIPTION -->
@@ -172,7 +220,7 @@ watch(isRegister, async (value) => {
         placeholder="Confirmer le mot de passe"
       />
 
-      <button type="submit">Créer un compte</button>
+      <button :aria-busy="isSubmittingRegister" type="submit">Créer un compte</button>
     </form>
 
     <!-- OAuth -->
@@ -243,7 +291,7 @@ form {
   align-items: center;
 }
 
-.github-btn {
+/* .github-btn {
   width: 240px;
   height: 40px;
   display: flex;
@@ -266,5 +314,10 @@ form {
 
 .github-icon {
   font-size: 1.2rem;
+} */
+
+.forgot-password-link {
+  text-align: center;
+  margin-top: 0.5rem;
 }
 </style>

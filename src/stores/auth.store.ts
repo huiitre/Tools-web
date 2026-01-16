@@ -12,7 +12,7 @@ type Role = {
   active: boolean
 }
 
-type Module = {
+export type ModuleType = {
   id: string
   code: string
   name: string
@@ -27,13 +27,15 @@ type User = {
   name: string
   userType: string
   active: boolean
+  avatarUrl: string
   roles: Role[]
-  modules: Module[]
+  modules: ModuleType[]
 }
 
 type AuthState = {
   user: User | null
   accessToken: string | null
+  authInitialized: boolean
 }
 
 /* ======================
@@ -43,7 +45,8 @@ type AuthState = {
 export const useAuthStore = defineStore('auth', {
   state: (): AuthState => ({
     user: null,
-    accessToken: null
+    accessToken: null,
+    authInitialized: false
   }),
 
   getters: {
@@ -51,6 +54,10 @@ export const useAuthStore = defineStore('auth', {
   },
 
   actions: {
+
+    setAuthInitialized() {
+      this.authInitialized = true
+    },
 
     setToken(token: string) {
       this.accessToken = token

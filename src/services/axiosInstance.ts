@@ -1,7 +1,6 @@
 import axios, { AxiosInstance } from 'axios'
-import router from '@/router/router'
-import toast from './toast'
 import { useAuthStore } from '@/stores/auth.store'
+import { ApiException } from './ApiException'
 
 /* ======================
    CLIENT FACTORY
@@ -16,6 +15,12 @@ const createClient = (version: string): AxiosInstance =>
     withCredentials: true
   })
 
+const clientInit = axios.create({
+  baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v3`,
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true
+})
+
 const clientV1 = createClient('v1')
 const clientV2 = createClient('v2')
 const clientV3 = createClient('v3')
@@ -29,78 +34,95 @@ const attachInterceptors = (client: AxiosInstance) => {
   /* ---------- REQUEST ---------- */
   client.interceptors.request.use((config) => {
     const auth = useAuthStore()
-    const token = auth.accessToken
 
-    if (token) {
+    if (auth.accessToken) {
       config.headers = config.headers || {}
-      config.headers.Authorization = `Bearer ${token}`
+      config.headers.Authorization = `Bearer ${auth.accessToken}`
     }
 
     return config
   })
 
   /* ---------- RESPONSE ---------- */
-  let isRefreshing = false
-  let queue: {
-    resolve: (value?: unknown) => void
-    reject: (err: any) => void
-  }[] = []
-
-  const flushQueue = (error?: any) => {
-    queue.forEach(p => {
-      if (error) p.reject(error)
-      else p.resolve()
-    })
-    queue = []
-  }
-
   client.interceptors.response.use(
     response => response,
     async error => {
+      const auth = useAuthStore()
       const status = error?.response?.status
       const originalRequest = error.config
-      const auth = useAuthStore()
 
-      if (status !== 401 || originalRequest._retry) {
+      /* -----------------------------
+         PAS UNE 401 → ON REMONTE
+      ----------------------------- */
+      if (status !== 401) {
+        const responseData = error.response?.data
+
+        if (responseData?.message) {
+          return Promise.reject(
+            new ApiException(
+              responseData.message,
+              status,
+              responseData.code
+            )
+          )
+        }
+
         return Promise.reject(error)
       }
 
-      //* on ne refresh jamais sur login / refresh
-      if (
-        originalRequest.url.includes('/auth/login') ||
-        originalRequest.url.includes('/auth/refresh')
-      ) {
+      /* -----------------------------
+         401 SUR /auth/login
+      ----------------------------- */
+      if (originalRequest.url.includes('/auth/login')) {
+        const responseData = error.response?.data
+
+        return Promise.reject(
+          new ApiException(
+            responseData?.message ?? 'Identifiants invalides',
+            status,
+            responseData?.code
+          )
+        )
+      }
+
+      /* -----------------------------
+         401 SUR /auth/refresh
+         → SESSION MORTE
+      ----------------------------- */
+      const wasAuthenticated = !!auth.user
+      if (originalRequest.url.includes('/auth/refresh')) {
         auth.logout()
-        router.push('/login')
-        return Promise.reject(error)
+
+        if (wasAuthenticated) {
+          window.dispatchEvent(new Event('auth:expired'))
+        }
+
+        return new Promise(() => {})
       }
 
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          queue.push({ resolve, reject })
-        }).then(() => client(originalRequest))
+      /* -----------------------------
+         SÉCURITÉ : PAS DE BOUCLE
+      ----------------------------- */
+      if (originalRequest._retry) {
+        auth.logout()
+        window.dispatchEvent(new Event('auth:expired'))
+        return new Promise(() => {})
       }
 
+      /* -----------------------------
+         TENTATIVE DE REFRESH
+      ----------------------------- */
       originalRequest._retry = true
-      isRefreshing = true
 
       try {
         const { data } = await client.post('/auth/refresh')
-
-        const { accessToken } = data
-        auth.setToken(accessToken)
-
-        flushQueue()
+        auth.setToken(data.accessToken)
         return client(originalRequest)
 
       } catch (refreshError) {
-        flushQueue(refreshError)
         auth.logout()
-        router.push('/login')
-        return Promise.reject(refreshError)
-
-      } finally {
-        isRefreshing = false
+        window.dispatchEvent(new Event('auth:expired'))
+        return new Promise(() => {})
       }
     }
   )
@@ -114,4 +136,4 @@ attachInterceptors(clientV1)
 attachInterceptors(clientV2)
 attachInterceptors(clientV3)
 
-export { clientV1, clientV2, clientV3 }
+export { clientV1, clientV2, clientV3, clientInit }
