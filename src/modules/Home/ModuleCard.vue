@@ -48,7 +48,7 @@ const onClick = () => {
         v-if="module.roles.length"
         class="module-roles"
       >
-        <h4 class="roles-title">Rôles disponibles</h4>
+        <h5 class="roles-title">Rôles</h5>
 
         <ul class="roles-list">
           <li
