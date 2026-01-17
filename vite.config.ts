@@ -72,13 +72,13 @@ export default defineConfig({
     },
   },
   server: {
-    hmr: true,
-    host: true,
-    /* https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.1.30-key.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.1.30.pem'))
-    }, */
+    host: '0.0.0.0',
     port: 5173,
+    strictPort: true,
+    hmr: {
+      host: '192.168.1.30',
+      protocol: 'ws'
+    }
   },
   logLevel: 'info',
   define: {

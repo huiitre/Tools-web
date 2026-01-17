@@ -45,7 +45,7 @@ export const routes = [
   {
     name: 'settings',
     path: '/settings',
-    component: Home,
+    component: () => import('@/modules/Settings/Settings.vue'),
     meta: { requireAuth: true }
   },
   {
