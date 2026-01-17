@@ -11,7 +11,7 @@ import { registerSW } from 'virtual:pwa-register'
 
 import { getTheme, initThemeListener, setTheme } from '@/ui/theme'
 
-import { initPicoTheme, setPicoTheme } from '@/ui/picoTheme'
+import { getPicoTheme, initPicoTheme, setPicoTheme } from '@/ui/picoTheme'
 
 //* thème
 setTheme(getTheme())
@@ -20,6 +20,7 @@ initThemeListener()
 //* thème couleur
 //* DEBUG
 ;(window as any).setPicoTheme = setPicoTheme
+;(window as any).getPicoTheme = getPicoTheme
 initPicoTheme()
 
 // --- PWA auto update ---
