@@ -1,5 +1,5 @@
 export const PICO_THEMES = [
-  'default',
+  'azure',
   'amber',
   'blue',
   'cyan',
@@ -23,7 +23,7 @@ export const PICO_THEMES = [
 export type PicoTheme = typeof PICO_THEMES[number]
 
 const PICO_THEME_KEY = 'tools-pico-theme'
-const DEFAULT_PICO_THEME: PicoTheme = 'default'
+const DEFAULT_PICO_THEME: PicoTheme = 'azure'
 const LINK_ID = 'pico-theme'
 
 function applyPicoTheme(theme: PicoTheme): void {
@@ -31,7 +31,7 @@ function applyPicoTheme(theme: PicoTheme): void {
   if (!link) return
 
   link.href =
-    theme === 'default'
+    theme === 'azure'
       ? '/themes/pico.min.css'
       : `/themes/pico.${theme}.min.css`
 }

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { getTheme, setTheme } from '@/ui/theme'
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import BurgerMenu from './BurgerMenu.vue'
+import ThemePaletteButton from './ThemePaletteButton.vue'
+import ThemeModeButton from './ThemeModeButton.vue'
 import { useFetchLogout } from '@/modules/Auth/hooks/useFetchLogout'
 import { useRouter } from 'vue-router'
+import { getTheme } from '@/ui/theme'
 
 type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -33,33 +35,6 @@ onMounted(() => {
   theme.value = getTheme() as ThemeMode
 })
 
-const cycleTheme = () => {
-  const next: Record<ThemeMode, ThemeMode> = {
-    auto: 'light',
-    light: 'dark',
-    dark: 'auto'
-  }
-
-  theme.value = next[theme.value]
-  setTheme(theme.value)
-}
-
-const themeIcon = computed(() => {
-  switch (theme.value) {
-    case 'light': return 'mdi-weather-sunny'
-    case 'dark': return 'mdi-weather-night'
-    default: return 'mdi-theme-light-dark'
-  }
-})
-
-const themeLabel = computed(() => {
-  switch (theme.value) {
-    case 'light': return 'Light'
-    case 'dark': return 'Dark'
-    default: return 'Auto'
-  }
-})
-
 const handleLogout = async () => {
   await useFetchLogout()
   auth.logout()
@@ -86,15 +61,10 @@ const handleLogout = async () => {
     <div class="header-center"></div>
 
     <div class="header-right">
-      <button
-        class="theme-button"
-        :title="`Thème : ${themeLabel}`"
-        aria-label="Changer le thème"
-        @click="cycleTheme"
-      >
-        <i class="mdi" :class="themeIcon" aria-hidden="true"></i>
-        <span class="theme-label">{{ themeLabel }}</span>
-      </button>
+      <!-- Theme color -->
+      <ThemePaletteButton />
+      <!-- Theme mode -->
+      <ThemeModeButton />
     </div>
   </header>
 
@@ -145,11 +115,6 @@ const handleLogout = async () => {
   color: inherit;
 }
 
-.app-title:hover {
-  text-decoration: none;
-  color: inherit;
-}
-
 .icon-button {
   width: 2rem;
   height: 2rem;
@@ -164,50 +129,9 @@ const handleLogout = async () => {
   cursor: pointer;
 
   color: inherit;
-  line-height: 1;
 }
 
 .icon-button:hover {
   color: var(--pico-muted-color);
-}
-
-/* Theme button */
-.theme-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  height: 2.25rem;
-  padding: 0 0.5rem;
-
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
-  background: transparent;
-  cursor: pointer;
-
-  color: inherit;
-}
-
-.theme-button:hover {
-  background: var(--pico-muted-background-color);
-}
-
-.theme-button i {
-  font-size: 1.25rem;
-  line-height: 1;
-}
-
-/* Label responsive */
-.theme-label {
-  display: none;
-  font-size: 0.85rem;
-  letter-spacing: 0.04em;
-}
-
-/* Desktop / largeur suffisante */
-@media (min-width: 768px) {
-  .theme-label {
-    display: inline;
-  }
 }
 </style>
