@@ -46,11 +46,6 @@ const currentSection = ref<SettingsSection>('account-profile')
         <p>Emails, alertes</p>
       </section>
 
-      <section v-if="currentSection === 'prefs-core'">
-        <h2>Paramètres Core</h2>
-        <p>Réglages transverses Tools</p>
-      </section>
-
       <section v-if="currentSection === 'module-dofus'">
         <h2>Dofus</h2>
         <p>Paramètres spécifiques Dofus</p>

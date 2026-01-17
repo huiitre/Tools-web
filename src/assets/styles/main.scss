@@ -1,6 +1,6 @@
 /* Pico CSS */
-@use "@picocss/pico";
-@import "@picocss/pico/css/pico.colors.css";
+// @use "@picocss/pico";
+// @import "@picocss/pico/css/pico.colors.css";
 
 /* App layout */
 body {
@@ -13,3 +13,6 @@ body {
 #app {
   min-height: 100dvh;
 }
+
+h1, h2, h3, h4, h5, h6
+{ font-size: var(--pico-font-size) !important; line-height: var(--pico-line-height) !important; font-weight: var(--pico-font-weight, 700) !important; }
