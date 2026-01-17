@@ -3,7 +3,6 @@ import { ModuleType } from '@/stores/auth.store';
 import { RouterLink } from 'vue-router'
 
 defineProps<{
-  showSettings?: boolean
   modules?: Array<ModuleType>
 }>()
 
@@ -26,7 +25,6 @@ const onLogoutClick = () => {
     </RouterLink>
 
     <RouterLink
-      v-if="showSettings !== false"
       to="/settings"
       @click="emit('close')"
       class="nav-item"
@@ -35,7 +33,7 @@ const onLogoutClick = () => {
       Paramètres
     </RouterLink>
 
-    <button type="button" class="nav-item" @click="onLogoutClick">
+    <button class="nav-item" @click="onLogoutClick">
       <i class="fa-solid fa-right-from-bracket"></i>
       Déconnexion
     </button>
