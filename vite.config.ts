@@ -29,28 +29,45 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // 1. Taille max OK
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+
+        // 2. PRECACHE : AUCUN CSS
+        globPatterns: [
+          '**/*.{js,html,svg,png,ico}'
+        ],
+
+        // 3. Navigation SPA
         navigateFallback: 'index.html',
+
+        // 4. Ignorer explicitement TOUT ce qui peut poser problème
         globIgnores: [
+          '**/*.css',
+          '**/themes/**',
           '**/*worker*.js',
           '**/ts.worker*.js',
           '**/editor.worker*.js',
-          '**/index.*.js',
-          '**/themes/*.css'   // ← FIX
+          '**/index.*.js'
         ],
+
+        // 5. Activation immédiate
         skipWaiting: true,
         clientsClaim: true,
+
+        // 6. Runtime : thèmes = NETWORK ONLY (OBLIGATOIRE)
         runtimeCaching: [
           {
-            // Exemple de mise en cache des images
+            urlPattern: /^https:\/\/qa\.tools\.huiitre\.fr\/themes\/.*\.css$/,
+            handler: 'NetworkOnly'
+          },
+          {
             urlPattern: ({ request }) => request.destination === 'image',
             handler: 'CacheFirst',
             options: {
               cacheName: 'images-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 jours
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               }
             }
           }
