@@ -9,9 +9,10 @@ import { useAuthStore } from '@/stores/auth.store'
 // PWA auto-update
 import { registerSW } from 'virtual:pwa-register'
 
-import { getTheme, setTheme } from '@/ui/theme'
+import { getTheme, initThemeListener, setTheme } from '@/ui/theme'
 
 setTheme(getTheme())
+initThemeListener()
 
 // --- PWA auto update ---
 const updateSW = registerSW({

@@ -1,4 +1,3 @@
-<!-- settings/AccountSecuritySection.vue -->
 <script setup lang="ts">
 import { ref } from 'vue'
 import PasswordInput from '@/modules/Auth/components/PasswordInput.vue'
@@ -39,138 +38,104 @@ const onUpdatePassword = () => {
 </script>
 
 <template>
-  <section>
-    <header>
-      <h2>Sécurité</h2>
-      <p>Mot de passe, email et sécurité du compte.</p>
+  <section class="account-security">
+    <header class="section-header">
+      <h3>Sécurité</h3>
+      <p class="section-subtitle">
+        Mot de passe, email et sécurité du compte.
+      </p>
     </header>
 
-    <div class="accordion-grid">
-      <!-- MOT DE PASSE -->
-      <details open class="accordion">
-        <summary>Changer le mot de passe</summary>
+    <div class="card">
+      <h2 class="card-title">Changer le mot de passe</h2>
 
-        <form @submit.prevent="onUpdatePassword">
-          <div class="field">
-            <label>
-              Nouveau mot de passe
-              <PasswordInput
-                v-model="newPassword"
-                autocomplete="new-password"
-                placeholder="Nouveau mot de passe"
-              />
-            </label>
-          </div>
+      <form @submit.prevent="onUpdatePassword">
+        <div class="field">
+          <label>
+            Nouveau mot de passe
+            <PasswordInput
+              v-model="newPassword"
+              autocomplete="new-password"
+              placeholder="Nouveau mot de passe"
+            />
+          </label>
+        </div>
 
-          <div class="field">
-            <label>
-              Confirmer le mot de passe
-              <PasswordInput
-                v-model="confirmPassword"
-                autocomplete="new-password"
-                placeholder="Confirmation"
-              />
-            </label>
-          </div>
+        <div class="field">
+          <label>
+            Confirmer le mot de passe
+            <PasswordInput
+              v-model="confirmPassword"
+              autocomplete="new-password"
+              placeholder="Confirmation"
+            />
+          </label>
+        </div>
 
-          <small>
-            Minimum 8 caractères, avec au moins une lettre et un chiffre.
-          </small>
+        <small class="hint">
+          Minimum 8 caractères, avec au moins une lettre et un chiffre.
+        </small>
 
-          <div class="actions">
-            <button type="submit">Mettre à jour</button>
-          </div>
+        <div class="actions">
+          <button type="submit">Mettre à jour</button>
+        </div>
 
-          <p v-if="feedback" class="feedback">
-            <mark v-if="feedback.type === 'success'">
-              {{ feedback.message }}
-            </mark>
-            <mark v-else class="error">
-              {{ feedback.message }}
-            </mark>
-          </p>
-        </form>
-      </details>
-
-      <!-- EMAIL -->
-      <details class="accordion">
-        <summary>Email</summary>
-        <p>
-          Modification d’email, vérification et gestion des emails non confirmés.
+        <p v-if="feedback" class="feedback">
+          <mark v-if="feedback.type === 'success'">
+            {{ feedback.message }}
+          </mark>
+          <mark v-else class="error">
+            {{ feedback.message }}
+          </mark>
         </p>
-        <button class="secondary" disabled>
-          Modifier l’email (plus tard)
-        </button>
-      </details>
-
-      <!-- SESSIONS -->
-      <details class="accordion">
-        <summary>Sessions & appareils</summary>
-        <p>
-          Liste des sessions actives, révocation, déconnexion globale.
-        </p>
-        <button class="secondary" disabled>
-          Gérer les sessions (plus tard)
-        </button>
-      </details>
-
-      <!-- AUTH RENFORCÉE -->
-      <details class="accordion">
-        <summary>Authentification renforcée</summary>
-        <p>
-          2FA (TOTP), passkeys, codes de récupération.
-        </p>
-        <button class="secondary" disabled>
-          Configurer (plus tard)
-        </button>
-      </details>
+      </form>
     </div>
   </section>
 </template>
 
 <style scoped>
-/* ===== Accordéons ===== */
+/* ===== Header ===== */
 
-.accordion {
-  background: rgba(0, 0, 0, 0.015);
-  border: 1px solid rgba(0, 0, 0, 0.08);
-  border-radius: 8px;
-  padding: 0.75rem 1rem;
+.section-header {
+  margin-bottom: 1rem;
 }
 
-.accordion + .accordion {
-  margin-top: 0.75rem;
+.section-subtitle {
+  margin: 0.25rem 0 0;
+  opacity: 0.75;
+  font-size: 0.9rem;
 }
 
-summary {
-  font-size: 0.95rem; /* + que texte, - que h3 */
+/* ===== Card ===== */
+
+.card {
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 10px;
+  padding: 1rem;
+  max-width: 640px;
+}
+
+.card-title {
+  font-size: 1.25rem;
   font-weight: 600;
-  cursor: pointer;
-}
-
-/* ===== Layout ===== */
-
-.accordion-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
-}
-
-/* Desktop : 2 colonnes */
-@media (min-width: 1024px) {
-  .accordion-grid {
-    grid-template-columns: 1fr 1fr;
-  }
+  margin-bottom: 0.75rem;
 }
 
 /* ===== Form ===== */
 
 .field {
-  max-width: 360px; /* inputs pas full width */
+  max-width: 360px;
 }
 
 .field + .field {
   margin-top: 0.75rem;
+}
+
+.hint {
+  display: block;
+  margin-top: 0.5rem;
+  opacity: 0.7;
+  font-size: 0.85rem;
 }
 
 .actions {

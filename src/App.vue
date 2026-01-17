@@ -3,12 +3,17 @@ import Page from '@/router/Page.vue'
 import { onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import toast from '@/services/toast'
-import AppHeader from '@/components/Header/Header.vue'
+import { clientInit } from './services/axiosInstance'
 
 const route = useRoute()
 const router = useRouter()
 
-const onAuthExpired = () => {
+const onAuthExpired = async() => {
+
+  try {
+    await clientInit.post('/auth/logout')
+  } catch {}
+
   toast.error('Votre session a expiré. Veuillez vous reconnecter.')
 
   if (route.meta.requireAuth === true) {

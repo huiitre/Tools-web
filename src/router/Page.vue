@@ -1,13 +1,26 @@
 <script setup lang="ts">
 import Header from '@/components/Header/Header.vue'
 import Footer from '@/components/Footer/Footer.vue'
+import { useRoute } from 'vue-router';
+import { useScreen } from '@/composables/useScreen';
+import NotAvailableOnScreen from '@/components/NotAvailableOnScreen.vue';
+import { computed } from 'vue';
+
+const route = useRoute();
+const { isDesktop } = useScreen();
+
+const isBlocked = computed(() => {
+  return route.meta.desktopOnly === true && !isDesktop.value
+})
+
 </script>
 
 <template>
   <main class="page">
     <Header />
 
-    <slot />
+    <NotAvailableOnScreen v-if="isBlocked" />
+    <slot v-else />
 
     <Footer />
   </main>

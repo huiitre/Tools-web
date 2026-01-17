@@ -1,22 +1,53 @@
-export type Theme = 'dark' | 'light'
+export type Theme = 'light' | 'dark'
+export type ThemeMode = Theme | 'auto'
 
-const THEME_KEY = 'tools-theme'
-const DEFAULT_THEME: Theme = 'dark'
+const THEME_MODE_KEY = 'tools-theme-mode'
+const DEFAULT_MODE: ThemeMode = 'auto'
 
-export function getTheme(): Theme {
-  const saved = localStorage.getItem(THEME_KEY)
-  return saved === 'light' || saved === 'dark'
-    ? saved
-    : DEFAULT_THEME
+function getSystemTheme(): Theme {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light'
 }
 
-export function setTheme(theme: Theme): void {
+function applyTheme(theme: Theme): void {
   document.documentElement.setAttribute('data-theme', theme)
-  localStorage.setItem(THEME_KEY, theme)
 }
 
-export function toggleTheme(): Theme {
-  const next: Theme = getTheme() === 'dark' ? 'light' : 'dark'
-  setTheme(next)
-  return next
+/**
+ * Retourne le mode stocké (light / dark / auto)
+ */
+export function getTheme(): ThemeMode {
+  const saved = localStorage.getItem(THEME_MODE_KEY)
+  return saved === 'light' || saved === 'dark' || saved === 'auto'
+    ? saved
+    : DEFAULT_MODE
+}
+
+/**
+ * Applique le thème en fonction du mode
+ */
+export function setTheme(mode: ThemeMode): void {
+  localStorage.setItem(THEME_MODE_KEY, mode)
+
+  if (mode === 'auto') {
+    applyTheme(getSystemTheme())
+    return
+  }
+
+  applyTheme(mode)
+}
+
+/**
+ * À appeler UNE FOIS au démarrage de l’app
+ * pour gérer les changements système en mode auto
+ */
+export function initThemeListener(): void {
+  const media = window.matchMedia('(prefers-color-scheme: dark)')
+
+  media.addEventListener('change', () => {
+    if (getTheme() === 'auto') {
+      applyTheme(getSystemTheme())
+    }
+  })
 }

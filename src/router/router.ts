@@ -7,13 +7,14 @@ const Auth = () => import('@/modules/Auth/Auth.vue')
 import PrivacyPolicy from "@/modules/Legal/PrivacyPolicy.vue";
 import TermsOfService from "@/modules/Legal/TermsOfService.vue";
 
-import NotFound from '@/modules/Common/NotFound.vue';
+import NotFound from '@/components/NotFound.vue';
 import { useAuthStore } from "@/stores/auth.store";
 import { useFetchMe } from "@/modules/Auth/hooks/useFetchMe";
 import { clientInit } from "@/services/axiosInstance";
 
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
 
+//? meta: { desktopOnly: true } pour limiter la taille d'écran sur une route
 export const routes = [
   {
     name: 'home',
@@ -65,6 +66,12 @@ export const routes = [
     path: '/login',
     component: Auth,
     meta: { requireAuth: false }
+  },
+  {
+    name: 'dofus',
+    path: '/dofus',
+    component: () => import('@/modules/Dofus/Dofus.vue'),
+    meta: { requireAuth: true }
   },
   {
     path: '/:pathMatch(.*)*',

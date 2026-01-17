@@ -1,15 +1,17 @@
 <script setup lang="ts">
-import { getTheme, toggleTheme } from '@/ui/theme'
+import { getTheme, setTheme } from '@/ui/theme'
 import { ref, onMounted, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import BurgerMenu from './BurgerMenu.vue'
 import { useFetchLogout } from '@/modules/Auth/hooks/useFetchLogout'
 import { useRouter } from 'vue-router'
 
-const router = useRouter()
+type ThemeMode = 'auto' | 'light' | 'dark'
 
+const router = useRouter()
 const auth = useAuthStore()
-const theme = ref<'dark' | 'light'>('dark')
+
+const theme = ref<ThemeMode>('auto')
 
 const user = computed(() => auth.user)
 const userName = computed(() => user.value?.name ?? 'NAME UNKNOWN')
@@ -28,12 +30,35 @@ const openBurger = () => { isBurgerOpen.value = true }
 const closeBurger = () => { isBurgerOpen.value = false }
 
 onMounted(() => {
-  theme.value = getTheme()
+  theme.value = getTheme() as ThemeMode
 })
 
-const onToggleTheme = () => {
-  theme.value = toggleTheme()
+const cycleTheme = () => {
+  const next: Record<ThemeMode, ThemeMode> = {
+    auto: 'light',
+    light: 'dark',
+    dark: 'auto'
+  }
+
+  theme.value = next[theme.value]
+  setTheme(theme.value)
 }
+
+const themeIcon = computed(() => {
+  switch (theme.value) {
+    case 'light': return 'mdi-weather-sunny'
+    case 'dark': return 'mdi-weather-night'
+    default: return 'mdi-theme-light-dark'
+  }
+})
+
+const themeLabel = computed(() => {
+  switch (theme.value) {
+    case 'light': return 'Light'
+    case 'dark': return 'Dark'
+    default: return 'Auto'
+  }
+})
 
 const handleLogout = async () => {
   await useFetchLogout()
@@ -46,7 +71,12 @@ const handleLogout = async () => {
 <template>
   <header class="app-header" role="banner">
     <div class="header-left">
-      <button v-if="auth.isAuthenticated" class="icon-button" aria-label="Ouvrir le menu" @click="openBurger">
+      <button
+        v-if="auth.isAuthenticated"
+        class="icon-button"
+        aria-label="Ouvrir le menu"
+        @click="openBurger"
+      >
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
 
@@ -56,17 +86,15 @@ const handleLogout = async () => {
     <div class="header-center"></div>
 
     <div class="header-right">
-      <label class="theme-switch">
-        <input
-          type="checkbox"
-          role="switch"
-          :checked="theme === 'dark'"
-          @change="onToggleTheme"
-        />
-        <span class="icon" aria-hidden="true">
-          {{ theme === 'dark' ? '🌙' : '☀️' }}
-        </span>
-      </label>
+      <button
+        class="theme-button"
+        :title="`Thème : ${themeLabel}`"
+        aria-label="Changer le thème"
+        @click="cycleTheme"
+      >
+        <i class="mdi" :class="themeIcon" aria-hidden="true"></i>
+        <span class="theme-label">{{ themeLabel }}</span>
+      </button>
     </div>
   </header>
 
@@ -139,23 +167,47 @@ const handleLogout = async () => {
   line-height: 1;
 }
 
-.icon-button > i {
-  display: block;
-  color: currentColor;
-}
-
 .icon-button:hover {
   color: var(--pico-muted-color);
 }
 
-.theme-switch {
+/* Theme button */
+.theme-button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+
+  height: 2.25rem;
+  padding: 0 0.5rem;
+
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  background: transparent;
+  cursor: pointer;
+
+  color: inherit;
 }
 
-.theme-switch .icon {
+.theme-button:hover {
+  background: var(--pico-muted-background-color);
+}
+
+.theme-button i {
+  font-size: 1.25rem;
   line-height: 1;
-  user-select: none;
+}
+
+/* Label responsive */
+.theme-label {
+  display: none;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+}
+
+/* Desktop / largeur suffisante */
+@media (min-width: 768px) {
+  .theme-label {
+    display: inline;
+  }
 }
 </style>
