@@ -72,12 +72,11 @@ export default defineConfig({
     },
   },
   server: {
-    host: '0.0.0.0',
+    host: true,
     port: 5173,
     strictPort: true,
     hmr: {
-      host: '192.168.1.30',
-      protocol: 'ws'
+      clientPort: 5173
     }
   },
   logLevel: 'info',
