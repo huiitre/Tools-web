@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { ModuleType } from '@/stores/auth.store';
-import { RouterLink } from 'vue-router'
+import type { ModuleType } from '@/stores/auth.store'
+import { RouterLink, useRouter } from 'vue-router'
 
 defineProps<{
   modules?: Array<ModuleType>
@@ -11,51 +11,77 @@ const emit = defineEmits<{
   (e: 'logout'): void
 }>()
 
+const router = useRouter()
+
 const onLogoutClick = () => {
   emit('logout')
+}
+
+const isModuleEnabled = (module: ModuleType) => {
+  return module.active && router.hasRoute(module.code)
 }
 </script>
 
 <template>
   <nav class="burger-nav">
     <!-- CORE NAV -->
-    <RouterLink to="/" @click="emit('close')" class="nav-item">
+    <RouterLink
+      to="/"
+      class="nav-item"
+      @click="emit('close')"
+    >
       <i class="fa-solid fa-house"></i>
       Home
     </RouterLink>
 
     <RouterLink
       to="/settings"
-      @click="emit('close')"
       class="nav-item"
+      @click="emit('close')"
     >
       <i class="fa-solid fa-gear"></i>
       Paramètres
     </RouterLink>
 
-    <button class="nav-item" @click="onLogoutClick">
+    <button
+      class="nav-item"
+      @click="onLogoutClick"
+    >
       <i class="fa-solid fa-right-from-bracket"></i>
       Déconnexion
     </button>
 
     <!-- MODULES -->
-    <template v-if="modules && modules.length">
+    <template v-if="modules?.length">
       <hr />
 
-      <div class="modules-title">
-        Modules
-      </div>
+      <div class="modules-title">Modules</div>
 
-      <RouterLink
+      <template
         v-for="module in modules"
         :key="module.id"
-        :to="`/${module.code}`"
-        @click="emit('close')"
-        class="nav-item"
       >
-        <i class="mdi mdi-apps"></i>
-        {{ module.name }}
-      </RouterLink>
+        <!-- Actif -->
+        <RouterLink
+          v-if="isModuleEnabled(module)"
+          :to="`/${module.code}`"
+          class="nav-item"
+          @click="emit('close')"
+        >
+          <i class="mdi mdi-apps"></i>
+          {{ module.name }}
+        </RouterLink>
+
+        <!-- Inactif -->
+        <div
+          v-else
+          class="nav-item nav-item--disabled"
+          aria-disabled="true"
+        >
+          <i class="mdi mdi-apps"></i>
+          {{ module.name }}
+        </div>
+      </template>
     </template>
   </nav>
 </template>
@@ -79,23 +105,28 @@ const onLogoutClick = () => {
   border: 0;
 
   color: inherit;
-  cursor: pointer;
   text-decoration: none;
+  cursor: pointer;
 
   transition: background-color 120ms ease, color 120ms ease;
 }
 
 .nav-item:hover {
   background: var(--pico-muted-border-color);
-  color: inherit;
+}
+
+/* Désactivé */
+.nav-item--disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.nav-item--disabled:hover {
+  background: transparent;
 }
 
 .modules-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
   font-weight: 600;
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin: 0.25rem 0;
 }
 </style>
