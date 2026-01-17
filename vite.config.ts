@@ -36,7 +36,8 @@ export default defineConfig({
           '**/*worker*.js',
           '**/ts.worker*.js',
           '**/editor.worker*.js',
-          '**/index.*.js'
+          '**/index.*.js',
+          '**/themes/*.css'   // ← FIX
         ],
         skipWaiting: true,
         clientsClaim: true,
