@@ -72,6 +72,7 @@ const toggle = () => {
 
 .toggle i {
   font-size: 1rem;
+  color: var(--pico-form-element-color);
 }
 
 .toggle:hover {

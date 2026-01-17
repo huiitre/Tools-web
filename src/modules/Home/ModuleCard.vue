@@ -85,7 +85,12 @@ const onClick = () => {
 
 .module-card[aria-disabled='false']:hover {
   // background-color: var(--pico-muted-background-color);
-  box-shadow: 0 0 0 1px var(--pico-muted-border-color);
+  box-shadow: 0 0 0 1px var(--pico-primary-border);
+}
+
+.module-card[aria-disabled='false'] .role-title {
+  color: var(--pico-primary);
+  opacity: 0.85;
 }
 
 /* Disabled module */
@@ -101,6 +106,10 @@ const onClick = () => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
+}
+
+.module-card[aria-disabled='false']:hover h3 {
+  color: var(--pico-primary);
 }
 
 /* Status dot */
@@ -153,7 +162,6 @@ const onClick = () => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: var(--pico-muted-color);
 }
 
 /* Roles list */

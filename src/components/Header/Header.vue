@@ -62,7 +62,10 @@ const handleLogout = async () => {
 
     <div class="header-right">
       <!-- Theme color -->
-      <ThemePaletteButton />
+      <div class="theme-accent">
+        <ThemePaletteButton />
+      </div>
+
       <!-- Theme mode -->
       <ThemeModeButton />
     </div>
@@ -115,13 +118,14 @@ const handleLogout = async () => {
   color: inherit;
 }
 
+/* Boutons icône */
 .icon-button {
   width: 2rem;
   height: 2rem;
 
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: center; 
 
   padding: 0;
   border: 0;
@@ -134,4 +138,14 @@ const handleLogout = async () => {
 .icon-button:hover {
   color: var(--pico-muted-color);
 }
+
+/* Accent thème (palette uniquement) */
+.theme-accent :deep(.theme-button) {
+  color: var(--pico-primary);
+}
+
+.theme-accent :deep(.theme-button:hover) {
+  color: var(--pico-primary-hover);
+}
+
 </style>

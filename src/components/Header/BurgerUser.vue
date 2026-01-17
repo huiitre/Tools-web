@@ -5,6 +5,8 @@ const props = defineProps<{
   avatar?: string
 }>()
 
+console.log("%c BurgerUser.vue #8 || props : ", 'background:red;color:#fff;font-weight:bold;', props);
+
 </script>
 
 <template>
