@@ -4,6 +4,8 @@ import { useFetchAlmanax } from '@/modules/Dofus/hooks/useFetchAlmanax'
 import AlmanaxNav from '@/modules/Dofus/Almanax/AlmanaxNav.vue'
 import CalendarGrid from '@/modules/Dofus/Almanax/CalendarGrid.vue'
 import CalendarWeekdays from '@/modules/Dofus/Almanax/CalendarWeekdays.vue'
+import FullPageLoader from '@/components/ui/FullPageLoader.vue'
+import toast from '@/services/toast'
 
 type Almanax = {
   id: number
@@ -13,6 +15,8 @@ type Almanax = {
 }
 
 const almanaxList = ref<Almanax[]>([])
+
+const isLoading = ref(false)
 
 const today = new Date()
 const todayISO =
@@ -24,8 +28,16 @@ const displayedYear = ref(today.getFullYear())
 const displayedMonth = ref(today.getMonth())
 
 onMounted(async () => {
-  const { data } = await useFetchAlmanax()
-  almanaxList.value = data
+  try {
+    isLoading.value = true
+    const { data } = await useFetchAlmanax()
+    almanaxList.value = data
+  } catch (error: any) {
+    console.error('Failed to fetch Almanax data:', error)
+    toast.error(error?.message || 'Erreur lors du chargement des données Almanax')
+  } finally {
+    isLoading.value = false
+  }
 })
 
 const minDate = computed(() => {
@@ -120,7 +132,7 @@ const days = computed(() => {
 </script>
 
 <template>
-  <main id="dofus-almanax">
+  <div id="dofus-almanax">
     <AlmanaxNav
       :year="displayedYear"
       :month="displayedMonth"
@@ -134,14 +146,13 @@ const days = computed(() => {
 
     <CalendarWeekdays />
     <CalendarGrid :days="days" />
-  </main>
+
+    <FullPageLoader :visible="isLoading" />
+  </div>
 </template>
 
 <style lang="scss" scoped>
 #dofus-almanax {
-  max-width: 1600px;
-  min-width: 1280px;
-  margin: 0 auto;
-  padding: 1.5rem 2rem;
+  padding: 0.5rem;
 }
 </style>
