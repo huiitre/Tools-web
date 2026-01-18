@@ -26,7 +26,7 @@ const year = new Date().getFullYear()
 
       <!-- DROITE -->
       <div class="footer-right">
-        <span class="app-version">v3.0.0</span>
+        <span class="app-version">v2.0.0</span>
 
         <button class="icon-button" aria-label="Feedback">
           <i class="fa-solid fa-bug" aria-hidden="true"></i>
@@ -43,6 +43,7 @@ const year = new Date().getFullYear()
   margin-top: auto;
   border-top: 1px solid var(--pico-muted-border-color);
   color: var(--pico-color);
+  background-color: var(--pico-card-background-color);
 }
 
 /* Mobile first */
@@ -67,6 +68,7 @@ const year = new Date().getFullYear()
   display: flex;
   align-items: center;
   gap: 0.75rem;
+  color: var(--pico-primary);
 }
 
 .app-version {

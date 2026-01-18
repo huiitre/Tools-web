@@ -30,7 +30,7 @@ const isModuleEnabled = (module: ModuleType) => {
       class="nav-item"
       @click="emit('close')"
     >
-      <i class="fa-solid fa-house"></i>
+      <i class="mdi mdi-home"></i>
       Home
     </RouterLink>
 
@@ -39,7 +39,7 @@ const isModuleEnabled = (module: ModuleType) => {
       class="nav-item"
       @click="emit('close')"
     >
-      <i class="fa-solid fa-gear"></i>
+      <i class="mdi mdi-cog"></i>
       Paramètres
     </RouterLink>
 
@@ -47,7 +47,7 @@ const isModuleEnabled = (module: ModuleType) => {
       class="nav-item"
       @click="onLogoutClick"
     >
-      <i class="fa-solid fa-right-from-bracket"></i>
+      <i class="mdi mdi-logout"></i>
       Déconnexion
     </button>
 
@@ -86,7 +86,7 @@ const isModuleEnabled = (module: ModuleType) => {
   </nav>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .burger-nav {
   display: flex;
   flex-direction: column;
@@ -128,5 +128,13 @@ const isModuleEnabled = (module: ModuleType) => {
 .modules-title {
   font-weight: 600;
   margin: 0.25rem 0;
+}
+
+.nav-item.router-link-active {
+  color: var(--pico-primary);
+}
+
+.nav-item.router-link-active i {
+  color: var(--pico-primary);
 }
 </style>

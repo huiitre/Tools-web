@@ -79,7 +79,7 @@ const onClick = () => {
 }
 
 /* Active module */
-.module-card[aria-disabled='false'] {
+.module-card {
   border-color: var(--pico-muted-border-color);
 }
 

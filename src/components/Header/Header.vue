@@ -7,11 +7,13 @@ import ThemeModeButton from './ThemeModeButton.vue'
 import { useFetchLogout } from '@/modules/Auth/hooks/useFetchLogout'
 import { useRouter } from 'vue-router'
 import { getTheme } from '@/ui/theme'
+import { useUIStore } from '@/stores/ui.store'
 
 type ThemeMode = 'auto' | 'light' | 'dark'
 
 const router = useRouter()
 const auth = useAuthStore()
+const ui = useUIStore()
 
 const theme = ref<ThemeMode>('auto')
 
@@ -28,18 +30,21 @@ const avatar = computed(() => {
 const modules = computed(() => user.value?.modules ?? [])
 
 const isBurgerOpen = ref(false)
-const openBurger = () => { isBurgerOpen.value = true }
-const closeBurger = () => { isBurgerOpen.value = false }
+const toggleBurger = () => {
+  isBurgerOpen.value = !isBurgerOpen.value
+}
 
 onMounted(() => {
   theme.value = getTheme() as ThemeMode
 })
 
 const handleLogout = async () => {
+  ui.setLoading(true)
   await useFetchLogout()
   auth.logout()
-  closeBurger()
+  toggleBurger()
   router.push('/login')
+  ui.setLoading(false)
 }
 </script>
 
@@ -50,7 +55,7 @@ const handleLogout = async () => {
         v-if="auth.isAuthenticated"
         class="icon-button"
         aria-label="Ouvrir le menu"
-        @click="openBurger"
+        @click="toggleBurger"
       >
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
@@ -73,7 +78,7 @@ const handleLogout = async () => {
 
   <BurgerMenu
     :open="isBurgerOpen"
-    @close="closeBurger"
+    @close="toggleBurger"
     @logout="handleLogout"
     :modules="modules"
     :name="userName"
@@ -95,7 +100,7 @@ const handleLogout = async () => {
   height: 56px;
   padding: 0 1rem;
 
-  background: var(--pico-background-color);
+  background: var(--pico-card-background-color);
   border-bottom: 1px solid var(--pico-muted-border-color);
   color: var(--pico-color);
 }

@@ -13,6 +13,7 @@ import { useFetchMe } from "@/modules/Auth/hooks/useFetchMe";
 import { clientInit } from "@/services/axiosInstance";
 
 import type { RouteLocationNormalizedLoaded } from 'vue-router'
+import { useUIStore } from "@/stores/ui.store";
 
 //? meta: { desktopOnly: true } pour limiter la taille d'écran sur une route
 export const routes = [
@@ -71,11 +72,41 @@ export const routes = [
     name: 'dofus',
     path: '/dofus',
     component: () => import('@/modules/Dofus/Dofus.vue'),
-    meta: { requireAuth: true }
+    meta: {
+      requireAuth: true,
+      desktopOnly: true
+    },
+    redirect: { name: 'dofus-almanax' },
+    children: [
+      {
+        name: 'dofus-almanax',
+        path: 'almanax',
+        component: () => import('@/modules/Dofus/Almanax/Almanax.vue'),
+        meta: {
+          label: 'Almanax'
+        }
+      },
+      {
+        name: 'dofus-catalogue',
+        path: 'catalogue',
+        component: () => import('@/modules/Dofus/Catalogue/Catalogue.vue'),
+        meta: {
+          label: 'Catalogue'
+        }
+      },
+      {
+        name: 'dofus-atelier',
+        path: 'atelier',
+        component: () => import('@/modules/Dofus/Atelier/Atelier.vue'),
+        meta: {
+          label: 'Atelier'
+        }
+      }
+    ]
   },
   {
-    path: '/:pathMatch(.*)*',
     name: 'NotFound',
+    path: '/:pathMatch(.*)*',
     component: NotFound,
     meta: { requireAuth: false }
   }
@@ -89,13 +120,17 @@ const router = createRouter({
 })
 
 router.beforeEach(async (to) => {
+  const ui = useUIStore()
   const auth = useAuthStore()
+
   const requireAuth = to.meta.requireAuth === true
   const isLogin = to.path === '/login'
 
   //* Initialisation auth (UNE SEULE FOIS)
   if (!auth.authInitialized) {
     try {
+      ui.setLoading(true)
+
       const { data } = await clientInit.post('/auth/refresh')
       auth.setToken(data.accessToken)
 
@@ -104,6 +139,7 @@ router.beforeEach(async (to) => {
     } catch {
       auth.logout()
     } finally {
+      ui.setLoading(false)
       auth.setAuthInitialized()
     }
   }

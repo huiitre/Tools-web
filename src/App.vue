@@ -4,21 +4,30 @@ import { onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import toast from '@/services/toast'
 import { clientInit } from './services/axiosInstance'
+import FullPageLoader from './components/ui/FullPageLoader.vue'
+import { useUIStore } from '@/stores/ui.store'
+
+const uiStore = useUIStore()
 
 const route = useRoute()
 const router = useRouter()
 
-const onAuthExpired = async() => {
+const onAuthExpired = async () => {
+  uiStore.setLoading(true)
 
   try {
     await clientInit.post('/auth/logout')
-  } catch {}
+  } catch {
+    // ignore
+  }
 
   toast.error('Votre session a expiré. Veuillez vous reconnecter.')
 
   if (route.meta.requireAuth === true) {
-    router.push('/login')
+    await router.push('/login')
   }
+
+  uiStore.setLoading(false)
 }
 
 onMounted(() => {
@@ -36,4 +45,6 @@ onBeforeUnmount(() => {
       <component :is="Component" />
     </Page>
   </router-view>
+
+  <FullPageLoader :visible="uiStore.isLoading" />
 </template>
