@@ -34,7 +34,7 @@ console.log("%c BurgerUser.vue #8 || props : ", 'background:red;color:#fff;font-
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-top: 1rem;
+  margin-top: 2rem;
 }
 
 .avatar {

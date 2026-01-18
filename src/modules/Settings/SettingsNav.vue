@@ -154,6 +154,7 @@ nav li {
 
 nav li.active {
   font-weight: 600;
+  color: var(--pico-primary);
 }
 
 /* ===== RESPONSIVE ===== */

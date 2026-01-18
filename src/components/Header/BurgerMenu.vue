@@ -88,9 +88,10 @@ const emit = defineEmits<{
   top: 56px;
   left: 0;
 
-  width: 100vw; /* mobile first */
-  height: calc(100dvh - 56px);
-  padding: 1rem;
+  width: 100vw;
+  height: 100dvh;
+  padding-top: calc(var(--header-height, 0));
+  padding-left: 1rem;
 
   background: var(--pico-background-color);
   color: var(--pico-color);
