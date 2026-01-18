@@ -1,13 +1,141 @@
 <script setup lang="ts">
+import { ref, computed, onMounted } from 'vue'
+import { useFetchAlmanax } from '@/modules/Dofus/hooks/useFetchAlmanax'
+import AlmanaxNav from '@/modules/Dofus/Almanax/AlmanaxNav.vue'
+import CalendarGrid from '@/modules/Dofus/Almanax/CalendarGrid.vue'
+import CalendarWeekdays from '@/modules/Dofus/Almanax/CalendarWeekdays.vue'
 
+type Almanax = {
+  id: number
+  name: string
+  description: string
+  date: string
+}
+
+const almanaxList = ref<Almanax[]>([])
+
+const today = new Date()
+const todayISO = today.toISOString().slice(0, 10)
+
+const displayedYear = ref(today.getFullYear())
+const displayedMonth = ref(today.getMonth())
+
+onMounted(async () => {
+  const { data } = await useFetchAlmanax()
+  almanaxList.value = data
+})
+
+const minDate = computed(() => {
+  if (almanaxList.value.length === 0) return null
+  return new Date(almanaxList.value.map(a => a.date).sort()[0])
+})
+
+const maxDate = computed(() => {
+  if (almanaxList.value.length === 0) return null
+  return new Date(almanaxList.value.map(a => a.date).sort().at(-1)!)
+})
+
+const canGoPrev = computed(() => {
+  if (!minDate.value) return false
+  return (
+    displayedYear.value > minDate.value.getFullYear() ||
+    (
+      displayedYear.value === minDate.value.getFullYear() &&
+      displayedMonth.value > minDate.value.getMonth()
+    )
+  )
+})
+
+const canGoNext = computed(() => {
+  if (!maxDate.value) return false
+  return (
+    displayedYear.value < maxDate.value.getFullYear() ||
+    (
+      displayedYear.value === maxDate.value.getFullYear() &&
+      displayedMonth.value < maxDate.value.getMonth()
+    )
+  )
+})
+
+const isCurrentMonth = computed(() => {
+  return (
+    displayedYear.value === today.getFullYear() &&
+    displayedMonth.value === today.getMonth()
+  )
+})
+
+const goPrevMonth = () => {
+  if (!canGoPrev.value) return
+  displayedMonth.value === 0
+    ? (displayedMonth.value = 11, displayedYear.value--)
+    : displayedMonth.value--
+}
+
+const goNextMonth = () => {
+  if (!canGoNext.value) return
+  displayedMonth.value === 11
+    ? (displayedMonth.value = 0, displayedYear.value++)
+    : displayedMonth.value++
+}
+
+const goToday = () => {
+  displayedYear.value = today.getFullYear()
+  displayedMonth.value = today.getMonth()
+}
+
+const almanaxByDate = computed(() => {
+  const map = new Map<string, Almanax>()
+  for (const a of almanaxList.value) map.set(a.date, a)
+  return map
+})
+
+const days = computed(() => {
+  const result = []
+  const firstOfMonth = new Date(displayedYear.value, displayedMonth.value, 1)
+  const firstDayIndex = (firstOfMonth.getDay() + 6) % 7
+  const startDate = new Date(displayedYear.value, displayedMonth.value, 1 - firstDayIndex)
+
+  for (let i = 0; i < 35; i++) {
+    const d = new Date(startDate)
+    d.setDate(startDate.getDate() + i)
+    const iso = d.toISOString().slice(0, 10)
+
+    result.push({
+      date: d,
+      iso,
+      isToday: iso === todayISO,
+      isCurrentMonth: d.getMonth() === displayedMonth.value,
+      almanax: almanaxByDate.value.get(iso),
+    })
+  }
+
+  return result
+})
 </script>
 
 <template>
   <main id="dofus-almanax">
-    almanax Lorem ipsum dolor sit amet consectetur, adipisicing elit. Quibusdam possimus minus ea inventore corrupti. Alias magni quasi culpa nemo sed non unde sint ratione sit. Soluta, iste ut. Obcaecati minima esse deleniti amet quod quam facere eveniet modi! Aliquam libero mollitia saepe reiciendis accusantium quam laboriosam earum laudantium molestiae illo deleniti voluptates provident optio, enim praesentium. Perspiciatis blanditiis ipsa eveniet, in dolore distinctio alias sapiente quas, accusantium, ipsam pariatur? Dolorum quod, eos dicta ut aut autem ipsum dolorem voluptate quas, harum iste obcaecati architecto perferendis dolor, voluptatum totam inventore omnis. Architecto officia modi, suscipit nulla nisi autem ipsa temporibus magnam omnis doloremque, eligendi voluptates qui voluptatum hic adipisci aliquam nesciunt atque sequi? Aperiam, nesciunt. Repudiandae, modi quam. Dolorum exercitationem numquam laborum dolore iste sequi, modi et. Nisi itaque animi voluptate natus possimus ullam, adipisci ipsum voluptas facere, ad iste perferendis, laudantium vitae quaerat. Quia voluptate voluptatem corrupti ex sequi, eveniet libero soluta iusto unde asperiores tempore ut neque dignissimos nesciunt exercitationem pariatur voluptas voluptatibus magni commodi non error veniam id repellat. Neque hic debitis possimus! Error deserunt dolorem ipsa facere. Quisquam nisi possimus id molestiae tenetur distinctio quasi, adipisci voluptatibus, vitae facilis rerum suscipit consequuntur numquam facere tempora dolore excepturi veniam sunt natus cumque provident rem fugit eligendi illum! Temporibus rem incidunt fuga a cumque dolore deleniti cum, atque quam beatae ullam hic quia, esse fugiat facere assumenda expedita iure culpa quaerat corrupti nemo enim dicta ratione. Minima eveniet enim explicabo corrupti, ut dicta expedita hic quia tempora iste dignissimos et, possimus odit natus officiis? Fugiat sint, veniam deserunt ab voluptatum quas quibusdam repudiandae voluptate possimus doloribus pariatur, reiciendis quisquam incidunt recusandae eligendi aspernatur dolorem cupiditate! Inventore reiciendis eos dicta earum ad praesentium officiis iusto soluta voluptas nihil. Officia commodi totam ipsum officiis facere facilis tempore porro inventore expedita esse assumenda repellendus, suscipit cupiditate obcaecati, ea ad alias! Omnis laborum inventore nesciunt minima cum accusantium, magnam iusto neque a suscipit amet qui beatae, dignissimos soluta fugiat vitae impedit esse corporis odit molestiae praesentium obcaecati? Veritatis quidem ea fugiat placeat mollitia odit porro accusamus id, modi soluta, aliquam voluptas ad quis corporis aliquid a, ipsa impedit eaque. Non itaque aliquid dolorem et dicta soluta iure laboriosam laborum sequi eligendi saepe delectus beatae dolor repudiandae accusantium eum, vero ratione perferendis nisi deserunt? Deserunt, provident quam hic repudiandae in accusamus aspernatur amet fugiat natus. Reiciendis ab quis quae qui perspiciatis culpa aspernatur voluptas cumque quas earum! Voluptatibus, ullam! Quia omnis illum eum et aut atque labore consequuntur soluta, odit amet quam impedit eligendi tempora dolor laborum ipsam maiores voluptates at officia voluptate quidem? Voluptate eaque maxime eveniet aspernatur, obcaecati doloribus itaque delectus rerum ipsam iste officia ducimus ad vero dolor cumque nam, quaerat quis, atque explicabo quo? Molestiae hic cupiditate in doloremque sapiente dolore aperiam quasi eum. Aspernatur nesciunt eveniet delectus eius quos blanditiis commodi ducimus adipisci veritatis, alias eos sapiente minus dolore nobis cupiditate quis deleniti? Perspiciatis labore temporibus autem necessitatibus, enim et non provident hic sapiente omnis itaque possimus nihil, vitae eligendi, in nobis! Soluta nisi qui assumenda doloribus officiis quo beatae sunt impedit nesciunt atque incidunt perspiciatis dolorum sequi, ad aliquam reprehenderit ipsum dolores repellat nostrum voluptates. Natus, in ab voluptate nostrum nihil placeat aliquid quis? Non mollitia magnam neque, dicta, nostrum animi consequuntur, commodi quod ullam alias natus maiores sequi saepe est odio. Voluptatibus quasi recusandae vel nobis optio laborum, dolores consequatur nostrum eveniet non repellat rerum. Incidunt quaerat itaque a optio minima, ea nesciunt provident quae consequatur illo perferendis suscipit voluptates voluptate totam quam ut dolore maxime soluta nihil eos. Neque maiores cum odio repellendus, fugiat libero. Maxime?
+    <AlmanaxNav
+      :year="displayedYear"
+      :month="displayedMonth"
+      :can-go-prev="canGoPrev"
+      :can-go-next="canGoNext"
+      :is-current-month="isCurrentMonth"
+      @prev="goPrevMonth"
+      @next="goNextMonth"
+      @today="goToday"
+    />
+
+    <CalendarWeekdays />
+    <CalendarGrid :days="days" />
   </main>
 </template>
 
 <style lang="scss" scoped>
-
+#dofus-almanax {
+  max-width: 1600px;
+  min-width: 1280px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+}
 </style>

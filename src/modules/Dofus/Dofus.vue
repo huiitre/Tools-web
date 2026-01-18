@@ -54,7 +54,7 @@ const goTo = (tabName: string) => {
 
 <style lang="scss" scoped>
 .dofus-nav {
-  position: fixed;
+  // position: fixed;
   top: var(--header-height, 56px);
   left: 0;
   right: 0;
@@ -114,9 +114,5 @@ const goTo = (tabName: string) => {
 
 .dofus-nav-item.active::after {
   transform: scaleX(1);
-}
-
-.dofus-content {
-  padding-top: calc(var(--header-height, 64px) + 52px + 1.5rem);
 }
 </style>
