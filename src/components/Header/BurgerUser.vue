@@ -16,6 +16,8 @@ console.log("%c BurgerUser.vue #8 || props : ", 'background:red;color:#fff;font-
         v-if="avatar && (avatar.startsWith('http') || avatar.startsWith('/'))"
         :src="avatar"
         alt="Avatar utilisateur"
+        @error="console.log('IMG ERROR', avatar)"
+        @load="console.log('IMG OK', avatar)"
       />
       <span v-else>
         {{ name.charAt(0).toUpperCase() }}
