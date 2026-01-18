@@ -33,23 +33,29 @@ const goTo = (tabName: string) => {
 </script>
 
 <template>
-  <nav class="dofus-nav">
-    <ul class="dofus-nav-list">
-      <li
-        v-for="tab in tabs"
-        :key="tab.name"
-        class="dofus-nav-item"
-        :class="{ active: isActive(tab.name) }"
-        @click="goTo(tab.name)"
-      >
-        {{ tab.label }}
-      </li>
-    </ul>
-  </nav>
+  <div id="dofus">
+    <nav class="dofus-nav">
+      <ul class="dofus-nav-list">
+        <li
+          v-for="tab in tabs"
+          :key="tab.name"
+          class="dofus-nav-item"
+          :class="{ active: isActive(tab.name) }"
+          @click="goTo(tab.name)"
+        >
+          {{ tab.label }}
+        </li>
+      </ul>
+    </nav>
 
-  <section class="dofus-content">
-    <router-view />
-  </section>
+    <section class="dofus-content">
+      <router-view v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" />
+        </Transition>
+      </router-view>
+    </section>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -114,5 +120,20 @@ const goTo = (tabName: string) => {
 
 .dofus-nav-item.active::after {
   transform: scaleX(1);
+}
+
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>
