@@ -15,7 +15,10 @@ type Almanax = {
 const almanaxList = ref<Almanax[]>([])
 
 const today = new Date()
-const todayISO = today.toISOString().slice(0, 10)
+const todayISO =
+  today.getFullYear() + '-' +
+  String(today.getMonth() + 1).padStart(2, '0') + '-' +
+  String(today.getDate()).padStart(2, '0')
 
 const displayedYear = ref(today.getFullYear())
 const displayedMonth = ref(today.getMonth())
@@ -98,7 +101,10 @@ const days = computed(() => {
   for (let i = 0; i < 35; i++) {
     const d = new Date(startDate)
     d.setDate(startDate.getDate() + i)
-    const iso = d.toISOString().slice(0, 10)
+    const iso =
+      d.getFullYear() + '-' +
+      String(d.getMonth() + 1).padStart(2, '0') + '-' +
+      String(d.getDate()).padStart(2, '0')
 
     result.push({
       date: d,
