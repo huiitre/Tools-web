@@ -3,8 +3,8 @@
     <h2>Page non disponible</h2>
 
     <p class="description">
-      Cette page n’est pas accessible sur ce format d’écran.
-      Utilisez un écran plus large.
+      Cette page n’est pas accessible sur ce format d’écran.<br><br>
+      Vous devriez aller chercher du travail afin de pouvoir vous acheter un écran plus grand, clodo.
     </p>
 
     <div class="compatibility">
@@ -57,7 +57,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.5rem;
+  gap: 1rem;
   min-width: 120px;
 
   .device-icon {
