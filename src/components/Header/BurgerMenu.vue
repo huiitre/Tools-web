@@ -3,7 +3,7 @@ import { Dialog, DialogPanel, TransitionChild, TransitionRoot } from '@headlessu
 
 import BurgerUser from '@/components/Header/BurgerUser.vue'
 import BurgerNav from '@/components/Header/BurgerNav.vue'
-import { ModuleType } from '@/stores/auth.store';
+import { ModuleType } from '@/modules/Auth/auth.store';
 
 defineProps<{
   open: boolean

@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
   padding: 0.75rem 1rem;
   min-width: 190px;
 
-  background: var(--pico-background-color);
+  background: var(--pico-modal-overlay-background-color);
   border: 1px solid var(--pico-muted-border-color);
   border-radius: var(--pico-border-radius);
   box-shadow: var(--pico-card-box-shadow);

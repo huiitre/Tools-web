@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { useAuthStore } from '@/stores/auth.store';
+import { useAuthStore } from '@/modules/Auth/auth.store';
 import { computed } from 'vue';
 import ModuleNotFound from './ModuleNotFound.vue';
 import ModuleGrid from './ModuleGrid.vue';

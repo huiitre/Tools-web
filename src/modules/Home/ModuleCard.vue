@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import type { ModuleType } from '@/stores/auth.store'
+import type { ModuleType } from '@/modules/Auth/auth.store'
 
 const props = defineProps<{
   module: ModuleType
@@ -106,6 +106,11 @@ const onClick = () => {
   justify-content: space-between;
   align-items: center;
   padding: 1rem;
+
+  & h3 {
+    font-size: 1.5rem;
+    font-weight: bold;
+  }
 }
 
 .module-card[aria-disabled='false']:hover h3 {

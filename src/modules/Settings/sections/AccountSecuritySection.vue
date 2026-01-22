@@ -4,7 +4,7 @@ import PasswordInput from '@/modules/Auth/components/PasswordInput.vue'
 import {
   validatePassword,
   PasswordValidationError
-} from '@/utils/passwordValidation'
+} from '@/modules/Auth/views/passwordValidation'
 
 const newPassword = ref('')
 const confirmPassword = ref('')

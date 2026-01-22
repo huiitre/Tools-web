@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import ModuleCard from './ModuleCard.vue'
-import type { ModuleType } from '@/stores/auth.store'
+import type { ModuleType } from '@/modules/Auth/auth.store'
 
 defineProps<{
   modules: ModuleType[]
