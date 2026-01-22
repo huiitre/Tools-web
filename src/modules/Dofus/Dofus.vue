@@ -1,52 +1,61 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { onMounted, watch } from 'vue'
 
-const route = useRoute()
-const router = useRouter()
+import DofusNav from '@/modules/Dofus/shared/components/DofusNav.vue'
+import toast from '@/services/toast'
+import { useFetchGameVersions } from '@/modules/Dofus/game/fetch/game.fetch'
+import { useFetchGameServers } from '@/modules/Dofus/game/fetch/game.fetch'
+import { useDofusStore } from '@/modules/Dofus/dofus.store'
 
-// route parente (/dofus)
-const parentRoute = computed(() =>
-  route.matched.find(r => r.name === 'dofus')
-)
+const dofusStore = useDofusStore()
 
-// onglets = enfants de /dofus
-const tabs = computed(() => {
-  if (!parentRoute.value?.children) return []
+const loadGameServers = async () => {
+  if (dofusStore.currentGameVersionId === null) return
 
-  return parentRoute.value.children.map(child => ({
-    name: child.name as string,
-    label: child.meta?.label as string,
-  }))
-})
+  const { data: gameServers } = await useFetchGameServers()
+  dofusStore.setGameServers(gameServers)
 
-// onglet actif
-const isActive = (tabName: string) =>
-  route.name === tabName
-
-// navigation
-const goTo = (tabName: string) => {
-  if (route.name !== tabName) {
-    router.push({ name: tabName })
+  if (
+    dofusStore.currentGameServerId === null &&
+    gameServers.length > 0
+  ) {
+    dofusStore.setCurrentGameServer(gameServers[0].id)
   }
 }
+
+const loadDofusModuleData = async () => {
+  try {
+    dofusStore.hydrateFromStorage()
+
+    const { data: gameVersions } = await useFetchGameVersions()
+    dofusStore.setGameVersions(gameVersions)
+
+    if (dofusStore.currentGameVersionId === null && gameVersions.length > 0) {
+      dofusStore.setCurrentGameVersion(gameVersions[0].id)
+    }
+
+  } catch (e: any) {
+    console.error('Dofus.vue | loadDofusModuleData', e)
+    toast.error(e?.message || 'Erreur lors du chargement des données du module Dofus')
+  }
+}
+
+watch(
+  () => dofusStore.currentGameVersionId,
+  async () => {
+    dofusStore.setGameServers([])
+    await loadGameServers()
+  }
+)
+
+onMounted(() => {
+  loadDofusModuleData()
+})
 </script>
 
 <template>
   <div id="dofus">
-    <nav class="dofus-nav">
-      <ul class="dofus-nav-list">
-        <li
-          v-for="tab in tabs"
-          :key="tab.name"
-          class="dofus-nav-item"
-          :class="{ active: isActive(tab.name) }"
-          @click="goTo(tab.name)"
-        >
-          {{ tab.label }}
-        </li>
-      </ul>
-    </nav>
+    <DofusNav />
 
     <section class="dofus-content">
       <router-view v-slot="{ Component }">
@@ -59,69 +68,7 @@ const goTo = (tabName: string) => {
 </template>
 
 <style lang="scss" scoped>
-.dofus-nav {
-  // position: fixed;
-  top: var(--header-height, 56px);
-  left: 0;
-  right: 0;
-  height: 52px;
-
-  background-color: var(--pico-background-color);
-
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.dofus-nav-list {
-  display: flex;
-  gap: 2.5rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.dofus-nav-item {
-  position: relative;
-  cursor: pointer;
-
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-
-  color: var(--pico-muted-color);
-  padding: 0.5rem 0;
-
-  transition: color 0.2s ease;
-}
-
-.dofus-nav-item::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  bottom: 0;
-
-  width: 100%;
-  height: 1px;
-
-  background-color: var(--pico-primary);
-  transform: scaleX(0);
-  transform-origin: center;
-  transition: transform 0.25s ease;
-}
-
-.dofus-nav-item:hover {
-  color: var(--pico-color);
-}
-
-.dofus-nav-item.active {
-  color: var(--pico-primary);
-}
-
-.dofus-nav-item.active::after {
-  transform: scaleX(1);
-}
-
+/* Transitions */
 .page-enter-active,
 .page-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ModuleType } from '@/stores/auth.store';
+import { ModuleType } from '@/modules/Auth/auth.store';
 
 defineProps<{
   modules: Array<ModuleType>

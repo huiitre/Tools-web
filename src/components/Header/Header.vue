@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import { useAuthStore } from '@/stores/auth.store'
+import { useAuthStore } from '@/modules/Auth/auth.store'
 import BurgerMenu from './BurgerMenu.vue'
 import ThemePaletteButton from './ThemePaletteButton.vue'
 import ThemeModeButton from './ThemeModeButton.vue'
-import { useFetchLogout } from '@/modules/Auth/hooks/useFetchLogout'
+import { useFetchLogout } from '@/modules/Auth/fetch/auth.fetch'
 import { useRouter } from 'vue-router'
 import { getTheme } from '@/ui/theme'
 import { useUIStore } from '@/stores/ui.store'

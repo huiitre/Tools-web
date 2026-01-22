@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { ModuleType } from '@/stores/auth.store'
+import type { ModuleType } from '@/modules/Auth/auth.store'
 import { RouterLink, useRouter } from 'vue-router'
 
 defineProps<{

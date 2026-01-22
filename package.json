@@ -16,6 +16,7 @@
     "dev:local": "vite --host --mode development"
   },
   "dependencies": {
+    "@floating-ui/vue": "^1.1.9",
     "@fortawesome/fontawesome-svg-core": "^6.4.0",
     "@fortawesome/free-brands-svg-icons": "^6.4.0",
     "@fortawesome/free-regular-svg-icons": "^6.4.0",
