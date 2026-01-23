@@ -51,7 +51,9 @@ const onAddToCalendar = () => {
 
         <AlmanaxItem
           v-if="day.almanax.item"
+          class="almanax-item"
           :item="day.almanax.item"
+          :quantity="day.almanax.quantity"
         />
       </div>
     </div>
@@ -86,6 +88,7 @@ const onAddToCalendar = () => {
   );
 }
 
+/* Header */
 .day-header {
   display: flex;
   align-items: center;
@@ -111,11 +114,13 @@ const onAddToCalendar = () => {
   }
 }
 
+/* Content */
 .day-content {
   display: flex;
   flex-direction: column;
   gap: 0.35rem;
   font-size: 0.75rem;
+  flex: 1;
 }
 
 .almanax-name {
@@ -124,9 +129,14 @@ const onAddToCalendar = () => {
   color: var(--pico-primary);
 }
 
+/* Almanax content layout */
 .almanax-content {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
+  flex: 1;
+}
+
+.almanax-item {
+  margin-top: auto;
 }
 </style>

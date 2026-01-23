@@ -5,5 +5,6 @@ export type Almanax = {
   name: string
   description: string
   date: string
-  item: Item | null
+  item: Item | null,
+  quantity: number
 }
