@@ -10,6 +10,7 @@ type DofusState = {
   currentGameVersionId: number | null;
   gameServers: GameServer[];
   currentGameServerId: number | null;
+  renderKey: number;
 };
 
 /* ======================
@@ -22,6 +23,7 @@ export const useDofusStore = defineStore('dofus', {
     currentGameVersionId: null,
     gameServers: [],
     currentGameServerId: null,
+    renderKey: 0,
   }),
 
   getters: {
@@ -49,6 +51,7 @@ export const useDofusStore = defineStore('dofus', {
     setCurrentGameServer(id: number) {
       this.currentGameServerId = id;
       localStorage.setItem('dofus.gameServerId', String(id));
+      this.renderKey++
     },
 
     hydrateFromStorage() {
