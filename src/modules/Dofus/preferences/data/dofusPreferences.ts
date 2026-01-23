@@ -62,12 +62,12 @@ export const DOFUS_PREFERENCES: DofusPreferenceDefinition[] = [
       {
         value: PriceDisplayMode.USER,
         label: 'Mon prix',
-        help: 'Affiche ton prix en priorité quand il existe.',
+        help: 'Affiche mon prix en priorité.',
       },
       {
         value: PriceDisplayMode.COMMUNITY,
         label: 'Prix moyen communautaire',
-        help: 'Affiche la moyenne communautaire en priorité.',
+        help: 'Affiche la moyenne du prix de tous les utilisateurs en priorité.',
       },
       {
         value: PriceDisplayMode.LAST,

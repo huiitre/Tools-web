@@ -3,6 +3,10 @@ import type { Item } from '@/modules/Dofus/item/types/item.types'
 import { computed } from 'vue'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
+import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
+import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
+
+const dofusConfig = useDofusConfigStore()
 
 const props = defineProps<{
   item: Item,
@@ -14,7 +18,7 @@ const itemImageX1 = computed(() =>
 )
 
 const price = computed(() => {
-  return props.item.prices?.[0]?.communityAveragePrice ?? 0
+  return getItemPriceByMode(props.item.prices, dofusConfig.priceDisplayMode)
 })
 
 const totalPrice = computed(() => price.value * props.quantity)

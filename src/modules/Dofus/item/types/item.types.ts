@@ -15,7 +15,7 @@ export type ItemImage = {
   url: string
 }
 
-type ItemPrice = {
+export type ItemPrice = {
   userPrice: number
   communityAveragePrice: number
   lastUpdatedPrice: number
@@ -31,5 +31,5 @@ export type Item = {
   level: number
   itemType: ItemType
   images: ItemImage[]
-  prices: ItemPrice[]
+  prices: ItemPrice
 }
