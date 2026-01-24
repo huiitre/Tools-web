@@ -8,6 +8,7 @@ import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector
 import { storeToRefs } from 'pinia'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 import { formatNumber } from '@/utils/formatNumber'
+import ItemPriceTrigger from '@/modules/Dofus/item/components/price/ItemPriceTrigger.vue'
 
 const { get } = useItemPrices()
 const dofusConfig = useDofusConfigStore()
@@ -61,15 +62,17 @@ const totalPrice = computed(() =>
 
     <!-- Bloc bas : prix -->
     <div class="almanax-item-bottom">
-      <div class="almanax-item-total" :class="{ 'hover-enabled': showOtherPricesOnHover }">
-        💰
-        <span class="price-value">
-          {{ formatNumber(totalPrice) }} ₭ 
-          <span class="price-unit-value" v-if="price > 0">
-            ({{ formatNumber(price) }} ₭ / u)
+      <ItemPriceTrigger :price="get(item.id)">
+        <div class="almanax-item-total" :class="{ 'hover-enabled': showOtherPricesOnHover }">
+          💰
+          <span class="price-value">
+            {{ formatNumber(totalPrice) }} ₭ 
+            <span class="price-unit-value" v-if="price > 0">
+              ({{ formatNumber(price) }} ₭ / u)
+            </span>
           </span>
-        </span>
-      </div>
+        </div>
+      </ItemPriceTrigger>
     </div>
   </div>
 </template>
