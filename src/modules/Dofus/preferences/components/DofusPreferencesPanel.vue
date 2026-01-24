@@ -2,7 +2,6 @@
 import { DOFUS_PREFERENCES } from '@/modules/Dofus/preferences/data/dofusPreferences'
 import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
 import { PriceDisplayMode } from '@/modules/Dofus/preferences/types/priceDisplayMode.enum'
-import { onMounted } from 'vue'
 
 const dofusConfig = useDofusConfigStore()
 
@@ -36,9 +35,6 @@ const setValue = (key: string, value: unknown) => {
   }
 }
 
-onMounted(() => {
-  dofusConfig.hydrateFromStorage()
-})
 </script>
 
 <template>

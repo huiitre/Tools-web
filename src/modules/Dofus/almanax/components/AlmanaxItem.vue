@@ -5,8 +5,13 @@ import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSe
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
 import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { storeToRefs } from 'pinia'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { formatNumber } from '@/utils/formatNumber'
 
+const { get } = useItemPrices()
 const dofusConfig = useDofusConfigStore()
+const { priceDisplayMode, showOtherPricesOnHover } = storeToRefs(dofusConfig)
 
 const props = defineProps<{
   item: Item,
@@ -17,12 +22,20 @@ const itemImageX1 = computed(() =>
   getItemImageByResolution(props.item.images, AssetResolution.X1)
 )
 
+const prices = computed(() =>
+  get(props.item.id)
+)
+
 const price = computed(() => {
-  return getItemPriceByMode(props.item.prices, dofusConfig.priceDisplayMode)
+  if (!prices.value) return 0
+  return getItemPriceByMode(prices.value, priceDisplayMode.value)
 })
 
-const totalPrice = computed(() => price.value * props.quantity)
-</script>
+const totalPrice = computed(() =>
+  price.value * props.quantity
+)
+
+</script>p
 
 <template>
   <div class="almanax-item-wrapper">
@@ -48,12 +61,12 @@ const totalPrice = computed(() => price.value * props.quantity)
 
     <!-- Bloc bas : prix -->
     <div class="almanax-item-bottom">
-      <div class="almanax-item-total">
+      <div class="almanax-item-total" :class="{ 'hover-enabled': showOtherPricesOnHover }">
         💰
         <span class="price-value">
-          {{ totalPrice }} ₭ 
-          <span v-if="price > 0">
-            ({{ price }} ₭ / u)
+          {{ formatNumber(totalPrice) }} ₭ 
+          <span class="price-unit-value" v-if="price > 0">
+            ({{ formatNumber(price) }} ₭ / u)
           </span>
         </span>
       </div>
@@ -65,7 +78,7 @@ const totalPrice = computed(() => price.value * props.quantity)
 .almanax-item-wrapper {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.5rem;
 }
 
 .almanax-item-top {
@@ -116,11 +129,16 @@ const totalPrice = computed(() => price.value * props.quantity)
   transition: color 0.15s ease;
 }
 
-.almanax-item-total:hover {
+.almanax-item-total.hover-enabled:hover {
   color: var(--pico-primary);
 }
 
 .price-value {
   line-height: 1;
+}
+.price-unit-value {
+  font-size: 0.70rem;
+  color: var(--pico-muted-color);
+  margin-left: 0.2rem;
 }
 </style>

@@ -6,7 +6,10 @@ import CalendarGrid from '@/modules/Dofus/almanax/components/CalendarGrid.vue'
 import CalendarWeekdays from '@/modules/Dofus/almanax/components/CalendarWeekdays.vue'
 import FullPageLoader from '@/components/ui/FullPageLoader.vue'
 import toast from '@/services/toast'
-import { Almanax } from '../types/almanax.types'
+import { Almanax } from '@/modules/Dofus/almanax/types/almanax.types'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+
+const { load: loadItemPrices } = useItemPrices()
 
 const almanaxList = ref<Almanax[]>([])
 
@@ -25,8 +28,18 @@ onMounted(async () => {
   try {
     isLoading.value = true
     const { data } = await useFetchAlmanax()
-    console.log("%c Almanax.vue #34 || data : ", 'background:red;color:#fff;font-weight:bold;', data);
     almanaxList.value = data
+
+    const itemIds: number[] = Array.from(
+      new Set(
+        data
+          .map((almanax: Almanax) => almanax.item?.id)
+          .filter((id: number): id is number => typeof id === 'number')
+      )
+    )
+
+    await loadItemPrices(itemIds)
+
   } catch (error: any) {
     console.error('Failed to fetch Almanax data:', error)
     toast.error(error?.message || 'Erreur lors du chargement des données Almanax')

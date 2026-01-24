@@ -56,7 +56,7 @@ export const DOFUS_PREFERENCES: DofusPreferenceDefinition[] = [
     key: 'priceDisplayMode',
     type: 'select',
     label: 'Prix affiché en priorité',
-    description: 'Définit quel prix est mis en avant sur les items.',
+    description: 'Définit quel prix est mis en avant.',
     defaultValue: PriceDisplayMode.USER,
     options: [
       {
