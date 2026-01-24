@@ -76,5 +76,7 @@ const selectedGameServerId = computed<number | null>({
   font-size: 0.75rem;
   line-height: 1;
   margin: 0;
+
+  min-width: 120px;
 }
 </style>

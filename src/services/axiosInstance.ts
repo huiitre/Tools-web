@@ -144,6 +144,7 @@ clientV3Dofus.interceptors.request.use((config) => {
   if (dofus.currentGameVersionId !== null) {
     config.headers = config.headers || {};
     config.headers['X-Game-Version-Id'] = dofus.currentGameVersionId;
+    config.headers['X-Game-Serve-Id'] = dofus.currentGameServerId;
   }
 
   return config;

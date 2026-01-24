@@ -1,13 +1,18 @@
 <script setup lang="ts">
-import { onMounted, watch } from 'vue'
+import { onBeforeUnmount, onMounted, watch } from 'vue'
 
 import DofusNav from '@/modules/Dofus/shared/components/DofusNav.vue'
 import toast from '@/services/toast'
 import { useFetchGameVersions } from '@/modules/Dofus/game/fetch/game.fetch'
 import { useFetchGameServers } from '@/modules/Dofus/game/fetch/game.fetch'
 import { useDofusStore } from '@/modules/Dofus/dofus.store'
+import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+
+const { startAutoRefresh, stopAutoRefresh } = useItemPrices()
 
 const dofusStore = useDofusStore()
+const dofusConfig = useDofusConfigStore()
 
 const loadGameServers = async () => {
   if (dofusStore.currentGameVersionId === null) return
@@ -26,6 +31,7 @@ const loadGameServers = async () => {
 const loadDofusModuleData = async () => {
   try {
     dofusStore.hydrateFromStorage()
+    dofusConfig.hydrateFromStorage()
 
     const { data: gameVersions } = await useFetchGameVersions()
     dofusStore.setGameVersions(gameVersions)
@@ -50,7 +56,13 @@ watch(
 
 onMounted(() => {
   loadDofusModuleData()
+  startAutoRefresh() //? "3_000" = 3sec pour debug
 })
+
+onBeforeUnmount(() => {
+  stopAutoRefresh()
+})
+
 </script>
 
 <template>

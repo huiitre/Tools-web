@@ -21,6 +21,11 @@ export type ItemPrice = {
   lastUpdatedPrice: number
 }
 
+export type ItemPriceEntry = {
+  itemId: number
+  prices: ItemPrice
+}
+
 export type Item = {
   id: number
   name: string
@@ -31,5 +36,4 @@ export type Item = {
   level: number
   itemType: ItemType
   images: ItemImage[]
-  prices: ItemPrice
 }
