@@ -1,6 +1,7 @@
 import { GameServer, GameVersion } from '@/modules/Dofus/game/types/game.types';
 import { defineStore } from 'pinia';
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices';
+import { useAlmanaxStore } from '@/modules/Dofus/almanax/almanax.store';
 
 /* ======================
    TYPES
@@ -55,6 +56,18 @@ export const useDofusStore = defineStore('dofus', {
       
       const { clear } = useItemPrices()
       clear()
+
+      const almanaxStore = useAlmanaxStore()
+      if (almanaxStore.loaded) {
+        const { load: loadPrices } = useItemPrices()
+        const itemIds = almanaxStore.almanaxList
+          .map(a => a.item?.id)
+          .filter((id): id is number => typeof id === 'number')
+        
+        if (itemIds.length > 0) {
+          loadPrices(itemIds)
+        }
+      }
     },
 
     setGameServers(gameServers: GameServer[]) {
