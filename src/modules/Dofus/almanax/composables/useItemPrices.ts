@@ -13,11 +13,16 @@ export function useItemPrices() {
   const load = async (itemIds: number[]) => {
     if (itemIds.length === 0) return
 
+    //? Filtre les ids déjà en cache
+    const newIds = itemIds.filter(id => !prices.value.has(id))
+    
+    if (newIds.length === 0) return
+
     trackedItemIds.value = Array.from(
-      new Set([...trackedItemIds.value, ...itemIds])
+      new Set([...trackedItemIds.value, ...newIds])
     )
 
-    const { data } = await useFetchItemPrices(trackedItemIds.value)
+    const { data } = await useFetchItemPrices(newIds)
 
     for (const entry of data) {
       prices.value.set(entry.itemId, entry)
@@ -56,10 +61,10 @@ export function useItemPrices() {
   watch(
     prices,
     (newPrices) => {
-      console.log(
+      /* console.log(
         'prices updated:',
         Array.from(newPrices.entries())
-      )
+      ) */
     },
     { deep: false }
   )

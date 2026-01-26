@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from 'vue'
+import { onMounted, watch } from 'vue'
 import CatalogueToolbar from '@/modules/Dofus/catalogue/components/CatalogueToolbar.vue'
 import CatalogueHeader from '@/modules/Dofus/catalogue/components/CatalogueHeader.vue'
 import CatalogueRow from '@/modules/Dofus/catalogue/components/CatalogueRow.vue'
@@ -8,27 +8,6 @@ import { useCatalogueStore } from '@/modules/Dofus/catalogue/catalogue.store'
 import toast from '@/services/toast'
 
 const catalogueStore = useCatalogueStore()
-
-/* =========================
-   TREE UI
-========================= */
-
-const openedItems = ref<Set<number>>(new Set())
-
-const toggleItem = (id: number) => {
-  openedItems.value.has(id)
-    ? openedItems.value.delete(id)
-    : openedItems.value.add(id)
-}
-
-const isOpen = (id: number) => openedItems.value.has(id)
-
-/* =========================
-   INGREDIENTS
-========================= */
-
-const getIngredients = (itemId: number) =>
-  catalogueStore.ingredients.filter(i => i.item_id === itemId)
 
 const maxDepth = 4
 
@@ -72,9 +51,6 @@ watch(
         :item="item"
         :depth="0"
         :maxDepth="maxDepth"
-        :isOpen="isOpen"
-        :toggleItem="toggleItem"
-        :getIngredients="getIngredients"
       />
     </template>
   </main>

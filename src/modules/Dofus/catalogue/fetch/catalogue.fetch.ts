@@ -16,3 +16,7 @@ export const useFetchSearch = async(data: CatalogueSearch) => {
     }
   })
 }
+
+export const useFetchRecipeByItemId = async(itemId: number) => {
+  return await clientV3Dofus.get(`/dofus/catalogue/item/${itemId}/recipe`)
+}

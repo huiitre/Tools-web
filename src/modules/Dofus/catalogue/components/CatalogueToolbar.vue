@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useFloating, offset } from '@floating-ui/vue'
 import { useCatalogueStore } from '@/modules/Dofus/catalogue/catalogue.store'
 import CataloguePreferencesPanel from '@/modules/Dofus/catalogue/components/CataloguePreferencesPanel.vue'
@@ -11,12 +11,18 @@ const catalogueStore = useCatalogueStore()
 ====================== */
 
 const searchValue = ref(catalogueStore.q ?? '')
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-const onKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Enter') {
-    catalogueStore.setQuery(searchValue.value.trim() || null)
-  }
-}
+watch(searchValue, (value) => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+  debounceTimer = setTimeout(() => {
+    catalogueStore.setQuery(value.trim() || null)
+  }, 300)
+})
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer)
+})
 
 /* ======================
    PAGINATION (STORE)
@@ -160,7 +166,6 @@ onBeforeUnmount(() => {
         type="search"
         placeholder="Rechercher un objet…"
         v-model="searchValue"
-        @keydown="onKeydown"
       />
     </div>
   </div>
