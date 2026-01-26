@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
-import { storeToRefs } from 'pinia'
+import { computed, onMounted, ref, nextTick } from 'vue'
 import CatalogueHeader from './CatalogueHeader.vue'
 import { useCatalogueStore } from '@/modules/Dofus/catalogue/catalogue.store'
 import { useCatalogueGrid } from '@/modules/Dofus/catalogue/composables/useCatalogueGrid'
@@ -8,11 +7,10 @@ import type { CatalogueItem } from '@/modules/Dofus/catalogue/types/catalogue.ty
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
-import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
-import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
 import { formatNumber } from '@/utils/formatNumber'
 import { useClipboard } from '@/composables/useClipboard'
 import { useImagePreview } from '@/composables/useImagePreview'
+import toast from '@/services/toast'
 
 defineOptions({ name: 'CatalogueRow' })
 
@@ -20,15 +18,13 @@ const props = defineProps<{
   item: CatalogueItem
   depth: number
   maxDepth: number
-  isOpen: (id: number) => boolean
-  toggleItem: (id: number) => void
-  getIngredients: (itemId: number) => CatalogueItem[]
 }>()
 
 /* ========================= STORES ========================= */
 const catalogueStore = useCatalogueStore()
 const { copy } = useClipboard()
 const { open: openImagePreview } = useImagePreview()
+
 /* ========================= COPY COLUMNS DEF ========================= */
 const copyableKeys = ['id', 'asset_id', 'type', 'name', 'level', 'description']
 const handleCellClick = (key: string) => {
@@ -43,13 +39,28 @@ const { gridTemplateColumns, getIndentPx } = useCatalogueGrid()
 const visibleColumns = computed(() => catalogueStore.visibleCatalogueColumns)
 
 /* ========================= TREE ========================= */
+const openedItems = ref<Set<number>>(new Set())
+
+const isOpen = (id: number) => openedItems.value.has(id)
+
+const toggleItem = async (id: number) => {
+  if (openedItems.value.has(id)) {
+    openedItems.value.delete(id)
+  } else {
+    openedItems.value.add(id)
+    await catalogueStore.fetchIngredients(id)
+  }
+}
+
 const canExpand = computed(() => props.item.hasRecipe && props.depth < props.maxDepth - 1)
-const shouldShowChildren = computed(() => canExpand.value && props.isOpen(props.item.id))
-const children = computed(() => props.getIngredients(props.item.id))
+const shouldShowChildren = computed(() => canExpand.value && isOpen(props.item.id))
+const children = computed(() => catalogueStore.getIngredients(props.item.id))
 
 /* ========================= IMAGE ========================= */
 const imageUrl = computed(() => {
+  console.log('item:', props.item.id, 'resolution type:', typeof props.item.images?.[0]?.resolution, 'value:', props.item.images?.[0]?.resolution)
   const img = getItemImageByResolution(props.item.images ?? [], AssetResolution.X2)
+  console.log('found img:', img)
   return img?.url ?? ''
 })
 
@@ -58,9 +69,76 @@ const { get, load } = useItemPrices()
 onMounted(() => load([props.item.id]))
 const prices = computed(() => get(props.item.id))
 
+/* ========================= INLINE EDIT USER PRICE ========================= */
+const isEditingPrice = ref(false)
+const editPriceValue = ref('')
+const priceInputRef = ref<HTMLInputElement | null>(null)
+
+const startEditPrice = async () => {
+  editPriceValue.value = String(prices.value?.userPrice ?? 0)
+  isEditingPrice.value = true
+  await nextTick()
+  const input = Array.isArray(priceInputRef.value)
+    ? priceInputRef.value[0]
+    : priceInputRef.value
+  if (input) {
+    input.focus()
+    input.select()
+  }
+}
+
+const cancelEditPrice = () => {
+  isEditingPrice.value = false
+  editPriceValue.value = ''
+}
+
+const savePrice = async () => {
+  const sanitized = editPriceValue.value.replace(/[^0-9]/g, '')
+  const newPrice = parseInt(sanitized, 10)
+
+  if (isNaN(newPrice) || newPrice < 0) {
+    toast.error('Prix invalide')
+    cancelEditPrice()
+    return
+  }
+
+  const oldPrice = prices.value?.userPrice ?? 0
+  if (newPrice === oldPrice) {
+    cancelEditPrice()
+    return
+  }
+
+  try {
+    // TODO: Appel API ici
+    // await updateItemPrice(props.item.id, newPrice)
+
+    await load([props.item.id])
+    toast.success('Prix mis à jour')
+  } catch (e: any) {
+    toast.error(e?.message ?? 'Erreur lors de la mise à jour')
+  } finally {
+    isEditingPrice.value = false
+    editPriceValue.value = ''
+  }
+}
+
+const handlePriceKeydown = (e: KeyboardEvent) => {
+  if (e.key === 'Enter') {
+    e.preventDefault()
+    savePrice()
+  } else if (e.key === 'Escape') {
+    cancelEditPrice()
+  }
+}
+
+const handlePriceInput = (e: Event) => {
+  const input = e.target as HTMLInputElement
+  input.value = input.value.replace(/[^0-9]/g, '')
+  editPriceValue.value = input.value
+}
+
 /* ========================= CELL RENDERERS ========================= */
 const getCellValue = (key: string): string | number => {
-
   const craftKeys = ['craft_user_price', 'craft_community_price', 'craft_last_price', 'craft_calculated_price']
   if (craftKeys.includes(key) && !props.item.hasRecipe) {
     return '—'
@@ -71,6 +149,7 @@ const getCellValue = (key: string): string | number => {
     asset_id: () => props.item.assetId,
     type: () => props.item.type,
     name: () => props.item.name,
+    quantity: () => props.item.quantity ?? '—',
     description: () => props.item.description,
     level: () => props.item.level,
     user_price: () => formatNumber(prices.value?.userPrice ?? 0) + ' ₭',
@@ -111,21 +190,44 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
     </div>
 
     <!-- COLONNES DYNAMIQUES -->
-    <div
-      v-for="col in visibleColumns"
-      :key="col.key"
-      class="cell"
-      :class="{
-        right: isRightAligned(col.key),
-        strong: col.key === 'craft_calculated_price',
-        name: col.key === 'name',
-        copyable: copyableKeys.includes(col.key)
-      }"
-      :title="String(getCellValue(col.key))"
-      @click="handleCellClick(col.key)"
-    >
-      {{ getCellValue(col.key) }}
-    </div>
+    <template v-for="col in visibleColumns" :key="col.key">
+      <!-- USER PRICE : éditable -->
+      <div
+        v-if="col.key === 'user_price'"
+        class="cell right editable"
+        @click="!isEditingPrice && startEditPrice()"
+      >
+        <input
+          v-if="isEditingPrice"
+          ref="priceInputRef"
+          :value="editPriceValue"
+          type="text"
+          inputmode="numeric"
+          pattern="[0-9]*"
+          class="price-input"
+          @input="handlePriceInput"
+          @blur="savePrice"
+          @keydown="handlePriceKeydown"
+        />
+        <span v-else>{{ getCellValue(col.key) }}</span>
+      </div>
+
+      <!-- AUTRES COLONNES -->
+      <div
+        v-else
+        class="cell"
+        :class="{
+          right: isRightAligned(col.key),
+          strong: col.key === 'craft_calculated_price',
+          name: col.key === 'name',
+          copyable: copyableKeys.includes(col.key),
+        }"
+        :title="String(getCellValue(col.key))"
+        @click="handleCellClick(col.key)"
+      >
+        {{ getCellValue(col.key) }}
+      </div>
+    </template>
 
     <!-- ACTIONS -->
     <div class="cell actions">
@@ -144,9 +246,6 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
       :item="child"
       :depth="depth + 1"
       :maxDepth="maxDepth"
-      :isOpen="isOpen"
-      :toggleItem="toggleItem"
-      :getIngredients="getIngredients"
     />
   </template>
 </template>
@@ -208,5 +307,37 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
   &:hover {
     color: var(--pico-primary);
   }
+}
+
+.editable {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--pico-primary);
+  }
+}
+
+.price-input {
+  width: 100%;
+  height: 100%;
+  padding: 0.3rem 0.3rem;
+  margin: 0;
+  font-size: inherit;
+  line-height: 1;
+  text-align: right;
+  border: 1px solid var(--pico-primary);
+  border-radius: 0.25rem;
+  background: var(--pico-background-color);
+  color: var(--pico-color);
+  outline: none;
+  box-sizing: border-box;
+
+  &::-webkit-inner-spin-button,
+  &::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  -moz-appearance: textfield;
 }
 </style>

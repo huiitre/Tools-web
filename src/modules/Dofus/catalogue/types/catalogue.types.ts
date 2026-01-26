@@ -13,16 +13,8 @@ export type CatalogueItem = {
   description: string
   level: number
   hasRecipe: boolean
+  quantity?: number | null
   images: ItemImage[]
-}
-
-/* =========================
-   INGREDIENT
-========================= */
-
-export type Ingredient = CatalogueItem & {
-  item_id: number
-  quantity: number
 }
 
 /* =========================
@@ -71,7 +63,7 @@ export enum CataloguePageSize {
 
 export type CatalogueState = {
   items: CatalogueItem[]
-  ingredients: Ingredient[]
+  ingredients: Map<number, CatalogueItem[]>
   total: number
 
   q: string | null
