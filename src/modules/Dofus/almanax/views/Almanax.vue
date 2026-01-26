@@ -1,19 +1,13 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useFetchAlmanax } from '@/modules/Dofus/almanax/fetch/almanax.fetch'
+import { useAlmanaxStore } from '@/modules/Dofus/almanax/almanax.store'
 import AlmanaxNav from '@/modules/Dofus/almanax/components/AlmanaxNav.vue'
 import CalendarGrid from '@/modules/Dofus/almanax/components/CalendarGrid.vue'
 import CalendarWeekdays from '@/modules/Dofus/almanax/components/CalendarWeekdays.vue'
 import FullPageLoader from '@/components/ui/FullPageLoader.vue'
 import toast from '@/services/toast'
-import { Almanax } from '@/modules/Dofus/almanax/types/almanax.types'
-import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 
-const { load: loadItemPrices } = useItemPrices()
-
-const almanaxList = ref<Almanax[]>([])
-
-const isLoading = ref(false)
+const almanaxStore = useAlmanaxStore()
 
 const today = new Date()
 const todayISO =
@@ -26,56 +20,32 @@ const displayedMonth = ref(today.getMonth())
 
 onMounted(async () => {
   try {
-    isLoading.value = true
-    const { data } = await useFetchAlmanax()
-    almanaxList.value = data
-
-    const itemIds: number[] = Array.from(
-      new Set(
-        data
-          .map((almanax: Almanax) => almanax.item?.id)
-          .filter((id: number): id is number => typeof id === 'number')
-      )
-    )
-
-    await loadItemPrices(itemIds)
-
+    await almanaxStore.fetch()
   } catch (error: any) {
-    console.error('Failed to fetch Almanax data:', error)
     toast.error(error?.message || 'Erreur lors du chargement des données Almanax')
-  } finally {
-    isLoading.value = false
   }
 })
 
-const minDate = computed(() => {
-  if (almanaxList.value.length === 0) return null
-  return new Date(almanaxList.value.map(a => a.date).sort()[0])
-})
-
-const maxDate = computed(() => {
-  if (almanaxList.value.length === 0) return null
-  return new Date(almanaxList.value.map(a => a.date).sort().at(-1)!)
-})
-
 const canGoPrev = computed(() => {
-  if (!minDate.value) return false
+  const minDate = almanaxStore.minDate
+  if (!minDate) return false
   return (
-    displayedYear.value > minDate.value.getFullYear() ||
+    displayedYear.value > minDate.getFullYear() ||
     (
-      displayedYear.value === minDate.value.getFullYear() &&
-      displayedMonth.value > minDate.value.getMonth()
+      displayedYear.value === minDate.getFullYear() &&
+      displayedMonth.value > minDate.getMonth()
     )
   )
 })
 
 const canGoNext = computed(() => {
-  if (!maxDate.value) return false
+  const maxDate = almanaxStore.maxDate
+  if (!maxDate) return false
   return (
-    displayedYear.value < maxDate.value.getFullYear() ||
+    displayedYear.value < maxDate.getFullYear() ||
     (
-      displayedYear.value === maxDate.value.getFullYear() &&
-      displayedMonth.value < maxDate.value.getMonth()
+      displayedYear.value === maxDate.getFullYear() &&
+      displayedMonth.value < maxDate.getMonth()
     )
   )
 })
@@ -106,12 +76,6 @@ const goToday = () => {
   displayedMonth.value = today.getMonth()
 }
 
-const almanaxByDate = computed(() => {
-  const map = new Map<string, Almanax>()
-  for (const a of almanaxList.value) map.set(a.date, a)
-  return map
-})
-
 const days = computed(() => {
   const result = []
   const firstOfMonth = new Date(displayedYear.value, displayedMonth.value, 1)
@@ -131,7 +95,7 @@ const days = computed(() => {
       iso,
       isToday: iso === todayISO,
       isCurrentMonth: d.getMonth() === displayedMonth.value,
-      almanax: almanaxByDate.value.get(iso),
+      almanax: almanaxStore.almanaxByDate.get(iso),
     })
   }
 
@@ -155,7 +119,7 @@ const days = computed(() => {
     <CalendarWeekdays />
     <CalendarGrid :days="days" />
 
-    <FullPageLoader :visible="isLoading" />
+    <FullPageLoader :visible="almanaxStore.loading" />
   </div>
 </template>
 
