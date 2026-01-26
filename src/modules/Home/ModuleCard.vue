@@ -85,7 +85,7 @@ const onClick = () => {
 
 .module-card[aria-disabled='false']:hover {
   // background-color: var(--pico-muted-background-color);
-  box-shadow: 0 0 0 1px var(--pico-primary-border);
+  box-shadow: 0 0 0 2px var(--pico-primary-border);
 }
 
 .module-card[aria-disabled='false'] .role-title {

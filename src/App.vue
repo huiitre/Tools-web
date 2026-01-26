@@ -6,6 +6,7 @@ import toast from '@/services/toast'
 import { clientInit } from './services/axiosInstance'
 import FullPageLoader from './components/ui/FullPageLoader.vue'
 import { useUIStore } from '@/stores/ui.store'
+import ImagePreviewModal from '@/components/ui/ImagePreviewModal.vue'
 
 const uiStore = useUIStore()
 
@@ -49,6 +50,7 @@ onBeforeUnmount(() => {
   </router-view>
 
   <FullPageLoader :visible="uiStore.isLoading" />
+  <ImagePreviewModal />
 </template>
 
 <style lang="scss" scoped>

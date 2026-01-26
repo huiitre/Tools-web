@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import type { ItemPrice } from '@/modules/Dofus/item/types/item.types'
 import { useFetchItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 
@@ -52,6 +52,17 @@ export function useItemPrices() {
     trackedItemIds.value = []
     stopAutoRefresh()
   }
+
+  watch(
+    prices,
+    (newPrices) => {
+      console.log(
+        'prices updated:',
+        Array.from(newPrices.entries())
+      )
+    },
+    { deep: false }
+  )
 
   return {
     prices,

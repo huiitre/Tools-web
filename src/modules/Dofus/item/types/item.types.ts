@@ -1,11 +1,19 @@
-import { AssetResolution } from "./assetResolution.enum"
+import { AssetResolution } from './assetResolution.enum'
 
-type ItemType = {
+/* =========================
+   ITEM TYPE
+========================= */
+
+export type ItemType = {
   id: number
   name: string
   assetId: number
   gameVersionId: number
 }
+
+/* =========================
+   ITEM IMAGE
+========================= */
 
 export type ItemImage = {
   id: number
@@ -15,16 +23,23 @@ export type ItemImage = {
   url: string
 }
 
+/* =========================
+   ITEM PRICE
+========================= */
+
 export type ItemPrice = {
   userPrice: number
   communityAveragePrice: number
   lastUpdatedPrice: number
+  craftUserPrice: number
+  craftCommunityPrice: number
+  craftLastPrice: number
+  craftCalculatedPrice: number
 }
 
-export type ItemPriceEntry = {
-  itemId: number
-  prices: ItemPrice
-}
+/* =========================
+   ITEM (DOMAINE)
+========================= */
 
 export type Item = {
   id: number
