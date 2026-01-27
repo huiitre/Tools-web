@@ -8,6 +8,7 @@ import {
 } from '@/modules/Dofus/catalogue/types/catalogue.types'
 import { useFetchSearch, useFetchRecipeByItemId } from '@/modules/Dofus/catalogue/fetch/catalogue.fetch'
 import { useUIStore } from '@/stores/ui.store'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 
 const STORAGE_KEY_COLUMNS = 'dofus.catalogue.columns'
 const STORAGE_KEY_PAGE_SIZE = 'dofus.catalogue.page_size'
@@ -104,6 +105,13 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
 
         // Reset ingredients on new search
         this.ingredients = new Map<number, CatalogueItem[]>()
+
+        // Charger les prix de tous les items en une seule fois
+        const { load } = useItemPrices()
+        const itemIds = data.items.map((item: CatalogueItem) => item.id)
+        if (itemIds.length > 0) {
+          await load(itemIds)
+        }
       } catch (e: any) {
         this.error = e?.message ?? 'Erreur catalogue'
       } finally {
@@ -120,6 +128,13 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
         this.ingredients.set(itemId, data)
         // Force reactivity
         this.ingredients = new Map(this.ingredients)
+
+        // Charger les prix des ingrédients
+        const { load } = useItemPrices()
+        const ingredientIds = data.map((item: CatalogueItem) => item.id)
+        if (ingredientIds.length > 0) {
+          await load(ingredientIds)
+        }
       } catch (e: any) {
         console.error(`Erreur chargement ingrédients pour item ${itemId}:`, e)
       }
