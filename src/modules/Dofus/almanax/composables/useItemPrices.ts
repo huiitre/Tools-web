@@ -31,6 +31,19 @@ export function useItemPrices() {
     prices.value = new Map(prices.value)
   }
 
+  const refresh = async (itemIds: number[]) => {
+    const ids = Array.from(prices.value.keys())
+    if (ids.length === 0) return
+
+    const { data } = await useFetchItemPrices(ids)
+
+    for (const entry of data) {
+      prices.value.set(entry.itemId, entry)
+    }
+
+    prices.value = new Map(prices.value)
+  }
+
   const startAutoRefresh = (intervalMs = 5 * 60 * 1000) => {
     if (refreshTimer !== null) return
 
@@ -63,7 +76,7 @@ export function useItemPrices() {
     (newPrices) => {
       /* console.log(
         'prices updated:',
-        Array.from(newPrices.entries())
+        prices.value,
       ) */
     },
     { deep: false }
@@ -76,5 +89,6 @@ export function useItemPrices() {
     startAutoRefresh,
     stopAutoRefresh,
     clear,
+    refresh,
   }
 }

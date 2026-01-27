@@ -11,6 +11,7 @@ import { formatNumber } from '@/utils/formatNumber'
 import { useClipboard } from '@/composables/useClipboard'
 import { useImagePreview } from '@/composables/useImagePreview'
 import toast from '@/services/toast'
+import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 
 defineOptions({ name: 'CatalogueRow' })
 
@@ -65,8 +66,7 @@ const imageUrl = computed(() => {
 })
 
 /* ========================= PRICES ========================= */
-const { get, load } = useItemPrices()
-onMounted(() => load([props.item.id]))
+const { get, refresh } = useItemPrices()
 const prices = computed(() => get(props.item.id))
 
 /* ========================= INLINE EDIT USER PRICE ========================= */
@@ -93,26 +93,28 @@ const cancelEditPrice = () => {
 }
 
 const savePrice = async () => {
+  if (!isEditingPrice.value) return
+
   const sanitized = editPriceValue.value.replace(/[^0-9]/g, '')
   const newPrice = parseInt(sanitized, 10)
 
   if (isNaN(newPrice) || newPrice < 0) {
     toast.error('Prix invalide')
-    cancelEditPrice()
+    isEditingPrice.value = false
+    editPriceValue.value = ''
     return
   }
 
   const oldPrice = prices.value?.userPrice ?? 0
   if (newPrice === oldPrice) {
-    cancelEditPrice()
+    isEditingPrice.value = false
+    editPriceValue.value = ''
     return
   }
 
   try {
-    // TODO: Appel API ici
-    // await updateItemPrice(props.item.id, newPrice)
-
-    await load([props.item.id])
+    await useMutationItemPrices([{ itemId: props.item.id, price: newPrice }])
+    await refresh([props.item.id])
     toast.success('Prix mis à jour')
   } catch (e: any) {
     toast.error(e?.message ?? 'Erreur lors de la mise à jour')
@@ -125,9 +127,11 @@ const savePrice = async () => {
 const handlePriceKeydown = (e: KeyboardEvent) => {
   if (e.key === 'Enter') {
     e.preventDefault()
-    savePrice()
+    ;(e.target as HTMLInputElement).blur()
   } else if (e.key === 'Escape') {
-    cancelEditPrice()
+    e.preventDefault()
+    isEditingPrice.value = false
+    editPriceValue.value = ''
   }
 }
 
