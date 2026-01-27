@@ -120,16 +120,13 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
     },
 
     async fetchIngredients(itemId: number) {
-      // Déjà chargé
       if (this.ingredients.has(itemId)) return
 
       try {
         const { data } = await useFetchRecipeByItemId(itemId)
         this.ingredients.set(itemId, data)
-        // Force reactivity
         this.ingredients = new Map(this.ingredients)
 
-        // Charger les prix des ingrédients
         const { load } = useItemPrices()
         const ingredientIds = data.map((item: CatalogueItem) => item.id)
         if (ingredientIds.length > 0) {

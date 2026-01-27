@@ -12,6 +12,7 @@ import { useClipboard } from '@/composables/useClipboard'
 import { useImagePreview } from '@/composables/useImagePreview'
 import toast from '@/services/toast'
 import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
+import { useUIStore } from '@/stores/ui.store'
 
 defineOptions({ name: 'CatalogueRow' })
 
@@ -25,6 +26,7 @@ const props = defineProps<{
 const catalogueStore = useCatalogueStore()
 const { copy } = useClipboard()
 const { open: openImagePreview } = useImagePreview()
+const uiStore = useUIStore()
 
 /* ========================= COPY COLUMNS DEF ========================= */
 const copyableKeys = ['id', 'asset_id', 'type', 'name', 'level', 'description']
@@ -66,7 +68,7 @@ const imageUrl = computed(() => {
 })
 
 /* ========================= PRICES ========================= */
-const { get, refresh } = useItemPrices()
+const { get, refreshRecursive } = useItemPrices()
 const prices = computed(() => get(props.item.id))
 
 /* ========================= INLINE EDIT USER PRICE ========================= */
@@ -85,11 +87,6 @@ const startEditPrice = async () => {
     input.focus()
     input.select()
   }
-}
-
-const cancelEditPrice = () => {
-  isEditingPrice.value = false
-  editPriceValue.value = ''
 }
 
 const savePrice = async () => {
@@ -113,12 +110,15 @@ const savePrice = async () => {
   }
 
   try {
+    uiStore.setLoading(true)
     await useMutationItemPrices([{ itemId: props.item.id, price: newPrice }])
-    await refresh([props.item.id])
+    await refreshRecursive([props.item.id])
+
     toast.success('Prix mis à jour')
   } catch (e: any) {
     toast.error(e?.message ?? 'Erreur lors de la mise à jour')
   } finally {
+    uiStore.setLoading(false)
     isEditingPrice.value = false
     editPriceValue.value = ''
   }

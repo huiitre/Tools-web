@@ -28,6 +28,10 @@ export type ItemImage = {
 ========================= */
 
 export type ItemPrice = {
+
+  itemId: number
+  parentItemIds?: number[] | null
+
   userPrice: number
   communityAveragePrice: number
   lastUpdatedPrice: number
