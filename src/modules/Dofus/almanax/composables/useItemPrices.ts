@@ -31,8 +31,87 @@ export function useItemPrices() {
     prices.value = new Map(prices.value)
   }
 
-  const refresh = async (itemIds: number[]) => {
-    const ids = Array.from(prices.value.keys())
+  const refresh = async (itemIds?: number[]) => {
+    // Fallback : refresh tout le cache
+    if (!itemIds || itemIds.length === 0) {
+      const allIds = Array.from(prices.value.keys())
+      if (allIds.length === 0) return
+
+      const { data } = await useFetchItemPrices(allIds)
+      for (const entry of data) {
+        prices.value.set(entry.itemId, entry)
+      }
+      prices.value = new Map(prices.value)
+      return
+    }
+
+    // Refresh UNIQUEMENT l’item demandé + ses parents directs
+    const idsToRefresh = new Set<number>()
+
+    for (const id of itemIds) {
+      idsToRefresh.add(id)
+
+      const price = prices.value.get(id)
+      if (price?.parentItemIds?.length) {
+        for (const parentId of price.parentItemIds) {
+          idsToRefresh.add(parentId)
+        }
+      }
+    }
+
+    const ids = Array.from(idsToRefresh)
+    if (ids.length === 0) return
+
+    const { data } = await useFetchItemPrices(ids)
+
+    for (const entry of data) {
+      prices.value.set(entry.itemId, entry)
+    }
+
+    prices.value = new Map(prices.value)
+  }
+
+  const refreshRecursive = async (itemIds?: number[]) => {
+
+    const startIds =
+      itemIds && itemIds.length > 0
+        ? itemIds
+        : Array.from(prices.value.keys())
+
+    if (startIds.length === 0) return
+
+    const toVisit = new Set<number>()
+    const visited = new Set<number>()
+
+    for (const id of startIds) {
+      if (prices.value.has(id)) {
+        toVisit.add(id)
+      }
+    }
+
+    while (toVisit.size > 0) {
+      const iterator = toVisit.values().next()
+      if (iterator.done) break
+
+      const current: number = iterator.value
+      toVisit.delete(current)
+
+      if (visited.has(current)) continue
+      visited.add(current)
+
+      const price = prices.value.get(current)
+      if (!price) continue
+
+      const parentIds = price.parentItemIds ?? []
+      for (const parentId of parentIds) {
+        if (!prices.value.has(parentId)) continue
+        if (!visited.has(parentId)) {
+          toVisit.add(parentId)
+        }
+      }
+    }
+
+    const ids = Array.from(visited)
     if (ids.length === 0) return
 
     const { data } = await useFetchItemPrices(ids)
@@ -60,6 +139,18 @@ export function useItemPrices() {
     }
   }
 
+  const set = (itemId: number, price: number) => {
+    const current = prices.value.get(itemId)
+    if (!current) return
+
+    prices.value.set(itemId, {
+      ...current,
+      userPrice: price,
+    })
+
+    prices.value = new Map(prices.value)
+  }
+
   const get = (itemId: number): ItemPrice | undefined => {
     return prices.value.get(itemId)
   }
@@ -74,10 +165,10 @@ export function useItemPrices() {
   watch(
     prices,
     (newPrices) => {
-      /* console.log(
+      console.log(
         'prices updated:',
         prices.value,
-      ) */
+      )
     },
     { deep: false }
   )
@@ -90,5 +181,7 @@ export function useItemPrices() {
     stopAutoRefresh,
     clear,
     refresh,
+    refreshRecursive,
+    set,
   }
 }

@@ -6,6 +6,7 @@ import type { ItemImage } from '@/modules/Dofus/item/types/item.types'
 ========================= */
 
 export type CatalogueItem = {
+  parentItemId?: number | null
   id: number
   assetId: number
   type: string
