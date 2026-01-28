@@ -45,7 +45,6 @@ export function useItemPrices() {
       return
     }
 
-    // Refresh UNIQUEMENT l’item demandé + ses parents directs
     const idsToRefresh = new Set<number>()
 
     for (const id of itemIds) {
@@ -84,9 +83,7 @@ export function useItemPrices() {
     const visited = new Set<number>()
 
     for (const id of startIds) {
-      if (prices.value.has(id)) {
-        toVisit.add(id)
-      }
+      toVisit.add(id)
     }
 
     while (toVisit.size > 0) {
@@ -100,11 +97,8 @@ export function useItemPrices() {
       visited.add(current)
 
       const price = prices.value.get(current)
-      if (!price) continue
-
-      const parentIds = price.parentItemIds ?? []
+      const parentIds = price?.parentItemIds ?? []
       for (const parentId of parentIds) {
-        if (!prices.value.has(parentId)) continue
         if (!visited.has(parentId)) {
           toVisit.add(parentId)
         }

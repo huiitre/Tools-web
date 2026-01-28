@@ -32,8 +32,10 @@ watch(
     catalogueStore.sort,
     catalogueStore.dir,
   ],
-  () => catalogueStore.search(),
-  { immediate: true },
+  () => {
+    if (catalogueStore.q === null ||catalogueStore.q.length === 0) return;
+    catalogueStore.search()
+  },
 )
 </script>
 

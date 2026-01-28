@@ -52,22 +52,9 @@ export const useDofusStore = defineStore('dofus', {
     setCurrentGameServer(id: number) {
       this.currentGameServerId = id;
       localStorage.setItem('dofus.gameServerId', String(id));
-      this.renderKey++
-      
-      const { clear } = useItemPrices()
-      clear()
+      this.renderKey++;
 
-      const almanaxStore = useAlmanaxStore()
-      if (almanaxStore.loaded) {
-        const { load: loadPrices } = useItemPrices()
-        const itemIds = almanaxStore.almanaxList
-          .map(a => a.item?.id)
-          .filter((id): id is number => typeof id === 'number')
-        
-        if (itemIds.length > 0) {
-          loadPrices(itemIds)
-        }
-      }
+      useItemPrices().refresh();
     },
 
     setGameServers(gameServers: GameServer[]) {
