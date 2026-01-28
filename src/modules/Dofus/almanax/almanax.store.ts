@@ -5,7 +5,6 @@ import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices
 
 type AlmanaxState = {
   almanaxList: Almanax[]
-  loaded: boolean
   loading: boolean
   error: string | null
 }
@@ -13,7 +12,6 @@ type AlmanaxState = {
 export const useAlmanaxStore = defineStore('dofus.almanax', {
   state: (): AlmanaxState => ({
     almanaxList: [],
-    loaded: false,
     loading: false,
     error: null,
   }),
@@ -42,7 +40,7 @@ export const useAlmanaxStore = defineStore('dofus.almanax', {
 
   actions: {
     async fetch() {
-      if (this.loaded || this.loading) return
+      if (this.loading) return
 
       this.loading = true
       this.error = null
@@ -51,32 +49,37 @@ export const useAlmanaxStore = defineStore('dofus.almanax', {
         const { data } = await useFetchAlmanax()
         this.almanaxList = data
 
-        // Charger les prix des items
-        const { load: loadItemPrices } = useItemPrices()
-        const itemIds: number[] = Array.from(
-          new Set(
-            data
-              .map((almanax: Almanax) => almanax.item?.id)
-              .filter((id: number | undefined): id is number => typeof id === 'number')
-          )
-        )
-
-        if (itemIds.length > 0) {
-          await loadItemPrices(itemIds)
-        }
-
-        this.loaded = true
       } catch (e: any) {
         this.error = e?.message ?? 'Erreur lors du chargement des données Almanax'
         throw e
       } finally {
         this.loading = false
       }
+
+      try {
+
+        if (this.almanaxList.length === 0) return;
+
+        const { load: loadItemPrices } = useItemPrices()
+        const itemIds: number[] = Array.from(
+          new Set(
+            this.almanaxList
+              .map((almanax: Almanax) => almanax.item?.id)
+              .filter((id: number | undefined): id is number => typeof id === 'number')
+          )
+        )
+
+        console.log("%c almanax.store.ts #72 || itemIds : ", 'background:red;color:#fff;font-weight:bold;', itemIds);
+
+        await loadItemPrices(itemIds)
+
+      } catch (e: any) {
+
+      }
     },
 
     clear() {
       this.almanaxList = []
-      this.loaded = false
       this.loading = false
       this.error = null
     },

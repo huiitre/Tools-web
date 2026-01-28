@@ -1,3 +1,4 @@
+import { resetSessionStores } from '@/stores/reset'
 import { defineStore } from 'pinia'
 
 /* ======================
@@ -70,6 +71,8 @@ export const useAuthStore = defineStore('auth', {
     logout() {
       this.user = null
       this.accessToken = null
+
+      resetSessionStores()
     }
   }
 })
