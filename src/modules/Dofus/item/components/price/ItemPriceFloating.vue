@@ -59,6 +59,46 @@ defineProps<{
         {{ formatNumber(price.lastUpdatedPrice) }} ₭
       </strong>
     </div>
+    <br />
+    <div class="price-line">
+      <span class="label">
+        <span class="icon">👤</span>
+        Craft – mon prix
+      </span>
+      <strong class="value">
+        {{ formatNumber(price.craftUserPrice) }} ₭
+      </strong>
+    </div>
+
+    <div class="price-line">
+      <span class="label">
+        <span class="icon">🌍</span>
+        Craft – prix communautaire
+      </span>
+      <strong class="value">
+        {{ formatNumber(price.craftCommunityPrice) }} ₭
+      </strong>
+    </div>
+
+    <div class="price-line">
+      <span class="label">
+        <span class="icon">🕒</span>
+        Craft – dernier prix
+      </span>
+      <strong class="value">
+        {{ formatNumber(price.craftLastPrice) }} ₭
+      </strong>
+    </div>
+
+    <div class="price-line">
+      <span class="label">
+        <span class="icon">🧮</span>
+        Craft – prix calculé
+      </span>
+      <strong class="value">
+        {{ formatNumber(price.craftCalculatedPrice) }} ₭
+      </strong>
+    </div>
   </div>
 </template>
 
