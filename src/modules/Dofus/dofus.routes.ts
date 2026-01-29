@@ -1,6 +1,6 @@
 import { routes as almanaxRoutes } from '@/modules/Dofus/almanax/almanax.routes'
 import { routes as catalogueRoutes } from '@/modules/Dofus/catalogue/catalogue.routes'
-import { routes as atelierRoutes } from '@/modules/Dofus/atelier/atelier.routes'
+import { routes as atelierRoutes } from '@/modules/Dofus/workshop/workshop.routes'
 
 export const routes = [
   {

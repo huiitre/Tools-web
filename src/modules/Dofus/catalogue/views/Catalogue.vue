@@ -9,7 +9,7 @@ import toast from '@/services/toast'
 
 const catalogueStore = useCatalogueStore()
 
-const maxDepth = 4
+const maxDepth = 6
 
 /* =========================
    INIT

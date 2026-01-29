@@ -16,14 +16,14 @@ const isBlocked = computed(() => {
 </script>
 
 <template>
-  <main class="page">
+  <div class="page">
     <Header />
 
     <NotAvailableOnScreen v-if="isBlocked" />
     <slot v-else />
 
     <Footer />
-  </main>
+  </div>
 </template>
 
 <style lang="scss" scoped>
