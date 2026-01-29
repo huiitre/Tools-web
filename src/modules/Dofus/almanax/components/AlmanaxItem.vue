@@ -19,8 +19,8 @@ const props = defineProps<{
   quantity: number
 }>()
 
-const itemImageX1 = computed(() =>
-  getItemImageByResolution(props.item.images, AssetResolution.X1)
+const itemImageX2 = computed(() =>
+  getItemImageByResolution(props.item.images, AssetResolution.X2)
 )
 
 const prices = computed(() =>
@@ -44,8 +44,8 @@ const totalPrice = computed(() =>
     <div class="almanax-item-top">
       <div class="almanax-picture">
         <img
-          v-if="itemImageX1"
-          :src="itemImageX1.url"
+          v-if="itemImageX2"
+          :src="itemImageX2.url"
           :alt="item.name"
         />
       </div>
