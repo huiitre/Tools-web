@@ -35,6 +35,7 @@ export type ItemPrice = {
   userPrice: number
   communityAveragePrice: number
   lastUpdatedPrice: number
+  
   craftUserPrice: number
   craftCommunityPrice: number
   craftLastPrice: number
