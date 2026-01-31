@@ -43,6 +43,21 @@ export type ItemPrice = {
 }
 
 /* =========================
+   FARMZONE
+========================= */
+type FarmZone = {
+  areaId: number
+  areaName: string
+  subareaId: number
+  subareaName: string
+  monsters: {
+    id: number
+    name: string
+  }[]
+  isPrimary: boolean
+}
+
+/* =========================
    ITEM (DOMAINE)
 ========================= */
 
@@ -54,6 +69,10 @@ export type Item = {
   assetId: number
   gameVersionId: number
   level: number
-  itemType: ItemType
+  type: ItemType
   images: ItemImage[]
+
+  parentItemId?: number | null
+  quantity?: number | null
+  farmZones?: FarmZone[]
 }

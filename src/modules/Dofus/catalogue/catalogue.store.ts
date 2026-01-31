@@ -2,13 +2,13 @@ import { defineStore } from 'pinia'
 import {
   CatalogueState,
   CatalogueColumn,
-  CatalogueItem,
   CataloguePageSize,
   CatalogueSortDir,
 } from '@/modules/Dofus/catalogue/types/catalogue.types'
 import { useFetchSearch, useFetchRecipeByItemId } from '@/modules/Dofus/catalogue/fetch/catalogue.fetch'
 import { useUIStore } from '@/stores/ui.store'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { Item } from '@/modules/Dofus/item/types/item.types'
 
 const STORAGE_KEY_COLUMNS = 'dofus.catalogue.columns'
 const STORAGE_KEY_PAGE_SIZE = 'dofus.catalogue.page_size'
@@ -44,7 +44,7 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
 
     return {
       items: [],
-      ingredients: new Map<number, CatalogueItem[]>(),
+      ingredients: new Map<number, Item[]>(),
       total: 0,
 
       q: null,
@@ -104,11 +104,11 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
         )
 
         // Reset ingredients on new search
-        this.ingredients = new Map<number, CatalogueItem[]>()
+        this.ingredients = new Map<number, Item[]>()
 
         // Charger les prix de tous les items en une seule fois
         const { load } = useItemPrices()
-        const itemIds = data.items.map((item: CatalogueItem) => item.id)
+        const itemIds = data.items.map((item: Item) => item.id)
         if (itemIds.length > 0) {
           await load(itemIds)
         }
@@ -128,7 +128,7 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
         this.ingredients = new Map(this.ingredients)
 
         const { load } = useItemPrices()
-        const ingredientIds = data.map((item: CatalogueItem) => item.id)
+        const ingredientIds = data.map((item: Item) => item.id)
         if (ingredientIds.length > 0) {
           await load(ingredientIds)
         }
@@ -137,7 +137,7 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
       }
     },
 
-    getIngredients(itemId: number): CatalogueItem[] {
+    getIngredients(itemId: number): Item[] {
       return this.ingredients.get(itemId) ?? []
     },
 
@@ -200,7 +200,7 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
     },
 
     setItems(
-      items: CatalogueItem[],
+      items: Item[],
       total: number,
       page: number,
       pageSize: number,
@@ -220,7 +220,7 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
     clear() {
       this.columns = []
       this.visibleColumns.clear()
-      this.ingredients = new Map<number, CatalogueItem[]>()
+      this.ingredients = new Map<number, Item[]>()
       localStorage.removeItem(STORAGE_KEY_COLUMNS)
       localStorage.removeItem(STORAGE_KEY_PAGE_SIZE)
     },
