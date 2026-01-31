@@ -7,7 +7,7 @@ import { PriceDisplayMode } from '@/modules/Dofus/preferences/types/priceDisplay
 
 type DofusConfigState = {
   priceDisplayMode: PriceDisplayMode
-  showOtherPricesOnHover: boolean
+  showItemContextOnHover: boolean
 }
 
 /* ======================
@@ -15,10 +15,10 @@ type DofusConfigState = {
 ====================== */
 
 const STORAGE_KEY_PRICE_MODE = 'dofus.priceDisplayMode'
-const STORAGE_KEY_SHOW_OTHER_PRICES = 'dofus.showOtherPricesOnHover'
+const STORAGE_KEY_SHOW_CONTEXT_ITEM = 'dofus.showItemContextOnHover'
 
 const DEFAULT_PRICE_MODE: PriceDisplayMode = PriceDisplayMode.COMMUNITY
-const DEFAULT_SHOW_OTHER_PRICES = true
+const DEFAULT_SHOW_ITEM_CONTEXT = true
 
 /* ======================
    STORE
@@ -27,7 +27,7 @@ const DEFAULT_SHOW_OTHER_PRICES = true
 export const useDofusConfigStore = defineStore('dofus.preferences', {
   state: (): DofusConfigState => ({
     priceDisplayMode: DEFAULT_PRICE_MODE,
-    showOtherPricesOnHover: DEFAULT_SHOW_OTHER_PRICES,
+    showItemContextOnHover: DEFAULT_SHOW_ITEM_CONTEXT,
   }),
 
   getters: {
@@ -47,10 +47,10 @@ export const useDofusConfigStore = defineStore('dofus.preferences', {
 
     /* ===== OTHER PRICES ON HOVER ===== */
 
-    setShowOtherPricesOnHover(value: boolean) {
-      this.showOtherPricesOnHover = value
+    setShowItemContextOnHover(value: boolean) {
+      this.showItemContextOnHover = value
       localStorage.setItem(
-        STORAGE_KEY_SHOW_OTHER_PRICES,
+        STORAGE_KEY_SHOW_CONTEXT_ITEM,
         String(value),
       )
     },
@@ -74,18 +74,18 @@ export const useDofusConfigStore = defineStore('dofus.preferences', {
         localStorage.removeItem(STORAGE_KEY_PRICE_MODE)
       }
 
-      // showOtherPricesOnHover
-      const storedShowOtherPrices = localStorage.getItem(
-        STORAGE_KEY_SHOW_OTHER_PRICES,
+      // showItemContextOnHover
+      const storedShowItemContext = localStorage.getItem(
+        STORAGE_KEY_SHOW_CONTEXT_ITEM,
       )
 
-      if (storedShowOtherPrices === 'true') {
-        this.showOtherPricesOnHover = true
-      } else if (storedShowOtherPrices === 'false') {
-        this.showOtherPricesOnHover = false
+      if (storedShowItemContext === 'true') {
+        this.showItemContextOnHover = true
+      } else if (storedShowItemContext === 'false') {
+        this.showItemContextOnHover = false
       } else {
-        this.showOtherPricesOnHover = DEFAULT_SHOW_OTHER_PRICES
-        localStorage.removeItem(STORAGE_KEY_SHOW_OTHER_PRICES)
+        this.showItemContextOnHover = DEFAULT_SHOW_ITEM_CONTEXT
+        localStorage.removeItem(STORAGE_KEY_SHOW_CONTEXT_ITEM)
       }
     },
 
@@ -93,10 +93,9 @@ export const useDofusConfigStore = defineStore('dofus.preferences', {
 
     clear() {
       this.priceDisplayMode = DEFAULT_PRICE_MODE
-      this.showOtherPricesOnHover = DEFAULT_SHOW_OTHER_PRICES
-
+      this.showItemContextOnHover = DEFAULT_SHOW_ITEM_CONTEXT
       localStorage.removeItem(STORAGE_KEY_PRICE_MODE)
-      localStorage.removeItem(STORAGE_KEY_SHOW_OTHER_PRICES)
+      localStorage.removeItem(STORAGE_KEY_SHOW_CONTEXT_ITEM)
     },
   },
 })

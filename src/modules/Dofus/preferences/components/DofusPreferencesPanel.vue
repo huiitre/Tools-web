@@ -9,16 +9,16 @@ const getValue = (key: string) => {
   switch (key) {
     case 'priceDisplayMode':
       return dofusConfig.priceDisplayMode
-    case 'showOtherPricesOnHover':
-      return dofusConfig.showOtherPricesOnHover
+    case 'showItemContextOnHover':
+      return dofusConfig.showItemContextOnHover
     default:
       return null
   }
 }
 const getBooleanValue = (key: string): boolean => {
   switch (key) {
-    case 'showOtherPricesOnHover':
-      return dofusConfig.showOtherPricesOnHover
+    case 'showItemContextOnHover':
+      return dofusConfig.showItemContextOnHover
     default:
       return false
   }
@@ -29,8 +29,8 @@ const setValue = (key: string, value: unknown) => {
     case 'priceDisplayMode':
       dofusConfig.setPriceDisplayMode(value as PriceDisplayMode)
       break
-    case 'showOtherPricesOnHover':
-      dofusConfig.setShowOtherPricesOnHover(Boolean(value))
+    case 'showItemContextOnHover':
+      dofusConfig.setShowItemContextOnHover(Boolean(value))
       break
   }
 }
@@ -103,7 +103,7 @@ const setValue = (key: string, value: unknown) => {
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
-  min-width: 240px;
+  width: 400px;
   font-size: 0.75rem;
 }
 
