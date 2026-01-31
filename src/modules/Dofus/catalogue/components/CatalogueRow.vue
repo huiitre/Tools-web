@@ -3,7 +3,6 @@ import { computed, onMounted, ref, nextTick } from 'vue'
 import CatalogueHeader from './CatalogueHeader.vue'
 import { useCatalogueStore } from '@/modules/Dofus/catalogue/catalogue.store'
 import { useCatalogueGrid } from '@/modules/Dofus/catalogue/composables/useCatalogueGrid'
-import type { CatalogueItem } from '@/modules/Dofus/catalogue/types/catalogue.types'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
@@ -13,11 +12,12 @@ import { useImagePreview } from '@/composables/useImagePreview'
 import toast from '@/services/toast'
 import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 import { useUIStore } from '@/stores/ui.store'
+import { Item } from '@/modules/Dofus/item/types/item.types'
 
 defineOptions({ name: 'CatalogueRow' })
 
 const props = defineProps<{
-  item: CatalogueItem
+  item: Item
   depth: number
   maxDepth: number
 }>()
@@ -151,7 +151,7 @@ const getCellValue = (key: string): string | number => {
   const renderers: Record<string, () => string | number> = {
     id: () => props.item.id,
     asset_id: () => props.item.assetId,
-    type: () => props.item.type,
+    type: () => props.item.type.name,
     name: () => props.item.name,
     quantity: () => props.item.quantity ?? '—',
     description: () => props.item.description,

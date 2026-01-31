@@ -1,22 +1,4 @@
-import type { ItemImage } from '@/modules/Dofus/item/types/item.types'
-
-/* =========================
-   ITEM (CATALOGUE VIEW)
-   — projection légère de Item
-========================= */
-
-export type CatalogueItem = {
-  parentItemId?: number | null
-  id: number
-  assetId: number
-  type: string
-  name: string
-  description: string
-  level: number
-  hasRecipe: boolean
-  quantity?: number | null
-  images: ItemImage[]
-}
+import { Item } from '@/modules/Dofus/item/types/item.types'
 
 /* =========================
    COLONNES
@@ -63,8 +45,8 @@ export enum CataloguePageSize {
 ========================= */
 
 export type CatalogueState = {
-  items: CatalogueItem[]
-  ingredients: Map<number, CatalogueItem[]>
+  items: Item[]
+  ingredients: Map<number, Item[]>
   total: number
 
   q: string | null
