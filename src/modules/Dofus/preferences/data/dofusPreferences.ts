@@ -10,7 +10,7 @@ import { PriceDisplayMode } from '@/modules/Dofus/preferences/types/priceDisplay
 
 export type DofusPreferenceKey =
   | 'priceDisplayMode'
-  | 'showOtherPricesOnHover'
+  | 'showItemContextOnHover'
 
 /* ======================
    BASE TYPES
@@ -77,11 +77,11 @@ export const DOFUS_PREFERENCES: DofusPreferenceDefinition[] = [
     ],
   },
   {
-    key: 'showOtherPricesOnHover',
+    key: 'showItemContextOnHover',
     type: 'switch', 
-    label: "Afficher les autres prix d'un item au survol",
+    label: "Affiche les informations détaillées de l’item au survol",
     description:
-      'Affiche les autres types de prix dans une infobulle lors du survol du prix.',
+      'Affiche une infobulle contextuelle avec les informations complètes de l’item (prix, zones, monstres, etc.) lors du survol de l\'image.',
     defaultValue: true,
   },
 ]

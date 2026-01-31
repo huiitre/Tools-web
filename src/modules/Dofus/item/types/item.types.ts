@@ -12,15 +12,18 @@ export type ItemType = {
 }
 
 /* =========================
-   ITEM IMAGE
+   IMAGE
 ========================= */
 
-export type ItemImage = {
+type AssetImage = {
   id: number
   iconId: number
-  itemId: number
   resolution: AssetResolution
   url: string
+}
+
+export type ItemImage = AssetImage & {
+  itemId: number
 }
 
 /* =========================
@@ -45,15 +48,34 @@ export type ItemPrice = {
 /* =========================
    FARMZONE
 ========================= */
-type FarmZone = {
+
+export type MonsterImage = AssetImage & {
+  monsterId: number
+}
+
+type Area = {
+  id: number
+  assetId: number
+  name: string
+}
+
+type SubArea = {
+  id: number
   areaId: number
-  areaName: string
-  subareaId: number
-  subareaName: string
-  monsters: {
-    id: number
-    name: string
-  }[]
+  assetId: number
+  name: string
+}
+
+type Monster = {
+  id: number
+  name: string
+  images: MonsterImage[]
+}
+
+type FarmZone = {
+  area: Area
+  subarea: SubArea
+  monsters: Monster[]
   isPrimary: boolean
 }
 

@@ -13,6 +13,7 @@ import toast from '@/services/toast'
 import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 import { useUIStore } from '@/stores/ui.store'
 import { Item } from '@/modules/Dofus/item/types/item.types'
+import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
 
 defineOptions({ name: 'CatalogueRow' })
 
@@ -168,6 +169,9 @@ const getCellValue = (key: string): string | number => {
 }
 
 const isRightAligned = (key: string) => key.includes('price') || key.startsWith('craft_')
+
+const isPriceColumn = (key: string) => key.endsWith('_price')
+
 </script>
 
 <template>
@@ -189,9 +193,11 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
     </div>
 
     <!-- IMAGE -->
-    <div class="cell image" @click="imageUrl && openImagePreview(imageUrl, item.name)">
-      <img v-if="imageUrl" :src="imageUrl" :alt="item.name" />
-    </div>
+    <ItemContextTrigger :item="item">
+      <div class="cell image" @click="imageUrl && openImagePreview(imageUrl, item.name)">
+        <img v-if="imageUrl" :src="imageUrl" :alt="item.name" />
+      </div>
+    </ItemContextTrigger>
 
     <!-- COLONNES DYNAMIQUES -->
     <template v-for="col in visibleColumns" :key="col.key">

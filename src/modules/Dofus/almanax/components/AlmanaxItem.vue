@@ -8,11 +8,13 @@ import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector
 import { storeToRefs } from 'pinia'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 import { formatNumber } from '@/utils/formatNumber'
-import ItemPriceTrigger from '@/modules/Dofus/item/components/price/ItemPriceTrigger.vue'
+import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
+import { useClipboard } from '@/composables/useClipboard'
 
 const { get } = useItemPrices()
+const { copy } = useClipboard()
 const dofusConfig = useDofusConfigStore()
-const { priceDisplayMode, showOtherPricesOnHover } = storeToRefs(dofusConfig)
+const { priceDisplayMode, showItemContextOnHover } = storeToRefs(dofusConfig)
 
 const props = defineProps<{
   item: Item,
@@ -41,38 +43,39 @@ const totalPrice = computed(() =>
 <template>
   <div class="almanax-item-wrapper">
     <!-- Bloc haut : image + nom -->
-    <div class="almanax-item-top">
-      <div class="almanax-picture">
-        <img
-          v-if="itemImageX2"
-          :src="itemImageX2.url"
-          :alt="item.name"
-        />
-      </div>
+     <ItemContextTrigger :item="item">
+      <div class="almanax-item-top">
+          <div class="almanax-picture">
+            <img
+              v-if="itemImageX2"
+              :src="itemImageX2.url"
+              :alt="item.name"
+            />
+          </div>
+        
 
-      <div class="almanax-item-header">
-        <span class="almanax-item-name">
-          {{ item.name }}
-          <span class="almanax-item-quantity">
-            × {{ quantity }}
-          </span>
-        </span>
-      </div>
-    </div>
-
-    <!-- Bloc bas : prix -->
-    <div class="almanax-item-bottom">
-      <ItemPriceTrigger :price="get(item.id)">
-        <div class="almanax-item-total" :class="{ 'hover-enabled': showOtherPricesOnHover }">
-          💰
-          <span class="price-value">
-            {{ formatNumber(totalPrice) }} ₭ 
-            <span class="price-unit-value" v-if="price > 0">
-              ({{ formatNumber(price) }} ₭ / u)
+        <div class="almanax-item-header" :class="{ 'hover-enabled': showItemContextOnHover }" @click="copy(item.name)">
+          <span class="almanax-item-name">
+            {{ item.name }}
+            <span class="almanax-item-quantity">
+              × {{ quantity }}
             </span>
           </span>
         </div>
-      </ItemPriceTrigger>
+      </div>
+    </ItemContextTrigger>
+
+    <!-- Bloc bas : prix -->
+    <div class="almanax-item-bottom">
+      <div class="almanax-item-total">
+        💰
+        <span class="price-value">
+          {{ formatNumber(totalPrice) }} ₭ 
+          <span class="price-unit-value" v-if="price > 0">
+            ({{ formatNumber(price) }} ₭ / u)
+          </span>
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -132,10 +135,6 @@ const totalPrice = computed(() =>
   transition: color 0.15s ease;
 }
 
-.almanax-item-total.hover-enabled:hover {
-  color: var(--pico-primary);
-}
-
 .price-value {
   line-height: 1;
 }
@@ -143,5 +142,10 @@ const totalPrice = computed(() =>
   font-size: 0.70rem;
   color: var(--pico-muted-color);
   margin-left: 0.2rem;
+}
+
+.almanax-item-top:hover .almanax-item-name {
+  color: var(--pico-primary);
+  cursor: pointer;
 }
 </style>

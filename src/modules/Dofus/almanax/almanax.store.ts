@@ -69,8 +69,6 @@ export const useAlmanaxStore = defineStore('dofus.almanax', {
           )
         )
 
-        console.log("%c almanax.store.ts #72 || itemIds : ", 'background:red;color:#fff;font-weight:bold;', itemIds);
-
         await loadItemPrices(itemIds)
 
       } catch (e: any) {
