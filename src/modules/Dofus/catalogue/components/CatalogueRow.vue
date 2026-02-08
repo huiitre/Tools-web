@@ -312,14 +312,6 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
   font-weight: 600;
 }
 
-.copyable {
-  cursor: pointer;
-
-  &:hover {
-    color: var(--pico-primary);
-  }
-}
-
 .editable {
   cursor: pointer;
 

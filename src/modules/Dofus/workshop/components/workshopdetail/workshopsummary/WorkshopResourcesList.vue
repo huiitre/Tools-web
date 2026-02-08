@@ -1,10 +1,12 @@
 <script setup lang="ts">
+import { Item } from '@/modules/Dofus/item/types/item.types'
 import WorkshopResourceItem from './WorkshopResourceItem.vue'
 
 interface Resource {
   id: number
   name: string
   icon: string
+  item: Item
   price: number
   qty: number
   max: number

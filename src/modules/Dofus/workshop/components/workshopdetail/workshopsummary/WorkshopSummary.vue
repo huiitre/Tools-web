@@ -51,6 +51,7 @@ const zones = computed(() => {
         id: resource.item.id,
         name: resource.item.name,
         icon: img?.url ?? '',
+        item: resource.item,
         price: unitPrice,
         qty: resource.quantityObtained,
         max: resource.quantityRequired

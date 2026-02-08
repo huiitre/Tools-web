@@ -41,7 +41,7 @@ onUnmounted(() => {
   </div>
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
 .workshop-detail {
   display: flex;
   flex-direction: column;

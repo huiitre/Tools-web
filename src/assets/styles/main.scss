@@ -16,3 +16,12 @@ body {
 
 h1, h2, h3, h4, h5, h6
 { font-size: var(--pico-font-size); line-height: var(--pico-line-height); font-weight: var(--pico-font-weight, 700); }
+
+.copyable {
+  cursor: pointer;
+
+  &:hover {
+    color: var(--pico-primary);
+    font-weight: bold;
+  }
+}
