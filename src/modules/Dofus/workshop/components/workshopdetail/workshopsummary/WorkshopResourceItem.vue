@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useClipboard } from '@/composables/useClipboard'
+import { useImagePreview } from '@/composables/useImagePreview'
+import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
+import { Item } from '@/modules/Dofus/item/types/item.types'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import { normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { storeToRefs } from 'pinia'
@@ -7,22 +11,26 @@ interface Resource {
   id: number
   name: string
   icon: string
+  item: Item
   price: number
   qty: number
   max: number
 }
 
-interface Props {
+type Props = {
   resource: Resource
   condensed: boolean
 }
 
-interface Emits {
+type Emits = {
   (e: 'update:qty', value: number): void
 }
 
 defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const { copy } = useClipboard()
+const { open: openImagePreview } = useImagePreview()
 
 const workshopDetailStore = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(workshopDetailStore)
@@ -62,10 +70,14 @@ const onInput = (event: Event): void => {
     class="resource"
     :class="{ complete: resource.qty === resource.max }"
   >
-    <img :src="resource.icon" :alt="resource.name">
+    <!-- <img :src="resource.icon" :alt="resource.name" @click="openImagePreview(resource.icon, resource.name)"> -->
+
+    <ItemContextTrigger :item="resource.item">
+      <img :src="resource.icon" :alt="resource.name" @click="openImagePreview(resource.icon, resource.name)">
+    </ItemContextTrigger>
 
     <div class="resource-info">
-      <div class="name">{{ resource.name }}</div>
+      <div class="name copyable" @click="copy(resource.name)">{{ resource.name }}</div>
       <div class="price-details" v-if="!condensed">
         <span>Prix unitaire : {{ resource.price.toLocaleString() }} ₭</span>
         <span>Prix total : {{ (resource.price * resource.max).toLocaleString() }} ₭</span>
@@ -113,6 +125,7 @@ const onInput = (event: Event): void => {
     width: 24px;
     height: 24px;
     object-fit: contain;
+    cursor: pointer;
   }
 }
 

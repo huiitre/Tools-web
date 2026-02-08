@@ -1,8 +1,12 @@
 <script setup lang="ts">
+import { useClipboard } from '@/composables/useClipboard';
+
 const props = defineProps<{
   level: number
   parentName?: string
 }>()
+
+const { copy } = useClipboard()
 
 function getLevelColor(level: number): string {
   const colors = [
@@ -28,7 +32,7 @@ function getLevelColor(level: number): string {
       {{ props.level }}
     </div>
     <i class="mdi mdi-package-variant"></i>
-    <span>Pour craft : {{ props.parentName }}</span>
+    <span>Pour craft : <span class="copyable" @click="copy(props.parentName ?? '')">{{ props.parentName }}</span></span>
   </div>
 </template>
 

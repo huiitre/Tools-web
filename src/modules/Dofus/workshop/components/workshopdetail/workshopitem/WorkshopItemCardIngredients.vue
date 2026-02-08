@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useClipboard } from '@/composables/useClipboard'
+import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
@@ -17,6 +19,8 @@ const props = defineProps<{
 }>()
 
 const { isOwner } = storeToRefs(useWorkshopDetailStore())
+
+const { copy } = useClipboard();
 
 function getIngredientsByParent(
   ingredients: WorkshopItemIngredient[],
@@ -42,12 +46,19 @@ const onInput = (event: Event): void => {
       :key="ingredient.id"
       :class="['ingredient-row', { complete: ingredient.quantityObtained >= ingredient.quantityRequired }]"
     >
-      <img
+      <!-- <img
         :src="getItemImageByResolution(ingredient.item.images, AssetResolution.X2)?.url"
         :alt="ingredient.item.name"
         class="ing-icon"
-      />
-      <span class="ing-name">{{ ingredient.item.name }}</span>
+      /> -->
+      <ItemContextTrigger :item="ingredient.item">
+        <img
+          :src="getItemImageByResolution(ingredient.item.images, AssetResolution.X2)?.url"
+          :alt="ingredient.item.name"
+          class="ing-icon"
+        />
+      </ItemContextTrigger>
+      <span class="ing-name copyable" @click="copy(ingredient.item.name)">{{ ingredient.item.name }}</span>
 
       <div class="ing-controls">
         <button class="ing-btn min" v-if="isOwner">min</button>
@@ -94,6 +105,7 @@ const onInput = (event: Event): void => {
       width: 20px;
       height: 20px;
       object-fit: contain;
+      cursor: pointer;
     }
 
     .ing-name {

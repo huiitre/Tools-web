@@ -1,10 +1,14 @@
 <script setup lang="ts">
+import { useClipboard } from '@/composables/useClipboard'
+import { useImagePreview } from '@/composables/useImagePreview'
+import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import type { WorkshopItem, WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
 import { normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { storeToRefs } from 'pinia'
+import { computed } from 'vue'
 
 type CraftCard = {
   type: 'main' | 'craft'
@@ -16,6 +20,9 @@ const props = defineProps<{
   card: CraftCard
 }>()
 
+const { copy } = useClipboard();
+const { open: openImagePreview } = useImagePreview()
+
 const store = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(store)
 
@@ -25,36 +32,56 @@ const onQtyInput = (event: Event) => {
   input.value = String(value)
 }
 
+const itemPreview = computed(() => {
+  return props.card.type === 'main'
+    ? props.card.workshopItem.item
+    : props.card.craftedIngredient!.item
+})
+
+const itemName = computed(() => {
+  return props.card.type === 'main'
+    ? props.card.workshopItem.item.name
+    : props.card.craftedIngredient!.item.name
+})
+const itemTypeName = computed(() => {
+  return props.card.type === 'main'
+    ? props.card.workshopItem.item.type.name
+    : props.card.craftedIngredient!.item.type.name
+})
+const itemLevel = computed(() => {
+  return props.card.type === 'main'
+    ? props.card.workshopItem.item.level
+    : props.card.craftedIngredient!.item.level
+})
+const itemImage = computed(() => {
+  const item = props.card.type === 'main'
+    ? props.card.workshopItem.item
+    : props.card.craftedIngredient!.item
+
+  return getItemImageByResolution(item.images, AssetResolution.X2)?.url || ''
+})
+
 </script>
 
 <template>
   <header class="item-header">
-    <img
-      class="item-icon"
-      :src="getItemImageByResolution(
-        props.card.type === 'main'
-          ? props.card.workshopItem.item.images
-          : props.card.craftedIngredient!.item.images,
-        AssetResolution.X2
-      )?.url"
-      :alt="props.card.type === 'main'
-        ? props.card.workshopItem.item.name
-        : props.card.craftedIngredient!.item.name"
-    />
+
+    <ItemContextTrigger :item="itemPreview">
+      <img
+        class="item-icon"
+        :src="itemImage"
+        :alt="itemName"
+        @click="openImagePreview(itemImage, itemName)"
+      />
+    </ItemContextTrigger>
 
     <div class="item-title">
-      <strong>
-        {{ props.card.type === 'main'
-          ? props.card.workshopItem.item.name
-          : props.card.craftedIngredient!.item.name }}
+      <strong class="copyable" @click="copy(itemName)">
+        {{ itemName }}
       </strong>
       <small>
-        {{ props.card.type === 'main'
-          ? props.card.workshopItem.item.type.name
-          : props.card.craftedIngredient!.item.type.name }}
-        · Niv {{ props.card.type === 'main'
-          ? props.card.workshopItem.item.level
-          : props.card.craftedIngredient!.item.level }}
+        {{ itemTypeName }}
+        · Niv {{ itemLevel }}
       </small>
     </div>
 
@@ -83,6 +110,12 @@ const onQtyInput = (event: Event) => {
   grid-template-columns: auto 1fr auto;
   gap: 0.5rem;
   align-items: center;
+  padding: 0.75rem;
+  margin-bottom: 0;
+
+  img {
+    cursor: pointer;
+  }
 
   .item-icon {
     width: 28px;
