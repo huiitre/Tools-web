@@ -63,6 +63,8 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
       columns: [],
       visibleColumns: new Set<string>(),
 
+      selectedItemIds: new Set<number>(),
+
       error: null,
     }
   },
@@ -74,6 +76,20 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
 
     hasPreviousPage: (s) => s.previousPage !== null,
     hasNextPage: (s) => s.nextPage !== null,
+
+    isItemSelected: (state) => (itemId: number) => state.selectedItemIds.has(itemId),
+    
+    selectedItemsWithRecipe(state): number[] {
+      return state.items
+        .filter(item => item.hasRecipe && state.selectedItemIds.has(item.id))
+        .map(item => item.id)
+    },
+
+    allSelectableItemsSelected(state): boolean {
+      const selectableItems = state.items.filter(item => item.hasRecipe)
+      if (selectableItems.length === 0) return false
+      return selectableItems.every(item => state.selectedItemIds.has(item.id))
+    }
   },
 
   actions: {
@@ -81,6 +97,7 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
       const uiStore = useUIStore()
 
       this.error = null
+      this.clearSelection()
 
       try {
         uiStore.setLoading(true)
@@ -181,22 +198,26 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
     setQuery(q: string | null) {
       this.q = q
       this.page = DEFAULT_PAGE
+      this.clearSelection()
     },
 
     setPage(page: number) {
       this.page = page
+      this.clearSelection()
     },
 
     setPageSize(size: CataloguePageSize) {
       this.pageSize = size
       this.page = DEFAULT_PAGE
       localStorage.setItem(STORAGE_KEY_PAGE_SIZE, String(size))
+      this.clearSelection()
     },
 
     setSort(sort: string | null, dir: CatalogueSortDir) {
       this.sort = sort
       this.dir = dir
       this.page = DEFAULT_PAGE
+      this.clearSelection()
     },
 
     setItems(
@@ -217,10 +238,39 @@ export const useCatalogueStore = defineStore('dofus.catalogue', {
       this.lastPage = lastPage
     },
 
+    toggleItemSelection(itemId: number) {
+      if (this.selectedItemIds.has(itemId)) {
+        this.selectedItemIds.delete(itemId)
+      } else {
+        this.selectedItemIds.add(itemId)
+      }
+      this.selectedItemIds = new Set(this.selectedItemIds)
+    },
+
+    toggleSelectAll() {
+      const selectableItems = this.items.filter(item => item.hasRecipe)
+      
+      if (this.allSelectableItemsSelected) {
+        // Désélectionner tous
+        selectableItems.forEach(item => this.selectedItemIds.delete(item.id))
+      } else {
+        // Sélectionner tous
+        selectableItems.forEach(item => this.selectedItemIds.add(item.id))
+      }
+      
+      this.selectedItemIds = new Set(this.selectedItemIds)
+    },
+
+    clearSelection() {
+      this.selectedItemIds.clear()
+      this.selectedItemIds = new Set()
+    },
+
     clear() {
       this.columns = []
       this.visibleColumns.clear()
       this.ingredients = new Map<number, Item[]>()
+      this.clearSelection()
       localStorage.removeItem(STORAGE_KEY_COLUMNS)
       localStorage.removeItem(STORAGE_KEY_PAGE_SIZE)
     },

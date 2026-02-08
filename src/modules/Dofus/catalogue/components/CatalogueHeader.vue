@@ -13,20 +13,14 @@ const visibleColumns = computed(() => store.visibleCatalogueColumns)
 const isRightAligned = (key: string) =>
   key.includes('price') || key.startsWith('craft_')
 
-/**
- * Cycle : null → ASC → DESC → null
- */
 const handleSort = (col: { key: string; sortable: boolean }) => {
   if (!col.sortable) return
 
   if (store.sort !== col.key) {
-    // Nouvelle colonne → ASC
     store.setSort(col.key, 'ASC')
   } else if (store.dir === 'ASC') {
-    // Même colonne, ASC → DESC
     store.setSort(col.key, 'DESC')
   } else {
-    // Même colonne, DESC → reset
     store.setSort(null, 'ASC')
   }
 }
@@ -35,6 +29,8 @@ const getSortIcon = (key: string): string | null => {
   if (store.sort !== key) return null
   return store.dir === 'ASC' ? 'mdi-arrow-up' : 'mdi-arrow-down'
 }
+
+const allSelected = computed(() => store.allSelectableItemsSelected)
 </script>
 
 <template>
@@ -68,8 +64,15 @@ const getSortIcon = (key: string): string | null => {
         :class="getSortIcon(col.key)"
       />
     </span>
-    <!-- Actions placeholder -->
-    <span />
+    <!-- Checkbox "tout sélectionner" -->
+    <div class="select-all">
+      <input
+        type="checkbox"
+        :checked="allSelected"
+        @change="store.toggleSelectAll()"
+        title="Tout sélectionner / désélectionner"
+      />
+    </div>
   </div>
 </template>
 
@@ -104,5 +107,14 @@ const getSortIcon = (key: string): string | null => {
 .sort-icon {
   margin-left: 0.25rem;
   font-size: 0.7rem;
+}
+
+.select-all {
+  text-align: center;
+
+  input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
 }
 </style>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, nextTick } from 'vue'
+import { computed, ref, nextTick } from 'vue'
 import CatalogueHeader from './CatalogueHeader.vue'
 import { useCatalogueStore } from '@/modules/Dofus/catalogue/catalogue.store'
 import { useCatalogueGrid } from '@/modules/Dofus/catalogue/composables/useCatalogueGrid'
@@ -62,9 +62,7 @@ const children = computed(() => catalogueStore.getIngredients(props.item.id))
 
 /* ========================= IMAGE ========================= */
 const imageUrl = computed(() => {
-  console.log('item:', props.item.id, 'resolution type:', typeof props.item.images?.[0]?.resolution, 'value:', props.item.images?.[0]?.resolution)
   const img = getItemImageByResolution(props.item.images ?? [], AssetResolution.X2)
-  console.log('found img:', img)
   return img?.url ?? ''
 })
 
@@ -169,9 +167,6 @@ const getCellValue = (key: string): string | number => {
 }
 
 const isRightAligned = (key: string) => key.includes('price') || key.startsWith('craft_')
-
-const isPriceColumn = (key: string) => key.endsWith('_price')
-
 </script>
 
 <template>
@@ -239,9 +234,14 @@ const isPriceColumn = (key: string) => key.endsWith('_price')
       </div>
     </template>
 
-    <!-- ACTIONS -->
-    <div class="cell actions">
-      <i class="mdi mdi-dots-horizontal" />
+    <!-- CHECKBOX -->
+    <div class="cell checkbox-cell">
+      <input
+        v-if="item.hasRecipe"
+        type="checkbox"
+        :checked="catalogueStore.isItemSelected(item.id)"
+        @change="catalogueStore.toggleItemSelection(item.id)"
+      />
     </div>
   </div>
 
@@ -269,7 +269,6 @@ const isPriceColumn = (key: string) => key.endsWith('_price')
   background: var(--pico-card-background-color);
   border: 1px solid var(--pico-card-border-color);
   border-radius: 0.45rem;
-  overflow: hidden;
 }
 
 .catalogue-card:hover {
@@ -304,11 +303,6 @@ const isPriceColumn = (key: string) => key.endsWith('_price')
 
 .strong {
   font-weight: 600;
-}
-
-.actions {
-  text-align: center;
-  cursor: pointer;
 }
 
 .copyable {
@@ -349,5 +343,14 @@ const isPriceColumn = (key: string) => key.endsWith('_price')
   }
 
   -moz-appearance: textfield;
+}
+
+.checkbox-cell {
+  text-align: center;
+
+  input[type="checkbox"] {
+    margin: 0;
+    cursor: pointer;
+  }
 }
 </style>

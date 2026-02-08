@@ -62,6 +62,8 @@ export type CatalogueState = {
 
   columns: CatalogueColumn[]
   visibleColumns: Set<string>
+  
+  selectedItemIds: Set<number>
 
   error: string | null
 }
