@@ -3,6 +3,8 @@ import { ref, onMounted, onBeforeUnmount, computed, watch } from 'vue'
 import { useFloating, offset } from '@floating-ui/vue'
 import { useCatalogueStore } from '@/modules/Dofus/catalogue/catalogue.store'
 import CataloguePreferencesPanel from '@/modules/Dofus/catalogue/components/CataloguePreferencesPanel.vue'
+import CatalogueBatchActionsMenu from '@/modules/Dofus/catalogue/components/CatalogueBatchActionsMenu.vue'
+import AddToWorkshopModal from '@/modules/Dofus/catalogue/components/AddToWorkshopModal.vue'
 
 const catalogueStore = useCatalogueStore()
 
@@ -60,32 +62,75 @@ const goLast = () => {
 }
 
 /* ======================
-   FLOATING UI
+   PREFERENCES FLOATING UI
 ====================== */
 
-const isOpen = ref(false)
-const reference = ref<HTMLElement | null>(null)
-const floating = ref<HTMLElement | null>(null)
+const isPreferencesOpen = ref(false)
+const preferencesRef = ref<HTMLElement | null>(null)
+const preferencesFloating = ref<HTMLElement | null>(null)
 
-const { floatingStyles } = useFloating(reference, floating, {
+const { floatingStyles: preferencesStyles } = useFloating(preferencesRef, preferencesFloating, {
   placement: 'right-start',
   middleware: [offset(6)],
 })
 
+/* ======================
+   BATCH ACTIONS FLOATING UI
+====================== */
+
+const isBatchOpen = ref(false)
+const batchRef = ref<HTMLElement | null>(null)
+const batchFloating = ref<HTMLElement | null>(null)
+
+const { floatingStyles: batchStyles } = useFloating(batchRef, batchFloating, {
+  placement: 'right-start',
+  middleware: [offset(6)],
+})
+
+const hasSelection = computed(() => catalogueStore.selectedItemsWithRecipe.length > 0)
+
+/* ======================
+   ADD TO WORKSHOP MODAL
+====================== */
+
+const showAddToWorkshopModal = ref(false)
+
+function handleAddToWorkshop() {
+  isBatchOpen.value = false
+  showAddToWorkshopModal.value = true
+}
+
+/* ======================
+   CLICK OUTSIDE & SCROLL
+====================== */
+
 const onClickOutside = (e: MouseEvent) => {
   const target = e.target as HTMLElement
+  
+  // Preferences
   if (
-    reference.value &&
-    floating.value &&
-    !reference.value.contains(target) &&
-    !floating.value.contains(target)
+    preferencesRef.value &&
+    preferencesFloating.value &&
+    !preferencesRef.value.contains(target) &&
+    !preferencesFloating.value.contains(target)
   ) {
-    isOpen.value = false
+    isPreferencesOpen.value = false
+  }
+
+  // Batch
+  if (
+    batchRef.value &&
+    batchFloating.value &&
+    !batchRef.value.contains(target) &&
+    !batchFloating.value.contains(target)
+  ) {
+    isBatchOpen.value = false
   }
 }
 
 const onScroll = () => {
-  isOpen.value = false
+  isPreferencesOpen.value = false
+  isBatchOpen.value = false
 }
 
 onMounted(() => {
@@ -142,21 +187,43 @@ onBeforeUnmount(() => {
 
       <!-- PREFERENCES -->
       <button
-        ref="reference"
+        ref="preferencesRef"
         class="icon preferences"
         aria-label="Préférences catalogue"
-        @click="isOpen = !isOpen"
+        @click="isPreferencesOpen = !isPreferencesOpen"
       >
         <i class="mdi mdi-tune" />
       </button>
 
       <div
-        v-if="isOpen"
-        ref="floating"
+        v-if="isPreferencesOpen"
+        ref="preferencesFloating"
         class="floating-panel"
-        :style="floatingStyles"
+        :style="preferencesStyles"
       >
         <CataloguePreferencesPanel />
+      </div>
+
+      <!-- BATCH ACTIONS -->
+      <button
+        ref="batchRef"
+        class="icon batch"
+        :disabled="!hasSelection"
+        aria-label="Actions groupées"
+        @click="isBatchOpen = !isBatchOpen"
+      >
+        <i class="mdi mdi-playlist-check" />
+      </button>
+
+      <div
+        v-if="isBatchOpen"
+        ref="batchFloating"
+        class="floating-panel"
+        :style="batchStyles"
+      >
+        <CatalogueBatchActionsMenu
+          @add-to-workshop="handleAddToWorkshop"
+        />
       </div>
     </div>
 
@@ -169,6 +236,13 @@ onBeforeUnmount(() => {
       />
     </div>
   </div>
+
+  <!-- MODAL -->
+  <AddToWorkshopModal
+    v-if="showAddToWorkshopModal"
+    :item-ids="catalogueStore.selectedItemsWithRecipe"
+    @close="showAddToWorkshopModal = false"
+  />
 </template>
 
 <style scoped lang="scss">
@@ -220,7 +294,8 @@ button.icon i {
   user-select: none;
 }
 
-.preferences {
+.preferences,
+.batch {
   margin-left: 0.5rem;
 }
 

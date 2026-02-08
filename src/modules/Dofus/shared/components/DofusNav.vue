@@ -22,7 +22,7 @@ const tabs = computed(() => {
 })
 
 const isActive = (tabName: string) =>
-  route.name === tabName
+  route.matched.some(r => r.name === tabName)
 
 const goTo = (tabName: string) => {
   if (route.name !== tabName) {

@@ -8,6 +8,7 @@ import { useFetchGameServers } from '@/modules/Dofus/game/fetch/game.fetch'
 import { useDofusStore } from '@/modules/Dofus/dofus.store'
 import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { useWorkshopStore } from '@/modules/Dofus/workshop/store/workshop.store'
 
 const { startAutoRefresh, stopAutoRefresh } = useItemPrices()
 
@@ -39,6 +40,10 @@ const loadDofusModuleData = async () => {
     if (dofusStore.currentGameVersionId === null && gameVersions.length > 0) {
       dofusStore.setCurrentGameVersion(gameVersions[0].id)
     }
+
+    const workshopStore = useWorkshopStore()
+    await workshopStore.fetchTags()
+    await workshopStore.fetchWorkshops()
 
   } catch (e: any) {
     console.error('Dofus.vue | loadDofusModuleData', e)
