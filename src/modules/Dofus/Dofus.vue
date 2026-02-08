@@ -41,14 +41,14 @@ const loadDofusModuleData = async () => {
       dofusStore.setCurrentGameVersion(gameVersions[0].id)
     }
 
-    const workshopStore = useWorkshopStore()
-    await workshopStore.fetchTags()
-    await workshopStore.fetchWorkshops()
-
   } catch (e: any) {
     console.error('Dofus.vue | loadDofusModuleData', e)
     toast.error(e?.message || 'Erreur lors du chargement des données du module Dofus')
   }
+
+  const workshopStore = useWorkshopStore()
+  await workshopStore.fetchTags()
+  await workshopStore.fetchWorkshops()
 }
 
 watch(

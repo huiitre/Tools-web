@@ -4,9 +4,17 @@ import { useRoute, useRouter } from 'vue-router'
 
 import DofusGameSelect from './DofusGameSelect.vue'
 import DofusConfigButton from './DofusConfigButton.vue'
+import { useAuthStore } from '@/modules/Auth/auth.store'
+import { RoleCode } from '@/modules/Auth/types/auth.types'
 
 const route = useRoute()
 const router = useRouter()
+
+const authStore = useAuthStore()
+
+const canAccessWorkshop = computed(() =>
+  authStore.hasModuleAccess('DOFUS', RoleCode.USER)
+)
 
 const parentRoute = computed(() =>
   route.matched.find(r => r.name === 'dofus')
@@ -18,6 +26,7 @@ const tabs = computed(() => {
   return parentRoute.value.children.map(child => ({
     name: child.name as string,
     label: child.meta?.label as string,
+    disabled: child.name === 'dofus-workshop' && !canAccessWorkshop.value
   }))
 })
 
@@ -25,6 +34,10 @@ const isActive = (tabName: string) =>
   route.matched.some(r => r.name === tabName)
 
 const goTo = (tabName: string) => {
+
+  const tab = tabs.value.find(t => t.name === tabName)
+  if (tab?.disabled) return
+
   if (route.name !== tabName) {
     router.push({ name: tabName })
   }
@@ -42,7 +55,7 @@ const goTo = (tabName: string) => {
         v-for="tab in tabs"
         :key="tab.name"
         class="dofus-nav-item"
-        :class="{ active: isActive(tab.name) }"
+        :class="{ active: isActive(tab.name), disabled: tab.disabled }"
         @click="goTo(tab.name)"
       >
         {{ tab.label }}
@@ -129,4 +142,11 @@ const goTo = (tabName: string) => {
 .dofus-nav-item.active::after {
   transform: scaleX(1);
 }
+
+.dofus-nav-item.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 </style>

@@ -1,5 +1,6 @@
 import { resetSessionStores } from '@/stores/reset'
 import { defineStore } from 'pinia'
+import { RoleCode } from '@/modules/Auth/types/auth.types'
 
 /* ======================
    TYPES MÉTIER
@@ -40,7 +41,7 @@ type AuthState = {
 }
 
 /* ======================
-   STORE
+  STORE
 ====================== */
 
 export const useAuthStore = defineStore('auth', {
@@ -51,7 +52,33 @@ export const useAuthStore = defineStore('auth', {
   }),
 
   getters: {
-    isAuthenticated: (s) => !!s.user
+    isAuthenticated: (s) => !!s.user,
+
+    hasModuleAccess: (s) => (moduleCode: string, minRole: RoleCode) => {
+
+      if (!s.user) return false
+
+      const module = s.user.modules.find(m => m.code === moduleCode.toLowerCase() && m.active)
+      if (!module) return false
+
+      const hierarchy = [
+        RoleCode.READ_ONLY,
+        RoleCode.USER,
+        RoleCode.MODERATOR,
+        RoleCode.ADMIN,
+        RoleCode.TECH,
+        RoleCode.OWNER
+      ]
+
+      const userMaxRole = module.roles
+        .filter(r => r.active)
+        .map(r => hierarchy.indexOf(r.code as RoleCode))
+        .reduce((max, current) => Math.max(max, current), -1)
+
+      const minIndex = hierarchy.indexOf(minRole)
+
+      return userMaxRole >= minIndex
+    }
   },
 
   actions: {

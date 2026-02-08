@@ -21,3 +21,12 @@ export type useFetchRegisterType = {
   email: string;
   password: string;
 }
+
+export enum RoleCode {
+  READ_ONLY = 'READ_ONLY',
+  USER = 'USER',
+  MODERATOR = 'MODERATOR',
+  ADMIN = 'ADMIN',
+  TECH = 'TECH',
+  OWNER = 'OWNER'
+}
