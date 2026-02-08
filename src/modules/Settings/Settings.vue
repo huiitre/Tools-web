@@ -36,7 +36,7 @@ const currentSection = ref<SettingsSection>('account-profile')
         <p>Langue, options globales</p>
       </section>
 
-      <section v-if="currentSection === 'prefs-appearance'">
+      <!-- <section v-if="currentSection === 'prefs-appearance'">
         <h2>Apparence</h2>
         <p>Thème, affichage</p>
       </section>
@@ -54,7 +54,7 @@ const currentSection = ref<SettingsSection>('account-profile')
       <section v-if="currentSection === 'module-todolist'">
         <h2>Todolist</h2>
         <p>Paramètres spécifiques Todolist</p>
-      </section>
+      </section> -->
     </main>
   </div>
 </template>
