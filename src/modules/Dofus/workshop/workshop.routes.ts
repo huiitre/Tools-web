@@ -1,3 +1,6 @@
+import { useAuthStore } from '@/modules/Auth/auth.store'
+import { RoleCode } from '@/modules/Auth/types/auth.types'
+
 export const routes = [
   {
     name: 'dofus-workshop',
@@ -5,6 +8,12 @@ export const routes = [
     component: () => import('@/modules/Dofus/workshop/views/Workshop.vue'),
     meta: {
       label: 'Atelier',
+    },
+    beforeEnter: () => {
+      const authStore = useAuthStore()
+      if (!authStore.hasModuleAccess('DOFUS', RoleCode.USER)) {
+        return { name: 'dofus-almanax' }
+      }
     },
     redirect: { name: 'dofus-workshop-list' },
     children: [

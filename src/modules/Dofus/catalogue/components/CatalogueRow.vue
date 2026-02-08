@@ -14,6 +14,8 @@ import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 import { useUIStore } from '@/stores/ui.store'
 import { Item } from '@/modules/Dofus/item/types/item.types'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
+import { useAuthStore } from '@/modules/Auth/auth.store'
+import { RoleCode } from '@/modules/Auth/types/auth.types'
 
 defineOptions({ name: 'CatalogueRow' })
 
@@ -28,6 +30,11 @@ const catalogueStore = useCatalogueStore()
 const { copy } = useClipboard()
 const { open: openImagePreview } = useImagePreview()
 const uiStore = useUIStore()
+const authStore = useAuthStore()
+
+const canWrite = computed(() =>
+  authStore.hasModuleAccess('DOFUS', RoleCode.USER)
+)
 
 /* ========================= COPY COLUMNS DEF ========================= */
 const copyableKeys = ['id', 'asset_id', 'type', 'name', 'level', 'description']
@@ -203,7 +210,7 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
         @click="!isEditingPrice && startEditPrice()"
       >
         <input
-          v-if="isEditingPrice"
+          v-if="isEditingPrice && canWrite"
           ref="priceInputRef"
           :value="editPriceValue"
           type="text"
