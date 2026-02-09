@@ -4,25 +4,18 @@ import WorkshopItemSearchDropdown from './WorkshopItemSearchDropdown.vue'
 interface Props {
   showCompleted: boolean
   condensed: boolean
-  searchQuery: string
   activeSortMode: 'quantity' | 'name'
 }
 
 interface Emits {
   (e: 'update:showCompleted', value: boolean): void
   (e: 'update:condensed', value: boolean): void
-  (e: 'update:searchQuery', value: string): void
   (e: 'sortByQuantity'): void
   (e: 'sortByName'): void
-  (e: 'itemSelected', item: any): void
 }
 
 defineProps<Props>()
 const emit = defineEmits<Emits>()
-
-function handleItemSelect(item: any) {
-  emit('itemSelected', item)
-}
 </script>
 
 <template>
@@ -65,11 +58,7 @@ function handleItemSelect(item: any) {
       </button>
     </div>
 
-    <WorkshopItemSearchDropdown
-      :model-value="searchQuery"
-      @update:model-value="emit('update:searchQuery', $event)"
-      @select="handleItemSelect"
-    />
+    <WorkshopItemSearchDropdown />
   </div>
 </template>
 

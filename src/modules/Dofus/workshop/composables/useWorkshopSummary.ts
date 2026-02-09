@@ -1,14 +1,16 @@
 import { computed } from 'vue'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
-import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
-import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
-import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
-import type { WorkshopItem, WorkshopItemIngredient, AggregatedResource, WorkshopSummary } from '@/modules/Dofus/workshop/types/workshop.types'
+import { useWorkshopPriceCalculator } from '@/modules/Dofus/workshop/composables/useWorkshopPriceCalculator'
+import { type WorkshopItem, type WorkshopItemIngredient, type AggregatedResource, type WorkshopSummary, WorkshopItemStrategy } from '@/modules/Dofus/workshop/types/workshop.types'
 
 export function useWorkshopSummary() {
   const workshopDetailStore = useWorkshopDetailStore()
-  const { get: getPrice } = useItemPrices()
-  const dofusConfigStore = useDofusConfigStore()
+  const {
+    getUnitPrice,
+    calculateItemCraftCostTotal,
+    calculateItemCraftAdjusted,
+    calculateCraftedIngredientsCost
+  } = useWorkshopPriceCalculator()
 
   const summary = computed<WorkshopSummary>(() => {
     const items = workshopDetailStore.items
@@ -17,13 +19,12 @@ export function useWorkshopSummary() {
       return createEmptySummary()
     }
 
-    // Agréger toutes les ressources
     const resourceMap = new Map<number, AggregatedResource>()
 
     for (const workshopItem of items) {
       processIngredients(
         workshopItem.ingredients.filter(ing => !ing.parentIngredientId),
-        workshopItem.quantity,
+        1,
         workshopItem.ingredients,
         resourceMap,
         workshopItem
@@ -32,7 +33,6 @@ export function useWorkshopSummary() {
 
     const allResources = Array.from(resourceMap.values())
 
-    // Grouper par zone géographique
     const zoneMap = new Map<string, AggregatedResource[]>()
 
     for (const resource of allResources) {
@@ -43,7 +43,6 @@ export function useWorkshopSummary() {
         existing.push(resource)
         zoneMap.set('Zone inconnue', existing)
       } else {
-        // Prendre la zone primaire ou la première
         const primaryZone = zones.find(z => z.isPrimary) || zones[0]
         const zoneName = primaryZone.area.name
 
@@ -53,7 +52,6 @@ export function useWorkshopSummary() {
       }
     }
 
-    // Trier les zones par nom
     const sortedZones = Array.from(zoneMap.entries())
       .sort((a, b) => a[0].localeCompare(b[0]))
       .map(([zoneName, resources]) => {
@@ -68,42 +66,73 @@ export function useWorkshopSummary() {
         }
       })
 
-    // Calculer les stats globales
     const totalResources = allResources.length
     const totalComplete = allResources.filter(r => r.quantityObtained >= r.quantityRequired).length
     const totalMissing = totalResources - totalComplete
 
-    // Calculer les prix
-    const totalBuyCost = allResources.reduce((sum, r) => {
-      const remaining = Math.max(0, r.quantityRequired - r.quantityObtained)
-      const itemPrice = getPrice(r.item.id)
-      const unitPrice = itemPrice ? getItemPriceByMode(itemPrice, dofusConfigStore.priceDisplayMode) : 0
-      return sum + (remaining * unitPrice)
+    // Prix d'achat des items principaux
+    const buyItemsCost = items.reduce((sum, item) => {
+      const unitPrice = getUnitPrice(item.item.id)
+      return sum + (unitPrice * item.quantity)
     }, 0)
 
-    // Prix craft = somme des prix craft des items craftables
-    const totalCraftCost = items.reduce((sum, item) => {
+    // Prix d'achat des items restant (items dont ingrédients de base non tous validés)
+    const buyItemsRemaining = items.reduce((sum, item) => {
+      // Ingrédients de base uniquement (directs et non craftés)
+      const baseIngredients = item.ingredients.filter(ing => {
+        const isCrafted = item.ingredients.some(sub => sub.parentIngredientId === ing.id)
+        return !ing.parentIngredientId && !isCrafted
+      })
+      
+      // Si tous les ingrédients de base sont validés, l'item est complet
+      const allComplete = baseIngredients.every(ing => ing.quantityObtained >= ing.quantityRequired)
+      
+      if (allComplete) return sum
+      
+      const unitPrice = getUnitPrice(item.item.id)
+      return sum + (unitPrice * item.quantity)
+    }, 0)
+
+    // Prix craft total = somme TOUS les PU (items + ingrédients craftés)
+    const totalCraftCostTotal = items.reduce((sum, item) => {
       if (!item.item.hasRecipe) return sum
-      const itemPrice = getPrice(item.item.id)
-      if (!itemPrice) return sum
-
-      const craftPrice = 
-        dofusConfigStore.priceDisplayMode === 'USER' ? itemPrice.craftUserPrice :
-        dofusConfigStore.priceDisplayMode === 'COMMUNITY' ? itemPrice.craftCommunityPrice :
-        itemPrice.craftLastPrice
-
-      return sum + (craftPrice * item.quantity)
+      
+      const itemTotal = calculateItemCraftCostTotal(item.ingredients)
+      const craftedTotal = calculateCraftedIngredientsCost(item.ingredients)
+      
+      return sum + itemTotal + craftedTotal
     }, 0)
 
-    // Meilleur prix = min(achat direct, craft)
-    const bestPrice = Math.min(totalBuyCost, totalCraftCost)
+    // Prix craft ajusté
+    const totalCraftAdjusted = items.reduce((sum, item) => {
+      if (!item.item.hasRecipe) return sum
+      return sum + calculateItemCraftAdjusted(item.ingredients)
+    }, 0)
 
-    // Prix ajusté = prend en compte quantityObtained
-    const totalAdjustedCost = allResources.reduce((sum, r) => {
-      const remaining = Math.max(0, r.quantityRequired - r.quantityObtained)
-      const itemPrice = getPrice(r.item.id)
-      const unitPrice = itemPrice ? getItemPriceByMode(itemPrice, dofusConfigStore.priceDisplayMode) : 0
-      return sum + (remaining * unitPrice)
+    // Prix mixte personnalisé
+    const mixedCost = items.reduce((sum, item) => {
+      if (item.strategy === WorkshopItemStrategy.BUY) {
+        const unitPrice = getUnitPrice(item.item.id)
+        return sum + (unitPrice * item.quantity)
+      } else {
+        if (!item.item.hasRecipe) return sum
+        
+        const itemCraftCost = calculateItemCraftCostTotal(item.ingredients)
+        const craftedCost = calculateCraftedIngredientsCost(item.ingredients)
+        
+        return sum + itemCraftCost + craftedCost
+      }
+    }, 0)
+
+    // Prix mixte ajusté
+    const mixedAdjusted = items.reduce((sum, item) => {
+      if (item.strategy === WorkshopItemStrategy.BUY) {
+        const unitPrice = getUnitPrice(item.item.id)
+        return sum + (unitPrice * item.quantity)
+      } else {
+        if (!item.item.hasRecipe) return sum
+        return sum + calculateItemCraftAdjusted(item.ingredients)
+      }
     }, 0)
 
     return {
@@ -111,10 +140,13 @@ export function useWorkshopSummary() {
       totalResources,
       totalMissing,
       totalComplete,
-      totalCost: totalBuyCost,
-      craftCost: totalCraftCost,
-      bestPrice,
-      adjustedCost: totalAdjustedCost,
+      buyItemsCost,
+      buyItemsRemaining, // NOUVEAU
+      totalCost: 0, // DEPRECATED - sera supprimé du type
+      craftCost: totalCraftCostTotal, // MODIFIÉ - maintenant craft total
+      craftAdjusted: totalCraftAdjusted,
+      mixedCost,
+      mixedAdjusted,
       resources: allResources,
       zones: sortedZones
     }
@@ -131,10 +163,7 @@ export function useWorkshopSummary() {
       const totalRequired = ingredient.quantityRequired * multiplier
       const totalObtained = ingredient.quantityObtained * multiplier
 
-      const itemPrice = getPrice(ingredient.item.id)
-      const unitPrice = itemPrice
-        ? getItemPriceByMode(itemPrice, dofusConfigStore.priceDisplayMode)
-        : 0
+      const unitPrice = getUnitPrice(ingredient.item.id)
 
       const existing = resourceMap.get(ingredient.item.id)
 
@@ -161,7 +190,6 @@ export function useWorkshopSummary() {
         })
       }
 
-      // 🔽 ENSUITE seulement, on descend si craftable
       if (ingredient.item.hasRecipe) {
         const subIngredients = allIngredients.filter(
           ing => ing.parentIngredientId === ingredient.id
@@ -170,7 +198,7 @@ export function useWorkshopSummary() {
         if (subIngredients.length > 0) {
           processIngredients(
             subIngredients,
-            totalRequired,
+            multiplier,
             allIngredients,
             resourceMap,
             workshopItem
@@ -186,10 +214,13 @@ export function useWorkshopSummary() {
       totalResources: 0,
       totalMissing: 0,
       totalComplete: 0,
+      buyItemsCost: 0,
+      buyItemsRemaining: 0,
       totalCost: 0,
       craftCost: 0,
-      bestPrice: 0,
-      adjustedCost: 0,
+      craftAdjusted: 0,
+      mixedCost: 0,
+      mixedAdjusted: 0,
       resources: [],
       zones: []
     }

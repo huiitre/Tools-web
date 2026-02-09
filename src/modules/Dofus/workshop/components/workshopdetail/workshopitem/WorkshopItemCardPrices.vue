@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
-import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
-import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { computed, ref } from 'vue'
+import { useWorkshopPriceCalculator } from '@/modules/Dofus/workshop/composables/useWorkshopPriceCalculator'
 import type { WorkshopItem, WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
 import { formatNumber, normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import { storeToRefs } from 'pinia'
+import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 
 type CraftCard = {
   type: 'main' | 'craft'
@@ -17,40 +18,127 @@ const props = defineProps<{
   card: CraftCard
 }>()
 
-const { get: getPrice } = useItemPrices()
-const config = useDofusConfigStore()
+const { getUnitPrice } = useWorkshopPriceCalculator()
+
 const workshopDetailStore = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(workshopDetailStore)
 
-function getUnitPrice(itemId: number): number {
-  const p = getPrice(itemId)
-  return p ? getItemPriceByMode(p, config.priceDisplayMode) : 0
-}
+const { refreshRecursive } = useItemPrices()
+
+const priceUpdateTimeout = ref<NodeJS.Timeout | null>(null)
 
 function getFormattedUnitPrice(itemId: number): string {
   return formatNumber(getUnitPrice(itemId))
 }
 
-function getCraftPrice(itemId: number): number {
-  const p = getPrice(itemId)
-  if (!p) return 0
+async function updateItemPrice(itemId: number, rawValue: string) {
+  // Clear timeout précédent
+  if (priceUpdateTimeout.value) {
+    clearTimeout(priceUpdateTimeout.value)
+  }
 
-  return config.priceDisplayMode === 'USER'
-    ? p.craftUserPrice
-    : config.priceDisplayMode === 'COMMUNITY'
-      ? p.craftCommunityPrice
-      : p.craftLastPrice
+  // Debounce de 800ms
+  priceUpdateTimeout.value = setTimeout(async () => {
+    const sanitized = rawValue.replace(/[^0-9]/g, '')
+    const newPrice = parseInt(sanitized, 10)
+
+    if (isNaN(newPrice) || newPrice < 0) {
+      return
+    }
+
+    const oldPrice = getUnitPrice(itemId)
+    if (newPrice === oldPrice) {
+      return
+    }
+
+    try {
+      await useMutationItemPrices([{ itemId, price: newPrice }])
+      await refreshRecursive([itemId])
+    } catch (e) {
+      console.error('Erreur update prix:', e)
+    }
+  }, 500)
 }
+
+const unitPriceMultiplied = computed(() => {
+  if (props.card.type === 'main') {
+    return getUnitPrice(props.card.workshopItem.item.id) * props.card.workshopItem.quantity
+  } else {
+    return getUnitPrice(props.card.craftedIngredient!.item.id) * props.card.craftedIngredient!.quantityRequired
+  }
+})
+
+// Prix craft UNITAIRE = somme PU TOUS les ingrédients directs (craftés ou non)
+const craftPrice = computed(() => {
+  if (props.card.type === 'main') {
+    const directIngredients = props.card.workshopItem.ingredients.filter(ing => !ing.parentIngredientId)
+    
+    return directIngredients.reduce((sum, ing) => {
+      const baseQty = ing.quantityRequired / props.card.workshopItem.quantity
+      return sum + (getUnitPrice(ing.item.id) * baseQty)
+    }, 0)
+  } else {
+    const subIngredients = props.card.workshopItem.ingredients.filter(
+      sub => sub.parentIngredientId === props.card.craftedIngredient!.id
+    )
+    
+    const parentQty = props.card.craftedIngredient!.quantityRequired
+    
+    return subIngredients.reduce((sum, sub) => {
+      const baseQty = sub.quantityRequired / parentQty
+      return sum + (getUnitPrice(sub.item.id) * baseQty)
+    }, 0)
+  }
+})
+
+// Prix craft multiplié
+const craftPriceMultiplied = computed(() => {
+  if (props.card.type === 'main') {
+    return craftPrice.value * props.card.workshopItem.quantity
+  } else {
+    return craftPrice.value * props.card.craftedIngredient!.quantityRequired
+  }
+})
+
+// Comparaison pour indicateur visuel
+const comparison = computed(() => {
+  if (unitPriceMultiplied.value < craftPriceMultiplied.value) {
+    return 'buy' // Acheter est moins cher
+  } else if (craftPriceMultiplied.value < unitPriceMultiplied.value) {
+    return 'craft' // Crafter est moins cher
+  } else {
+    return 'equal' // Égaux
+  }
+})
+
+// Prix total craft = prix craft multiplié - PU des validés
+const totalCraftPrice = computed(() => {
+  if (props.card.type === 'main') {
+    const directIngredients = props.card.workshopItem.ingredients.filter(ing => !ing.parentIngredientId)
+    
+    const totalObtained = directIngredients.reduce((sum, ing) => {
+      return sum + (getUnitPrice(ing.item.id) * ing.quantityObtained)
+    }, 0)
+    
+    return craftPriceMultiplied.value - totalObtained
+  } else {
+    const subIngredients = props.card.workshopItem.ingredients.filter(
+      sub => sub.parentIngredientId === props.card.craftedIngredient!.id
+    )
+    
+    const totalObtained = subIngredients.reduce((sum, sub) => {
+      return sum + (getUnitPrice(sub.item.id) * sub.quantityObtained)
+    }, 0)
+    
+    return craftPriceMultiplied.value - totalObtained
+  }
+})
 
 const onInput = (event: Event) => {
   const input = event.target as HTMLInputElement
-
   const raw = input.value
-
   const normalized = normalizePositiveIntegerInput(raw)
-
   const formatted = formatNumber(normalized)
-
   input.value = formatted
 }
 
@@ -72,19 +160,24 @@ const onInput = (event: Event) => {
               : props.card.craftedIngredient!.item.id
           )"
           class="price-input"
-          @input="onInput"
+          @input="(event) => {
+            onInput(event)
+            const target = event.target as HTMLInputElement
+            const itemId = props.card.type === 'main'
+              ? props.card.workshopItem.item.id
+              : props.card.craftedIngredient!.item.id
+            updateItemPrice(itemId, target.value)
+          }"
           :disabled="!isOwner"
         />
       </div>
 
-      <div class="cell value">
+      <div class="cell value" :class="{ cheaper: comparison === 'buy', expensive: comparison === 'craft' }">
         <span class="price-label">Prix unitaire multiplié</span>
         <strong class="price-value">
-          {{
-            props.card.type === 'main'
-              ? (getUnitPrice(props.card.workshopItem.item.id) * props.card.workshopItem.quantity).toLocaleString()
-              : (getUnitPrice(props.card.craftedIngredient!.item.id) * props.card.craftedIngredient!.quantityRequired).toLocaleString()
-          }} ₭
+          <i v-if="comparison === 'buy'" class="mdi mdi-arrow-down indicator" />
+          <i v-else-if="comparison === 'craft'" class="mdi mdi-arrow-up indicator" />
+          {{ unitPriceMultiplied.toLocaleString() }} ₭
         </strong>
       </div>
     </div>
@@ -94,35 +187,23 @@ const onInput = (event: Event) => {
       <div class="cell value">
         <span class="price-label">Prix craft</span>
         <strong class="price-value">
-          {{
-            getCraftPrice(
-              props.card.type === 'main'
-                ? props.card.workshopItem.item.id
-                : props.card.craftedIngredient!.item.id
-            ).toLocaleString()
-          }} ₭
+          {{ craftPrice.toLocaleString() }} ₭
         </strong>
       </div>
 
-      <div class="cell value">
+      <div class="cell value" :class="{ cheaper: comparison === 'craft', expensive: comparison === 'buy' }">
         <span class="price-label">Prix craft multiplié</span>
         <strong class="price-value">
-          {{
-            props.card.type === 'main'
-              ? (getCraftPrice(props.card.workshopItem.item.id) * props.card.workshopItem.quantity).toLocaleString()
-              : (getCraftPrice(props.card.craftedIngredient!.item.id) * props.card.craftedIngredient!.quantityRequired).toLocaleString()
-          }} ₭
+          <i v-if="comparison === 'craft'" class="mdi mdi-arrow-down indicator" />
+          <i v-else-if="comparison === 'buy'" class="mdi mdi-arrow-up indicator" />
+          {{ craftPriceMultiplied.toLocaleString() }} ₭
         </strong>
       </div>
 
       <div class="cell value highlight">
         <span class="price-label">Prix total craft</span>
         <strong class="price-value">
-          {{
-            props.card.type === 'main'
-              ? (getCraftPrice(props.card.workshopItem.item.id) * props.card.workshopItem.quantity).toLocaleString()
-              : (getCraftPrice(props.card.craftedIngredient!.item.id) * props.card.craftedIngredient!.quantityRequired).toLocaleString()
-          }} ₭
+          {{ totalCraftPrice.toLocaleString() }} ₭
         </strong>
       </div>
     </div>
@@ -159,8 +240,16 @@ const onInput = (event: Event) => {
     gap: 0.2rem;
     align-items: center;
 
-    &.value {
-      /* justify-content: flex-end; */
+    &.cheaper {
+      .price-value {
+        color: var(--pico-ins-color);
+      }
+    }
+
+    &.expensive {
+      .price-value {
+        color: var(--pico-del-color);
+      }
     }
 
     &.highlight {
@@ -180,6 +269,13 @@ const onInput = (event: Event) => {
     font-size: 0.75rem;
     font-weight: 600;
     text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .indicator {
+    font-size: 0.85rem;
   }
 
   .price-input {

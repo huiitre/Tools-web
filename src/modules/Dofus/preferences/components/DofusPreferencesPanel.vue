@@ -39,7 +39,7 @@ const setValue = (key: string, value: unknown) => {
 
 <template>
   <div class="dofus-preferences-panel">
-    <h3 class="panel-title">Préférences Dofus</h3>
+    <h3 class="panel-title">Préférences</h3>
 
     <div
       v-for="pref in DOFUS_PREFERENCES"

@@ -20,6 +20,7 @@ export type WorkshopItem = {
   item: Item
   quantity: number
   ingredients: WorkshopItemIngredient[]
+  strategy: WorkshopItemStrategy
 }
 
 export type WorkshopItemIngredient = {
@@ -46,17 +47,24 @@ export type AggregatedResource = {
   usedIn: WorkshopItem[]
 }
 
-export type WorkshopSummary = {
+export interface WorkshopSummary {
   totalItems: number
   totalResources: number
   totalMissing: number
   totalComplete: number
+  buyItemsCost: number
   totalCost: number
   craftCost: number
-  bestPrice: number
-  adjustedCost: number
+  craftAdjusted: number
+  mixedCost: number
+  mixedAdjusted: number
   resources: AggregatedResource[]
-  zones: ResourcesByZone[]
+  zones: {
+    name: string
+    percent: number
+    resources: AggregatedResource[]
+  }[],
+  buyItemsRemaining: number
 }
 
 export type CraftCard = {
@@ -66,4 +74,9 @@ export type CraftCard = {
   subIngredients?: WorkshopItemIngredient[]
   level?: number
   parentName?: string
+}
+
+export enum WorkshopItemStrategy {
+  CRAFT = 'craft',
+  BUY = 'buy'
 }

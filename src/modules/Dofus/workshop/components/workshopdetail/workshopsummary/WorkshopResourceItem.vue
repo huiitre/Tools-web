@@ -4,6 +4,7 @@ import { useImagePreview } from '@/composables/useImagePreview'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
 import { Item } from '@/modules/Dofus/item/types/item.types'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
+import type { WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
 import { normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { storeToRefs } from 'pinia'
 
@@ -22,12 +23,7 @@ type Props = {
   condensed: boolean
 }
 
-type Emits = {
-  (e: 'update:qty', value: number): void
-}
-
-defineProps<Props>()
-const emit = defineEmits<Emits>()
+const props = defineProps<Props>()
 
 const { copy } = useClipboard()
 const { open: openImagePreview } = useImagePreview()
@@ -35,32 +31,88 @@ const { open: openImagePreview } = useImagePreview()
 const workshopDetailStore = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(workshopDetailStore)
 
-function setMin(res: Resource) {
-  emit('update:qty', 0)
+function findAllIngredients(itemId: number): WorkshopItemIngredient[] {
+  const ingredients: WorkshopItemIngredient[] = []
+  for (const item of workshopDetailStore.items) {
+    for (const ing of item.ingredients) {
+      if (ing.item.id === itemId) {
+        ingredients.push(ing)
+      }
+    }
+  }
+  return ingredients
 }
 
-function setMax(res: Resource) {
-  emit('update:qty', res.max)
-}
-
-function decrement(res: Resource) {
-  if (res.qty > 0) {
-    emit('update:qty', res.qty - 1)
+async function setMin() {
+  const ingredients = findAllIngredients(props.resource.item.id)
+  const toUpdate = ingredients
+    .filter(ing => ing.quantityObtained > 0)
+    .map(ing => ({ id: ing.id, quantity: 0 }))
+  
+  if (toUpdate.length > 0) {
+    await workshopDetailStore.setIngredientsQuantityObtained(toUpdate)
   }
 }
 
-function increment(res: Resource) {
-  if (res.qty < res.max) {
-    emit('update:qty', res.qty + 1)
+async function setMax() {
+  const ingredients = findAllIngredients(props.resource.item.id)
+  const toUpdate = ingredients
+    .filter(ing => ing.quantityObtained < ing.quantityRequired)
+    .map(ing => ({ id: ing.id, quantity: ing.quantityRequired }))
+  
+  if (toUpdate.length > 0) {
+    await workshopDetailStore.setIngredientsQuantityObtained(toUpdate)
   }
 }
 
-const onInput = (event: Event): void => {
+async function decrement() {
+  const ingredients = findAllIngredients(props.resource.item.id)
+  const toDecrement = ingredients.find(ing => ing.quantityObtained > 0)
+  
+  if (toDecrement) {
+    await workshopDetailStore.setIngredientsQuantityObtained([
+      { id: toDecrement.id, quantity: toDecrement.quantityObtained - 1 }
+    ])
+  }
+}
+
+async function increment() {
+  const ingredients = findAllIngredients(props.resource.item.id)
+  const toIncrement = ingredients.find(ing => ing.quantityObtained < ing.quantityRequired)
+  
+  if (toIncrement) {
+    await workshopDetailStore.setIngredientsQuantityObtained([
+      { id: toIncrement.id, quantity: toIncrement.quantityObtained + 1 }
+    ])
+  }
+}
+
+async function onInput(event: Event) {
   const input = event.target as HTMLInputElement
   const value = normalizePositiveIntegerInput(input.value)
   input.value = String(value)
 
-  emit('update:qty', value)
+  const targetQty = Number(value)
+  const ingredients = findAllIngredients(props.resource.item.id)
+  
+  let remaining = targetQty
+  const toUpdate: { id: number; quantity: number }[] = []
+  
+  for (const ing of ingredients) {
+    const maxForThis = ing.quantityRequired
+    const assignedQty = Math.min(remaining, maxForThis)
+    
+    if (assignedQty !== ing.quantityObtained) {
+      toUpdate.push({ id: ing.id, quantity: assignedQty })
+    }
+    
+    remaining -= assignedQty
+    if (remaining <= 0) break
+  }
+  
+  if (toUpdate.length > 0) {
+    await workshopDetailStore.setIngredientsQuantityObtained(toUpdate)
+  }
 }
 
 </script>
@@ -70,8 +122,6 @@ const onInput = (event: Event): void => {
     class="resource"
     :class="{ complete: resource.qty === resource.max }"
   >
-    <!-- <img :src="resource.icon" :alt="resource.name" @click="openImagePreview(resource.icon, resource.name)"> -->
-
     <ItemContextTrigger :item="resource.item">
       <img :src="resource.icon" :alt="resource.name" @click="openImagePreview(resource.icon, resource.name)">
     </ItemContextTrigger>
@@ -86,9 +136,9 @@ const onInput = (event: Event): void => {
     </div>
 
     <div class="controls">
-      <button class="min" @click="setMin(resource)" v-if="isOwner">min</button>
-      <button class="max" @click="setMax(resource)" v-if="isOwner">max</button>
-      <button class="decrement" @click="decrement(resource)" v-if="isOwner">−</button>
+      <button class="min" @click="setMin" v-if="isOwner">min</button>
+      <button class="max" @click="setMax" v-if="isOwner">max</button>
+      <button class="decrement" @click="decrement" v-if="isOwner">−</button>
       <input
         type="number"
         :value="resource.qty"
@@ -97,7 +147,7 @@ const onInput = (event: Event): void => {
         :max="resource.max"
         :disabled="!isOwner"
       >
-      <button class="increment" @click="increment(resource)" v-if="isOwner">+</button>
+      <button class="increment" @click="increment" v-if="isOwner">+</button>
       <span class="max">/ {{ resource.max }}</span>
     </div>
   </div>

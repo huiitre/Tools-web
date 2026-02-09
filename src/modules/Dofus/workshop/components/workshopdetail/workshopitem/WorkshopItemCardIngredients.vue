@@ -4,6 +4,7 @@ import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigg
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
+import { useWorkshopPriceCalculator } from '@/modules/Dofus/workshop/composables/useWorkshopPriceCalculator'
 import type { WorkshopItem, WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
 import { normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { storeToRefs } from 'pinia'
@@ -18,21 +19,104 @@ const props = defineProps<{
   card: CraftCard
 }>()
 
-const { isOwner } = storeToRefs(useWorkshopDetailStore())
+const store = useWorkshopDetailStore()
+const { isOwner, isCondensed } = storeToRefs(store)
+const { getUnitPrice } = useWorkshopPriceCalculator()
 
-const { copy } = useClipboard();
+const { copy } = useClipboard()
 
 function getIngredientsByParent(
   ingredients: WorkshopItemIngredient[],
   parentId: number | null | undefined
 ) {
-  return ingredients.filter(ing => ing.parentIngredientId === parentId)
+  return ingredients
+    .filter(ing => ing.parentIngredientId === parentId)
+    .sort((a, b) => {
+      if (a.quantityRequired !== b.quantityRequired) {
+        return a.quantityRequired - b.quantityRequired
+      }
+      return a.item.name.localeCompare(b.item.name)
+    })
 }
 
-const onInput = (event: Event): void => {
+function isCraftable(ingredient: WorkshopItemIngredient): boolean {
+  return ingredient.item.hasRecipe
+}
+
+function isAlreadyCrafted(ingredient: WorkshopItemIngredient): boolean {
+  return store.isIngredientCrafted(ingredient.id)
+}
+
+async function handleCraftIngredient(ingredient: WorkshopItemIngredient) {
+  if (isAlreadyCrafted(ingredient)) return
+  
+  await store.craftIngredient(props.card.workshopItem.id, ingredient.id)
+}
+
+async function handleUpdateIngredientMin(ingredient: WorkshopItemIngredient) {
+  if (ingredient.quantityObtained === 0) return
+
+  await store.setIngredientsQuantityObtained([
+    { id: ingredient.id, quantity: 0 }
+  ])
+}
+
+async function handleUpdateIngredientMax(ingredient: WorkshopItemIngredient) {
+  const max = ingredient.quantityRequired
+
+  if (ingredient.quantityObtained === max) return
+
+  await store.setIngredientsQuantityObtained([
+    { id: ingredient.id, quantity: max }
+  ])
+}
+
+async function handleUpdateIngredientDelta(
+  ingredient: WorkshopItemIngredient,
+  delta: number
+) {
+  const next = ingredient.quantityObtained + delta
+
+  if (next < 0 || next > ingredient.quantityRequired) return
+  if (next === ingredient.quantityObtained) return
+
+  await store.setIngredientsQuantityObtained([
+    { id: ingredient.id, quantity: next }
+  ])
+}
+
+async function handleUpdateIngredientInput(
+  ingredient: WorkshopItemIngredient,
+  event: Event
+) {
   const input = event.target as HTMLInputElement
   const value = normalizePositiveIntegerInput(input.value)
-  input.value = String(value)
+
+  const quantity = Math.min(
+    Math.max(0, Number(value)),
+    ingredient.quantityRequired
+  )
+
+  input.value = String(quantity)
+
+  if (quantity === ingredient.quantityObtained) return
+
+  await store.setIngredientsQuantityObtained([
+    { id: ingredient.id, quantity }
+  ])
+}
+
+function getIngredientPrices(ingredient: WorkshopItemIngredient) {
+  const unitPrice = getUnitPrice(ingredient.item.id)
+  const totalPrice = unitPrice * ingredient.quantityRequired
+  const remaining = Math.max(0, ingredient.quantityRequired - ingredient.quantityObtained)
+  const remainingPrice = unitPrice * remaining
+
+  return {
+    unitPrice,
+    totalPrice,
+    remainingPrice
+  }
 }
 
 </script>
@@ -44,35 +128,49 @@ const onInput = (event: Event): void => {
         ? getIngredientsByParent(props.card.workshopItem.ingredients, null)
         : props.card.subIngredients"
       :key="ingredient.id"
-      :class="['ingredient-row', { complete: ingredient.quantityObtained >= ingredient.quantityRequired }]"
+      :class="['ingredient-wrapper', { complete: ingredient.quantityObtained >= ingredient.quantityRequired }]"
     >
-      <!-- <img
-        :src="getItemImageByResolution(ingredient.item.images, AssetResolution.X2)?.url"
-        :alt="ingredient.item.name"
-        class="ing-icon"
-      /> -->
-      <ItemContextTrigger :item="ingredient.item">
-        <img
-          :src="getItemImageByResolution(ingredient.item.images, AssetResolution.X2)?.url"
-          :alt="ingredient.item.name"
-          class="ing-icon"
+      <div class="ingredient-row">
+        <i 
+          v-if="isOwner && isCraftable(ingredient)"
+          :class="['mdi', 'mdi-hammer-wrench', 'craft-icon', { disabled: isAlreadyCrafted(ingredient) }]"
+          @click="handleCraftIngredient(ingredient)"
         />
-      </ItemContextTrigger>
-      <span class="ing-name copyable" @click="copy(ingredient.item.name)">{{ ingredient.item.name }}</span>
+        
+        <ItemContextTrigger :item="ingredient.item">
+          <img
+            :src="getItemImageByResolution(ingredient.item.images, AssetResolution.X2)?.url"
+            :alt="ingredient.item.name"
+            class="ing-icon"
+          />
+        </ItemContextTrigger>
 
-      <div class="ing-controls">
-        <button class="ing-btn min" v-if="isOwner">min</button>
-        <button class="ing-btn max" v-if="isOwner">max</button>
-        <button class="ing-btn decrement" v-if="isOwner">−</button>
-        <input
-          type="number"
-          :value="ingredient.quantityObtained"
-          class="ing-input"
-          @input="onInput"
-          :disabled="!isOwner"
-        />
-        <button class="ing-btn increment" v-if="isOwner">+</button>
-        <span class="ing-max">/ {{ ingredient.quantityRequired }}</span>
+        <div class="ing-info">
+          <span class="ing-name copyable" @click="copy(ingredient.item.name)">
+            {{ ingredient.item.name }}
+          </span>
+        </div>
+
+        <div class="ing-controls">
+          <button class="ing-btn min" v-if="isOwner" @click="handleUpdateIngredientMin(ingredient)">min</button>
+          <button class="ing-btn max" v-if="isOwner" @click="handleUpdateIngredientMax(ingredient)">max</button>
+          <button class="ing-btn decrement" v-if="isOwner" @click="handleUpdateIngredientDelta(ingredient, -1)">−</button>
+          <input
+            type="number"
+            :value="ingredient.quantityObtained"
+            class="ing-input"
+            @input="event => handleUpdateIngredientInput(ingredient, event)"
+            :disabled="!isOwner"
+          />
+          <button class="ing-btn increment" v-if="isOwner" @click="handleUpdateIngredientDelta(ingredient, 1)">+</button>
+          <span class="ing-max">/ {{ ingredient.quantityRequired }}</span>
+        </div>
+      </div>
+
+      <div v-if="!isCondensed" class="price-details">
+        <span>Prix unitaire : {{ getIngredientPrices(ingredient).unitPrice.toLocaleString() }} ₭</span>
+        <span>Prix total : {{ getIngredientPrices(ingredient).totalPrice.toLocaleString() }} ₭</span>
+        <span>Restant : <span class="colored">{{ getIngredientPrices(ingredient).remainingPrice.toLocaleString() }} ₭</span></span>
       </div>
     </div>
   </section>
@@ -84,11 +182,10 @@ const onInput = (event: Event): void => {
   flex-direction: column;
   gap: 0.4rem;
 
-  .ingredient-row {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    gap: 0.4rem;
-    align-items: center;
+  .ingredient-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
     padding: 0.25rem;
     border-radius: var(--pico-border-radius);
     transition: background 0.15s;
@@ -100,12 +197,46 @@ const onInput = (event: Event): void => {
     &:hover {
       background: var(--pico-card-sectioning-background-color);
     }
+  }
+
+  .ingredient-row {
+    display: flex;
+    grid-template-columns: auto auto 1fr auto;
+    gap: 0.4rem;
+    align-items: center;
+    justify-content: space-between;
+
+    .craft-icon {
+      width: 16px;
+      font-size: 16px;
+      color: var(--pico-primary);
+      cursor: pointer;
+      transition: color 0.15s;
+
+      &:hover:not(.disabled) {
+        color: var(--pico-primary-hover);
+      }
+
+      &.disabled {
+        color: var(--pico-muted-color);
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
 
     .ing-icon {
       width: 20px;
       height: 20px;
       object-fit: contain;
       cursor: pointer;
+    }
+
+    .ing-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+      flex: 1;
     }
 
     .ing-name {
@@ -160,6 +291,19 @@ const onInput = (event: Event): void => {
         margin: 0 0 0 0.1rem;
       }
     }
+  }
+
+  .price-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    font-size: 0.6rem;
+    color: var(--pico-muted-color);
+    padding-left: 2.4rem;
+  }
+
+  .colored {
+    color: var(--pico-primary);
   }
 
   input[type="number"]::-webkit-inner-spin-button,

@@ -1,69 +1,67 @@
 <script setup lang="ts">
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
+import { useAddItemsToWorkshop } from '@/modules/Dofus/workshop/fetch/workshopItem.fetch'
 import { storeToRefs } from 'pinia'
-import { ref, computed, onMounted, onUnmounted } from 'vue'
-
-interface Item {
-  id: number
-  name: string
-  icon: string
-  type: string
-  level: number
-}
-
-interface Props {
-  modelValue: string
-}
-
-interface Emits {
-  (e: 'update:modelValue', value: string): void
-  (e: 'select', item: Item): void
-}
-
-const props = defineProps<Props>()
-const emit = defineEmits<Emits>()
+import { ref, watch, onMounted, onUnmounted } from 'vue'
+import type { Item } from '@/modules/Dofus/item/types/item.types'
+import { useSearchCraftableItems } from '@/modules/Dofus/workshop/fetch/workshopItem.fetch'
+import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
+import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 
 const workshopDetailStore = useWorkshopDetailStore()
-const { isOwner } = storeToRefs(workshopDetailStore)
+const { isOwner, workshopId } = storeToRefs(workshopDetailStore)
+
+const searchQuery = ref('')
+const items = ref<Item[]>([])
+let timeout: ReturnType<typeof setTimeout> | null = null
 
 const isOpen = ref(false)
 const searchInput = ref<HTMLInputElement | null>(null)
 const dropdownRef = ref<HTMLElement | null>(null)
 
-// Données de test
-const allItems: Item[] = [
-  { id: 1, name: 'Plume Vibrante du Tofu Royal', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/17188-128.png', type: 'Ressource', level: 120 },
-  { id: 2, name: 'Gelée Bleuet Royale', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/9201-128.png', type: 'Ressource', level: 60 },
-  { id: 3, name: 'Gelée Menthe Royale', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/9202-128.png', type: 'Ressource', level: 60 },
-  { id: 4, name: 'Peau de Rouquette', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/462-128.png', type: 'Ressource', level: 140 },
-  { id: 5, name: 'Cloche de Bardéryl Clocheculvre', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/1785-128.png', type: 'Ressource diverse', level: 190 },
-  { id: 6, name: 'Moustache du Shogun Tofugawa', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/9207-128.png', type: 'Poil', level: 160 },
-  { id: 7, name: 'Anneau Royal Tofu', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/16349-128.png', type: 'Anneau', level: 120 },
-  { id: 8, name: 'Cape du Tofu Royal', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/16350-128.png', type: 'Cape', level: 115 },
-  { id: 9, name: 'Bottes du Tofu Royal', icon: 'https://assets.tools.huiitre.fr/tools_dofus/dofus3/img/item/2x/16351-128.png', type: 'Bottes', level: 110 }
-]
-
-const filteredItems = computed(() => {
-  if (!props.modelValue || props.modelValue.length < 2) {
-    return []
-  }
+async function performSearch(query: string) {
+  if (!workshopId.value) return
   
-  const query = props.modelValue.toLowerCase()
-  return allItems.filter(item => 
-    item.name.toLowerCase().includes(query)
-  ).slice(0, 8) // Limite à 8 résultats
-})
-
-function updateSearch(value: string) {
-  emit('update:modelValue', value)
-  isOpen.value = value.length >= 2
+  try {
+    items.value = await useSearchCraftableItems(workshopId.value, query)
+  } catch (error) {
+    console.error('Search error:', error)
+    items.value = []
+  }
 }
 
-function selectItem(item: Item) {
-  emit('select', item)
-  emit('update:modelValue', '')
-  isOpen.value = false
-  searchInput.value?.focus()
+watch(searchQuery, (value) => {
+  if (timeout) clearTimeout(timeout)
+
+  if (!value || value.length < 2 || !workshopId.value) {
+    items.value = []
+    isOpen.value = false
+    return
+  }
+
+  timeout = setTimeout(async () => {
+    await performSearch(value)
+    isOpen.value = items.value.length > 0
+  }, 300)
+})
+
+async function selectItem(item: Item) {
+  if (!workshopId.value) return
+
+  try {
+    await workshopDetailStore.addItems([item.id])
+    
+    if (searchQuery.value.length >= 2) {
+      await performSearch(searchQuery.value)
+      
+      if (items.value.length === 0) {
+        isOpen.value = false
+        searchQuery.value = ''
+      }
+    }
+  } catch (error) {
+    console.error('Add item error:', error)
+  }
 }
 
 function handleClickOutside(event: MouseEvent) {
@@ -76,6 +74,10 @@ function handleClickOutside(event: MouseEvent) {
   ) {
     isOpen.value = false
   }
+}
+
+function getItemImage(item: Item): string {
+  return getItemImageByResolution(item.images, AssetResolution.X2)?.url || ''
 }
 
 onMounted(() => {
@@ -92,35 +94,34 @@ onUnmounted(() => {
     <input
       ref="searchInput"
       type="search"
-      :value="modelValue"
-      @input="updateSearch(($event.target as HTMLInputElement).value)"
-      @focus="isOpen = modelValue.length >= 2 && filteredItems.length > 0"
+      v-model="searchQuery"
+      @focus="isOpen = searchQuery.length >= 2 && items.length > 0"
       placeholder="Rechercher ou ajouter..."
       class="search-input"
       :disabled="!isOwner"
     >
 
     <div 
-      v-if="isOpen && filteredItems.length > 0"
+      v-if="isOpen && items.length > 0"
       ref="dropdownRef"
       class="search-dropdown"
     >
       <div
-        v-for="item in filteredItems"
+        v-for="item in items"
         :key="item.id"
         class="search-item"
         @click="selectItem(item)"
       >
-        <img :src="item.icon" :alt="item.name" />
+        <img :src="getItemImage(item)" :alt="item.name" />
         <div class="item-info">
           <div class="item-name">{{ item.name }}</div>
-          <div class="item-meta">{{ item.type }} - Niv. {{ item.level }}</div>
+          <div class="item-meta">{{ item.type.name }} - Niv. {{ item.level }}</div>
         </div>
       </div>
     </div>
 
     <div 
-      v-if="isOpen && modelValue.length >= 2 && filteredItems.length === 0"
+      v-if="isOpen && searchQuery.length >= 2 && items.length === 0"
       ref="dropdownRef"
       class="search-dropdown"
     >
@@ -209,7 +210,6 @@ onUnmounted(() => {
   color: var(--pico-muted-color);
 }
 
-/* Scrollbar styling */
 .search-dropdown::-webkit-scrollbar {
   width: 6px;
 }
