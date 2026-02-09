@@ -1,67 +1,44 @@
-import { createApp } from 'vue'
-// import '@/assets/styles/font-awesome5.15.4.css'
-import './assets/styles/main.scss'
-import App from './App.vue'
-import store from '@/store/store'
-import router from '@/router/router'
+import { createApp } from 'vue';
+import './assets/styles/main.scss';
+import App from './App.vue';
+import router from '@/router/router';
 
-// Vuetify
-import 'vuetify/styles'
-import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
+import { createPinia } from 'pinia';
+import { useAuthStore } from '@/modules/Auth/auth.store';
 
 // PWA auto-update
-import { registerSW } from 'virtual:pwa-register'
+import { registerSW } from 'virtual:pwa-register';
 
-// Détection plateforme
-store.dispatch('Core/detectPlatform');
+import { getTheme, initThemeListener, setTheme } from '@/ui/theme';
 
-const vuetify = createVuetify({
-  components,
-  directives,
-  theme: {
-    defaultTheme: 'light',
-    themes: {
-      light: {
-        colors: {
-          primary: '#1976D2',
-          secondary: '#424242',
-          background: '#FFFFFF',
-        },
-      },
-      dark: {
-        colors: {
-          primary: '#2196F3',
-          secondary: '#757575',
-          background: '#121212',
-        },
-      },
-    },
-  },
-})
+import { getPicoTheme, initPicoTheme, setPicoTheme } from '@/ui/picoTheme';
+
+//* thème
+setTheme(getTheme());
+initThemeListener();
+
+//* thème couleur
+//* DEBUG
+(window as any).setPicoTheme = setPicoTheme;
+(window as any).getPicoTheme = getPicoTheme;
+initPicoTheme();
 
 // --- PWA auto update ---
 const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    updateSW(true)
+    updateSW(true);
   },
   onOfflineReady() {
-    console.log('PWA prête pour utilisation hors-ligne 🚀')
-  }
-})
+    console.log('PWA prête pour utilisation hors-ligne 🚀');
+  },
+});
 
 // --- Création de l’app ---
 const app = createApp(App);
 
-(async () => {
-  const latest = await store.dispatch('Core/getLatestVersion');
-  store.commit('Core/setVersion', latest?.version);
+const pinia = createPinia();
+app.use(pinia);
 
-  app.use(store)
-  app.use(router)
-  app.use(vuetify)
-
-  app.mount('#app')
-})();
+app.use(router);
+app.mount('#app');

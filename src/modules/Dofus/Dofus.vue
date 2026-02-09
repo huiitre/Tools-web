@@ -1,130 +1,103 @@
 <script setup lang="ts">
-import { computed, ref, watch, provide, onMounted, onUnmounted } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
-import store from '@/store/store'
-import dayjs from "dayjs"
-import LS from '@/services/localStorage';
+import { onBeforeUnmount, onMounted, watch } from 'vue'
 
-const router = useRouter();
-const route = useRoute();
+import DofusNav from '@/modules/Dofus/shared/components/DofusNav.vue'
+import toast from '@/services/toast'
+import { useFetchGameVersions } from '@/modules/Dofus/game/fetch/game.fetch'
+import { useFetchGameServers } from '@/modules/Dofus/game/fetch/game.fetch'
+import { useDofusStore } from '@/modules/Dofus/dofus.store'
+import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { useWorkshopStore } from '@/modules/Dofus/workshop/store/workshop.store'
 
-const LS_KEY_FAVORITES = "dofus_almanax_favorites"
+const { startAutoRefresh, stopAutoRefresh } = useItemPrices()
 
-const hasTodayFavorite = ref(false)
+const dofusStore = useDofusStore()
+const dofusConfig = useDofusConfigStore()
 
-function checkTodayFavorite() {
-  const savedFavorites = LS.get(LS_KEY_FAVORITES)
-  if (!Array.isArray(savedFavorites)) {
-    hasTodayFavorite.value = false
-    return
+const loadGameServers = async () => {
+  if (dofusStore.currentGameVersionId === null) return
+
+  const { data: gameServers } = await useFetchGameServers()
+  dofusStore.setGameServers(gameServers)
+
+  if (
+    dofusStore.currentGameServerId === null &&
+    gameServers.length > 0
+  ) {
+    dofusStore.setCurrentGameServer(gameServers[0].id)
   }
-
-  const todayKey = dayjs().format("YYYY-MM-DD")
-  hasTodayFavorite.value = savedFavorites.some(f => f.date === todayKey)
 }
 
+const loadDofusModuleData = async () => {
+  try {
+    dofusStore.hydrateFromStorage()
+    dofusConfig.hydrateFromStorage()
+
+    const { data: gameVersions } = await useFetchGameVersions()
+    dofusStore.setGameVersions(gameVersions)
+
+    if (dofusStore.currentGameVersionId === null && gameVersions.length > 0) {
+      dofusStore.setCurrentGameVersion(gameVersions[0].id)
+    }
+
+  } catch (e: any) {
+    console.error('Dofus.vue | loadDofusModuleData', e)
+    toast.error(e?.message || 'Erreur lors du chargement des données du module Dofus')
+  }
+
+  const workshopStore = useWorkshopStore()
+  await workshopStore.fetchTags()
+  await workshopStore.fetchWorkshops()
+}
+
+watch(
+  () => dofusStore.currentGameVersionId,
+  async () => {
+    dofusStore.setGameServers([])
+    await loadGameServers()
+  }
+)
+
 onMounted(() => {
-  checkTodayFavorite()
-  window.addEventListener("storage", checkTodayFavorite)
+  loadDofusModuleData()
+  startAutoRefresh() //? "3_000" = 3sec pour debug
 })
 
-onUnmounted(() => {
-  window.removeEventListener("storage", checkTodayFavorite)
+onBeforeUnmount(() => {
+  stopAutoRefresh()
 })
 
-const userModule = computed(() => store.getters['Core/getUserModules']?.find((module: any) => module.code === 'dofus') || null);
-provide('userModule', userModule.value)
-
-// Calculer les onglets à partir des routes enfants
-const tabs = computed(() => {
-  const parentPath = `/${route.path.split('/')[1]}`; // Identifier le parent
-  const parentRoute = router.options.routes.find(r => r.path === parentPath);
-
-  if (!parentRoute) {
-    console.warn("Aucune route parente trouvée pour :", parentPath);
-    return [];
-  }
-
-  if (!parentRoute.children) {
-    console.warn("La route parente n'a pas d'enfants :", parentRoute);
-    return [];
-  }
-
-  // Construire les onglets
-  return parentRoute.children
-    .filter(child => {
-      // Exclure "Set Partagé" si on n'est pas sur une route partagée
-      if (child.name === 'dofus-set-shared' && route.name !== 'dofus-set-shared') {
-        return false;
-      }
-      return true;
-    })
-    .map((child, index) => ({
-      label: child?.meta?.label || child.name,
-      path: `${parentRoute.path}/${child.path.replace(/:setCode\??/, '')}`, // Remplacer les paramètres dynamiques
-      rawPath: `${parentRoute.path}/${child.path}`, // Garder le chemin brut pour comparer dynamiquement
-      value: index + 1,
-    }));
-});
-
-// Onglet actif par défaut
-const currentTab = ref(
-  tabs.value.length > 0 
-    ? tabs.value.find(tab => route.matched.some(m => m.path === tab.rawPath))?.value || tabs.value[0].value 
-    : null
-);
-
-// Mettre à jour l'onglet actif selon la route
-watch(route, () => {
-  const tab = tabs.value.find(tab => route.matched.some(m => m.path === tab.rawPath));
-  if (tab) {
-    currentTab.value = tab.value;
-  }
-});
-
-// Naviguer à l'onglet sélectionné
-watch(currentTab, (newValue) => {
-  const tab = tabs.value.find(tab => tab.value === newValue);
-  if (tab) {
-    router.push(tab.path);
-  }
-});
 </script>
 
 <template>
-  <v-card class="dofus-card">
-    <v-tabs
-      v-model="currentTab"
-      align-tabs="center"
-      color="deep-purple-accent-4"
-    >
-      <v-tab
-        v-for="tab in tabs"
-        :key="tab.value"
-        :value="tab.value"
-      >
-        <span>
-          {{ tab.label }}
-          <i
-            v-if="tab.label === 'Almanax' && hasTodayFavorite"
-            class="fa-solid fa-bell favorite-icon"
-            title="Almanax favori aujourd'hui"
-          ></i>
-        </span>
-      </v-tab>
-    </v-tabs>
+  <div id="dofus">
+    <DofusNav />
 
-    <router-view />
-  </v-card>
+    <section class="dofus-content">
+      <router-view v-slot="{ Component }">
+        <Transition name="page" mode="out-in">
+          <component :is="Component" :key="dofusStore.renderKey" />
+        </Transition>
+      </router-view>
+    </section>
+  </div>
 </template>
 
-<style scoped>
-.dofus-card {
-  width: 100%;
+<style lang="scss" scoped>
+/* Transitions */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.2s ease, transform 0.2s ease;
 }
-.favorite-icon {
-  margin-left: 6px;
-  color: #f5c518;
-  font-size: 0.85em;
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
 }
 </style>
