@@ -3,6 +3,7 @@ import { ref, computed } from 'vue'
 import { useWorkshopSummary } from '@/modules/Dofus/workshop/composables/useWorkshopSummary'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
+import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
@@ -10,16 +11,16 @@ import WorkshopStats from './WorkshopStats.vue'
 import WorkshopPrices from './WorkshopPrices.vue'
 import WorkshopFilters from './WorkshopFilters.vue'
 import WorkshopResourcesList from './WorkshopResourcesList.vue'
+import { storeToRefs } from 'pinia'
 
 const { summary } = useWorkshopSummary()
 const { get: getPrice } = useItemPrices()
 const dofusConfigStore = useDofusConfigStore()
-
+const workshopDetailStore = useWorkshopDetailStore()
 /* ========================= FILTERS ========================= */
 const showCompleted = ref(false)
-const condensed = ref(true)
-const searchQuery = ref('')
-const sortMode = ref<'quantity' | 'name'>('quantity') // Par défaut trié par quantité
+const condensed = storeToRefs(workshopDetailStore).condensed
+const sortMode = ref<'quantity' | 'name'>('quantity')
 
 /* ========================= COMPUTED DATA ========================= */
 const stats = computed(() => ({
@@ -30,12 +31,13 @@ const stats = computed(() => ({
 }))
 
 const prices = computed(() => ({
-  buy: summary.value.totalCost,
+  buyItems: summary.value.buyItemsCost,
+  buyItemsRemaining: summary.value.buyItemsRemaining, // NOUVEAU
+  // buy: summary.value.totalCost, ← SUPPRIMÉ (deprecated)
   craft: summary.value.craftCost,
-  best: summary.value.bestPrice,
-  buyAdjusted: summary.value.adjustedCost,
-  craftAdjusted: summary.value.adjustedCost,
-  bestAdjusted: summary.value.adjustedCost
+  craftAdjusted: summary.value.craftAdjusted,
+  mixedCost: summary.value.mixedCost,
+  mixedAdjusted: summary.value.mixedAdjusted
 }))
 
 const zones = computed(() => {
@@ -59,7 +61,6 @@ const zones = computed(() => {
     })
   }))
 
-  // Appliquer le tri
   processedZones = processedZones.map(zone => ({
     ...zone,
     resources: [...zone.resources].sort((a, b) => {
@@ -88,10 +89,6 @@ function sortByName() {
   sortMode.value = 'name'
 }
 
-function handleItemSelect(item: any) {
-  // TODO: Ajouter item au workshop
-  console.log('Item selected:', item)
-}
 </script>
 
 <template>
@@ -106,22 +103,20 @@ function handleItemSelect(item: any) {
 
       <div class="right-side">
         <WorkshopPrices
-          :buy="prices.buy"
+          :buy-items="prices.buyItems"
+          :buy-items-remaining="prices.buyItemsRemaining"
           :craft="prices.craft"
-          :best="prices.best"
-          :buy-adjusted="prices.buyAdjusted"
           :craft-adjusted="prices.craftAdjusted"
-          :best-adjusted="prices.bestAdjusted"
+          :mixed="prices.mixedCost"
+          :mixed-adjusted="prices.mixedAdjusted"
         />
 
         <WorkshopFilters
           v-model:show-completed="showCompleted"
           v-model:condensed="condensed"
-          v-model:search-query="searchQuery"
           :active-sort-mode="sortMode"
           @sort-by-quantity="sortByQuantity"
           @sort-by-name="sortByName"
-          @item-selected="handleItemSelect"
         />
       </div>
     </div>

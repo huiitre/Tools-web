@@ -110,13 +110,15 @@ const onLeave = () => {
     <slot />
   </span>
 
-  <ItemContextFloating
-    v-if="item && showItemContextOnHover"
-    :item="item"
-    :price="price"
-    :visible="visible"
-    :x="x"
-    :y="y"
-    :priceDisplayMode="priceDisplayMode"
-  />
+  <Teleport to="body">
+    <ItemContextFloating
+      v-if="item && showItemContextOnHover"
+      :item="item"
+      :price="price"
+      :visible="visible"
+      :x="x"
+      :y="y"
+      :priceDisplayMode="priceDisplayMode"
+    />
+  </Teleport>
 </template>

@@ -6,7 +6,7 @@ import WorkshopItemCardIngredients from './WorkshopItemCardIngredients.vue'
 import WorkshopItemCardCraftBanner from './WorkshopItemCardCraftBanner.vue'
 import type { WorkshopItem, WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
 
-type CraftCard = {
+export type CraftCard = {
   type: 'main' | 'craft'
   workshopItem: WorkshopItem
   craftedIngredient?: WorkshopItemIngredient
@@ -39,7 +39,7 @@ const props = defineProps<{
     <WorkshopItemCardIngredients :card="props.card" />
 
     <!-- FOOTER -->
-    <WorkshopItemCardFooter />
+    <WorkshopItemCardFooter :card="props.card" />
   </article>
 </template>
 

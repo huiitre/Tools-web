@@ -26,10 +26,22 @@ const { open: openImagePreview } = useImagePreview()
 const store = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(store)
 
-const onQtyInput = (event: Event) => {
+async function handleIncrement() {
+  const newQuantity = props.card.workshopItem.quantity + 1
+  await store.updateItemQuantity(props.card.workshopItem.id, newQuantity)
+}
+
+async function handleDecrement() {
+  const newQuantity = Math.max(1, props.card.workshopItem.quantity - 1)
+  await store.updateItemQuantity(props.card.workshopItem.id, newQuantity)
+}
+
+async function handleInputChange(event: Event) {
   const input = event.target as HTMLInputElement
   const value = normalizePositiveIntegerInput(input.value)
   input.value = String(value)
+  const quantity = Math.max(1, Number(value))
+  await store.updateItemQuantity(props.card.workshopItem.id, quantity)
 }
 
 const itemPreview = computed(() => {
@@ -86,16 +98,16 @@ const itemImage = computed(() => {
     </div>
 
     <div v-if="props.card.type === 'main'" class="item-qty-controls">
-      <button class="qty-btn" v-if="isOwner">−</button>
+      <button class="qty-btn" v-if="isOwner" @click="handleDecrement">−</button>
       <input
         type="text"
         inputmode="numeric"
         :value="props.card.workshopItem.quantity"
         class="qty-input"
-        @input="onQtyInput"
+        @input="handleInputChange"
         :disabled="!isOwner"
       />
-      <button class="qty-btn" v-if="isOwner">+</button>
+      <button class="qty-btn" v-if="isOwner" @click="handleIncrement">+</button>
     </div>
 
     <div v-else class="item-qty-static">

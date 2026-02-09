@@ -1,11 +1,11 @@
 <script setup lang="ts">
 interface Props {
-  buy: number
+  buyItems: number
+  buyItemsRemaining: number
   craft: number
-  best: number
-  buyAdjusted: number
   craftAdjusted: number
-  bestAdjusted: number
+  mixed: number
+  mixedAdjusted: number
 }
 
 defineProps<Props>()
@@ -13,33 +13,36 @@ defineProps<Props>()
 
 <template>
   <div class="prices">
-    <div class="prices-col">
-      <div class="price-line">
-        <span>Prix achat</span>
-        <span>{{ buy.toLocaleString() }} ₭</span>
+    <div class="prices-row">
+      <div class="price-cell">
+        <span class="label">Prix d'achat total</span>
+        <span class="value">{{ buyItems.toLocaleString() }} ₭</span>
       </div>
-      <div class="price-line">
-        <span>Prix craft</span>
-        <span>{{ craft.toLocaleString() }} ₭</span>
-      </div>
-      <div class="price-line">
-        <span>Meilleur prix</span>
-        <span class="highlight">{{ best.toLocaleString() }} ₭</span>
+      <div class="price-cell">
+        <span class="label">Prix d'achat ajusté</span>
+        <span class="value">{{ buyItemsRemaining.toLocaleString() }} ₭</span>
       </div>
     </div>
 
-    <div class="prices-col">
-      <div class="price-line muted">
-        <span>Achat ajusté</span>
-        <span>{{ buyAdjusted.toLocaleString() }} ₭</span>
+    <div class="prices-row">
+      <div class="price-cell">
+        <span class="label">Prix craft total</span>
+        <span class="value">{{ craft.toLocaleString() }} ₭</span>
       </div>
-      <div class="price-line muted">
-        <span>Craft ajusté</span>
-        <span>{{ craftAdjusted.toLocaleString() }} ₭</span>
+      <div class="price-cell">
+        <span class="label">Prix craft ajusté</span>
+        <span class="value">{{ craftAdjusted.toLocaleString() }} ₭</span>
       </div>
-      <div class="price-line ok">
-        <span>Meilleur ajusté</span>
-        <span>{{ bestAdjusted.toLocaleString() }} ₭</span>
+    </div>
+
+    <div class="prices-row highlight">
+      <div class="price-cell">
+        <span class="label">Prix mixte total</span>
+        <span class="value">{{ mixed.toLocaleString() }} ₭</span>
+      </div>
+      <div class="price-cell">
+        <span class="label">Prix mixte ajusté</span>
+        <span class="value">{{ mixedAdjusted.toLocaleString() }} ₭</span>
       </div>
     </div>
   </div>
@@ -48,44 +51,37 @@ defineProps<Props>()
 <style scoped>
 .prices {
   display: flex;
-  gap: 2rem;
+  flex-direction: column;
+  gap: 0.3rem;
   padding: 0.5rem;
   background: var(--pico-card-sectioning-background-color);
   border-radius: var(--pico-border-radius);
   border: 1px solid var(--pico-muted-border-color);
 }
 
-.prices-col {
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-  flex: 1;
-}
-
-.price-line {
-  display: flex;
-  gap: 0.5rem;
+.prices-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
   font-size: 0.75rem;
-  justify-content: space-between;
 }
 
-.price-line span:first-child {
+.price-cell {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.label {
   flex-shrink: 0;
 }
 
-.price-line span:last-child {
+.value {
   font-weight: 600;
+  white-space: nowrap;
 }
 
-.price-line.muted {
-  color: var(--pico-muted-color);
-}
-
-.price-line.ok span:last-child {
+.prices-row.highlight .value {
   color: var(--pico-ins-color);
-}
-
-.price-line .highlight {
-  color: var(--pico-primary);
 }
 </style>
