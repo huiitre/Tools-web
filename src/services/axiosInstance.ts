@@ -1,172 +1,153 @@
-import axios from "axios";
-import LS from "./localStorage";
-import store from "@/store/store";
-import router from "@/router/router";
-import toast from "./toast";
-// import { useFetchConnexion } from "@/Modules/Login/hooks/useFetchConnexion";
-const clientV1 = axios.create({
-  baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v1`,
-  headers: {
-    'Content-Type': 'application/json',
-  }
-})
-const clientV2 = axios.create({
-  baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v2`,
-  headers: {
-    'Content-Type': 'application/json',
-  }
-})
+import axios, { AxiosInstance } from 'axios';
+import { useAuthStore } from '@/modules/Auth/auth.store';
+import { ApiException } from './ApiException';
 
-const clientV3 = axios.create({
+/* ======================
+   CLIENT FACTORY
+====================== */
+
+const createClient = (version: string): AxiosInstance =>
+  axios.create({
+    baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/${version}`,
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    withCredentials: true,
+  });
+
+const clientInit = axios.create({
   baseURL: `${import.meta.env.VITE_TOOLS_API_BASE_URL}/api/v3`,
-  headers: {
-    'Content-Type': 'application/json',
-  }
-})
+  headers: { 'Content-Type': 'application/json' },
+  withCredentials: true,
+});
 
+const clientV1 = createClient('v1');
+const clientV2 = createClient('v2');
+const clientV3 = createClient('v3');
+const clientV3Dofus = createClient('v3');
 
-const interceptors = (client: any) => {
-  client.interceptors.request.use(async(config: any) => {
+/* ======================
+   INTERCEPTORS
+====================== */
 
-    //* flag pour la route sécurisé
-    const requireToken = config.headers.requireToken
-    
-    //* est-ce qu'on est sur une route sécurisé
-    if (requireToken) {
+const attachInterceptors = (client: AxiosInstance) => {
+  /* ---------- REQUEST ---------- */
+  client.interceptors.request.use((config) => {
+    const auth = useAuthStore();
 
-      //* token depuis le LS
-      const { user } = LS.get('TOOLS_CORE_USER')
-
-      //* token depuis le store
-      const tokenStore = store.getters['Core/rememberToken']
-
-      let rememberToken = ''
-      
-      //* est-ce qu'on possède un token dans le store
-      if (tokenStore !== null) {
-        rememberToken = tokenStore
-      }
-      //* est-ce qu'on possède un token en localstorage
-      else if (user && user.remember_token !== null) {
-        rememberToken = user.remember_token
-      }
-      //* SINON on a pas de token donc on redirige vers /login
-      else {
-        await store.dispatch('Core/clearUser')
-        router.push('/login')
-        return config
-      }
-      config.headers['Authorization'] = `Bearer ${rememberToken}`;
-    }
-    return config
-})
-
-  client.interceptors.response.use(async(response: any) => {
-    const { data } = response
-
-    // const userLS = LS.get('TOOLS_USER')
-
-    //* le token n'est pas bon
-    //! ancienne méthode de vérification
-    if (
-      typeof data?.status !== "undefined" && // ← vérifie que c’est bien une réponse PHP
-      !data.status &&
-      typeof data.msg === "string" &&
-      (
-        data.msg.includes("Token manquant") ||
-        data.msg.includes("Utilisateur introuvable") ||
-        data.msg.includes("La date de validité du token API est expirée") ||
-        data.msg.includes("Erreur du middleware token API") ||
-        data.msg.includes("Le compte est désactivé")
-      )
-    ) {
-      store.dispatch("Core/clearUser");
-      router.push("/login");
-      // toast.error(data.msg);
+    if (auth.accessToken) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${auth.accessToken}`;
     }
 
-    /* //* si le token n'est plus valide
-    if (!data.status && data.msg.includes('EW ERR 401 - IDUSER OR TOKEN UNIDENTIFY')) {
-      //* on tente de regénérer un token et de relancer la requête
+    return config;
+  });
+
+  /* ---------- RESPONSE ---------- */
+  client.interceptors.response.use(
+    (response) => response,
+    async (error) => {
+      const auth = useAuthStore();
+      const status = error?.response?.status;
+      const originalRequest = error.config;
+
+      /* -----------------------------
+         PAS UNE 401 → ON REMONTE
+      ----------------------------- */
+      if (status !== 401) {
+        const responseData = error.response?.data;
+
+        if (responseData?.message) {
+          return Promise.reject(
+            new ApiException(responseData.message, status, responseData.code),
+          );
+        }
+
+        return Promise.reject(error);
+      }
+
+      /* -----------------------------
+         401 SUR /auth/login
+      ----------------------------- */
+      if (originalRequest.url.includes('/auth/login')) {
+        const responseData = error.response?.data;
+
+        return Promise.reject(
+          new ApiException(
+            responseData?.message ?? 'Identifiants invalides',
+            status,
+            responseData?.code,
+          ),
+        );
+      }
+
+      /* -----------------------------
+         401 SUR /auth/refresh
+         → SESSION MORTE
+      ----------------------------- */
+      const wasAuthenticated = !!auth.user;
+      if (originalRequest.url.includes('/auth/refresh')) {
+        auth.logout();
+
+        if (wasAuthenticated) {
+          window.dispatchEvent(new Event('auth:expired'));
+        }
+
+        return new Promise(() => {});
+      }
+
+      /* -----------------------------
+         SÉCURITÉ : PAS DE BOUCLE
+      ----------------------------- */
+      if (originalRequest._retry) {
+        auth.logout();
+        window.dispatchEvent(new Event('auth:expired'));
+        return new Promise(() => {});
+      }
+
+      /* -----------------------------
+         TENTATIVE DE REFRESH
+      ----------------------------- */
+      originalRequest._retry = true;
+
       try {
-        // const data = await useFetchConnexion({ login: user.login, password: user.password })
-        //* si l'identifiant est incorrect
-        if (!data.status)
-          throw new DOMException(data.msg)
-
-        //* on relance la requête précédente
-        const requestConfig = response.config
-
-        //* on lui ajouter les paramètres
-        requestConfig.params = {
-          iduser: data.iduser,
-          token: data.token
-        }
-
-        //* on vérifie les en-tête de la requête (headers)
-        if (requestConfig.headers && typeof requestConfig.headers === 'object') {
-          for (const header in requestConfig.headers) {
-            if (typeof requestConfig.headers[header] === 'object') {
-              requestConfig.headers[header] = JSON.stringify(requestConfig.headers[header]);
-            }
-          }
-        }
-
-        //* les data de la req précédente sont déjà stringifié, on doit re-PARSER ces data avant de les renvoyer
-        if (requestConfig.data)
-          requestConfig.data = JSON.parse(requestConfig.data)
-
-        //* on stock en LS et dans le state
-        store.commit('Core/insertUser', {
-          login: user.login,
-          password: user.password,
-          status: data.status,
-          iduser: data.iduser,
-          token: data.token
-        })
-
-        //* on relance la précédente requête
-        //! la requête retourne une erreur comme quoi on lui donne une valeur vide alors qu'on a bien les valeurs dans le body de la requête, va comprendre ...
-        //! le seul truc qui diffère d'une requête OK c'est le fait qu'on ai pas de requête OPTION avant, possible que ça vienne de là
-        //? La solution était de PARSER le data de la requête précédente afin d'envoyer un objet et non un string ... car j'imagine que le stringify des data en json doit se faire dans l'instance d'axios. L'interceptor récupère la précédente requête qui a foiré, les data sont déjà stringifié, donc pour pouvoir la relancer il faut re-PARSER les data
-        return client(requestConfig)
-
-      } catch (e) {
-        //* on a pas réussi à se co, on retourne sur /login et on vide le LS et le state
-        store.commit('Core/clearUser')
-        LS.delete('TOOLZ2_USER')
-        router.push('/login')
-      } finally {
-        clearToasts()
+        const { data } = await client.post('/auth/refresh');
+        auth.setToken(data.accessToken);
+        return client(originalRequest);
+      } catch (refreshError) {
+        auth.logout();
+        window.dispatchEvent(new Event('auth:expired'));
+        return new Promise(() => {});
       }
-    } */
+    },
+  );
+};
 
-    return response
-  }, async (error: any) => {
-    console.log(
-      "%c axiosInstance.ts #99 || error de l'interceptor : ",
-      "background:red;color:#fff;font-weight:bold;",
-      error
-    );
+/* ======================
+   INIT
+====================== */
 
-    // Vérifie que c’est une réponse reçue (donc pas une erreur réseau type CORS ou DNS)
-    if (error.response) {
-      const status = error.response.status;
+attachInterceptors(clientV1);
+attachInterceptors(clientV2);
+attachInterceptors(clientV3);
+attachInterceptors(clientV3Dofus);
 
-      if (status === 401) {
-        // 🔐 Token invalide, on dégage
-        await store.dispatch("Core/clearUser");
-        router.push("/login");
-      }
-    }
+/* ======================
+   INTERCEPTOR DOFUS
+====================== */
 
-    // Re-balance l’erreur pour que le composant qui a déclenché la requête la reçoive aussi
-    return Promise.reject(error);
-  })
-}
+import { useDofusStore } from '@/modules/Dofus/dofus.store';
 
-interceptors(clientV1)
-interceptors(clientV2)
-interceptors(clientV3)
+clientV3Dofus.interceptors.request.use((config) => {
+  const dofus = useDofusStore();
 
-export { clientV1, clientV2, clientV3 };
+  if (dofus.currentGameVersionId !== null) {
+    config.headers = config.headers || {};
+    config.headers['X-Game-Version-Id'] = dofus.currentGameVersionId;
+    config.headers['X-Game-Serve-Id'] = dofus.currentGameServerId;
+  }
+
+  return config;
+});
+
+export { clientV1, clientV2, clientV3, clientInit, clientV3Dofus };

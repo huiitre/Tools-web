@@ -29,27 +29,45 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // 1. Taille max OK
         maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
-        globPatterns: ['**/*.{js,css,html,svg,png,ico}'],
+
+        // 2. PRECACHE : AUCUN CSS
+        globPatterns: [
+          '**/*.{js,html,svg,png,ico}'
+        ],
+
+        // 3. Navigation SPA
         navigateFallback: 'index.html',
+
+        // 4. Ignorer explicitement TOUT ce qui peut poser problème
         globIgnores: [
+          '**/*.css',
+          '**/themes/**',
           '**/*worker*.js',
           '**/ts.worker*.js',
           '**/editor.worker*.js',
           '**/index.*.js'
         ],
+
+        // 5. Activation immédiate
         skipWaiting: true,
         clientsClaim: true,
+
+        // 6. Runtime : thèmes = NETWORK ONLY (OBLIGATOIRE)
         runtimeCaching: [
           {
-            // Exemple de mise en cache des images
+            urlPattern: /^https:\/\/qa\.tools\.huiitre\.fr\/themes\/.*\.css$/,
+            handler: 'NetworkOnly'
+          },
+          {
             urlPattern: ({ request }) => request.destination === 'image',
             handler: 'CacheFirst',
             options: {
               cacheName: 'images-cache',
               expiration: {
                 maxEntries: 50,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 jours
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               }
             }
           }
@@ -62,28 +80,22 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
-  optimizeDeps: {
-    include: ["monaco-editor"]
-  },
   css: {
     preprocessorOptions: {
       scss: {
         additionalData: `
-          @use "@/assets/styles/_vars.css";
           @use "@/assets/styles/reset.scss";
-          @use "@/assets/styles/light-icon.css";
         `
       }
     },
   },
   server: {
-    hmr: true,
     host: true,
-    /* https: {
-      key: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.1.30-key.pem')),
-      cert: fs.readFileSync(path.resolve(__dirname, 'certs/192.168.1.30.pem'))
-    }, */
     port: 5173,
+    strictPort: true,
+    hmr: {
+      clientPort: 5173
+    }
   },
   logLevel: 'info',
   define: {

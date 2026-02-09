@@ -1,75 +1,71 @@
 <script setup lang="ts">
-import Page from '@/router/Page.vue';
-import Header from './components/Header/Header.vue';
-import store from '@/store/store';
-import { computed, onBeforeUnmount, onMounted } from 'vue';
+import Page from '@/router/Page.vue'
+import { onMounted, onBeforeUnmount } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import toast from '@/services/toast'
+import { clientInit } from './services/axiosInstance'
+import FullPageLoader from './components/ui/FullPageLoader.vue'
+import { useUIStore } from '@/stores/ui.store'
+import ImagePreviewModal from '@/components/ui/ImagePreviewModal.vue'
 
-import { initGapi } from "@/services/googleApi"
-import toast from './services/toast';
+const uiStore = useUIStore()
 
-let updateInterval: number | null = null;
+const route = useRoute()
+const router = useRouter()
 
-const isLogged = computed(() => store.getters['Core/isLogged'])
+const onAuthExpired = async () => {
+  uiStore.setLoading(true)
 
-onMounted(async () => {
   try {
-    await initGapi()
-    console.log("✅ GAPI prêt")
-
-    if (isLogged.value) {
-      store.dispatch('Core/getAllReleaseNotes');
-    }
-
-    updateInterval = window.setInterval(() => {
-      console.log("✅ Vérification de la version ...")
-      store.dispatch('Core/checkForUpdate');
-    }, 5 * 60 * 1000);
-    // 5 * 60 * 1000 = 5min
-    // 10 * 1000 = 10sec
-
-  } catch (err) {
-    console.error("Erreur init GAPI :", err)
-    toast.error("Erreur lors de l'initialisation de Google API")
+    await clientInit.post('/auth/logout')
+  } catch {
+    // ignore
   }
+
+  toast.error('Votre session a expiré. Veuillez vous reconnecter.')
+
+  if (route.meta.requireAuth === true) {
+    await router.push('/login')
+  }
+
+  uiStore.setLoading(false)
+}
+
+onMounted(() => {
+  window.addEventListener('auth:expired', onAuthExpired)
 })
 
 onBeforeUnmount(() => {
-  if (updateInterval) clearInterval(updateInterval);
-});
-
-const body = document.querySelector('body')
-body?.classList.add('main-theme')
-
-const isLoading = computed(() => store.getters['Core/isLoading'])
+  window.removeEventListener('auth:expired', onAuthExpired)
+})
 </script>
 
 <template>
-  <v-app>
-    <Header v-if="isLogged" />
+  <router-view v-slot="{ Component }">
+    <Page>
+      <Transition name="page" mode="out-in">
+        <component :is="Component" />
+      </Transition>
+    </Page>
+  </router-view>
 
-    <v-main>
-      <router-view v-slot="{ Component }">
-        <!-- <transition name="fade" mode="out-in"> -->
-        <Page>
-          <component :is="Component" />
-        </Page>
-        <!-- </transition> -->
-      </router-view>
-    </v-main>
-    <v-overlay
-      :model-value="isLoading"
-      class="align-center justify-center"
-      persistent
-    >
-      <v-progress-circular
-        color="primary"
-        size="64"
-        indeterminate
-      ></v-progress-circular>
-    </v-overlay>
-  </v-app>
+  <FullPageLoader :visible="uiStore.isLoading" />
+  <ImagePreviewModal />
 </template>
 
-<style scoped>
+<style lang="scss" scoped>
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
 
+.page-enter-from {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateY(-6px);
+}
 </style>
