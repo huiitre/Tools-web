@@ -37,10 +37,8 @@ const isSubmittingRegister = ref(false)
 /* Google OAuth — ANCIEN BOUTON */
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID_WEB
 const googleBtnRef = ref<HTMLElement | null>(null)
-let googleInitialized = false
 
 const renderGoogleButton = async () => {
-  if (googleInitialized) return
 
   while (!window.google?.accounts?.id) {
     await new Promise(r => setTimeout(r, 50))
@@ -81,8 +79,6 @@ const renderGoogleButton = async () => {
     shape: 'rectangular',
     width: 360
   })
-
-  googleInitialized = true
 }
 
 onMounted(renderGoogleButton)
