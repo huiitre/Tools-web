@@ -19,7 +19,10 @@ const dofusConfigStore = useDofusConfigStore()
 const workshopDetailStore = useWorkshopDetailStore()
 /* ========================= FILTERS ========================= */
 const showCompleted = ref(false)
-const condensed = storeToRefs(workshopDetailStore).condensed
+const condensed = computed({
+  get: () => workshopDetailStore.condensed,
+  set: (value: boolean) => workshopDetailStore.setCondensed(value)
+})
 const sortMode = ref<'quantity' | 'name'>('quantity')
 
 /* ========================= COMPUTED DATA ========================= */

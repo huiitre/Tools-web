@@ -15,6 +15,8 @@ type WorkshopDetailState = {
   condensed: boolean
 }
 
+const STORAGE_KEY_CONDENSED = 'dofus.workshop.condensed'
+
 export const useWorkshopDetailStore = defineStore('dofus.workshop.detail', {
   state: (): WorkshopDetailState => ({
     workshopId: null,
@@ -22,7 +24,7 @@ export const useWorkshopDetailStore = defineStore('dofus.workshop.detail', {
     summary: null,
     loading: false,
     owner: false,
-    condensed: true
+    condensed: localStorage.getItem(STORAGE_KEY_CONDENSED) !== 'false'
   }),
 
   getters: {
@@ -167,6 +169,7 @@ export const useWorkshopDetailStore = defineStore('dofus.workshop.detail', {
 
     setCondensed(value: boolean) {
       this.condensed = value
+      localStorage.setItem(STORAGE_KEY_CONDENSED, String(value))
     }
   }
 })
