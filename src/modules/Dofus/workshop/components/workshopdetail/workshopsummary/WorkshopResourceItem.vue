@@ -1,12 +1,15 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { useImagePreview } from '@/composables/useImagePreview'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
 import { Item } from '@/modules/Dofus/item/types/item.types'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import type { WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
-import { normalizePositiveIntegerInput } from '@/utils/formatNumber'
+import { formatNumber, normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { storeToRefs } from 'pinia'
+import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 
 interface Resource {
   id: number
@@ -30,6 +33,46 @@ const { open: openImagePreview } = useImagePreview()
 
 const workshopDetailStore = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(workshopDetailStore)
+
+const { get, set, refreshRecursive } = useItemPrices()
+
+const priceUpdateTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
+
+function getUserPrice(itemId: number): number {
+  return get(itemId)?.userPrice ?? 0
+}
+
+const onPriceInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const raw = input.value
+  const normalized = normalizePositiveIntegerInput(raw)
+  const formatted = formatNumber(normalized)
+  input.value = formatted
+}
+
+async function updateItemPrice(itemId: number, rawValue: string) {
+  if (priceUpdateTimeout.value) {
+    clearTimeout(priceUpdateTimeout.value)
+  }
+
+  priceUpdateTimeout.value = setTimeout(async () => {
+    const sanitized = rawValue.replace(/[^0-9]/g, '')
+    const newPrice = parseInt(sanitized, 10)
+
+    if (isNaN(newPrice) || newPrice < 0) return
+
+    const oldPrice = getUserPrice(itemId)
+    if (newPrice === oldPrice) return
+
+    try {
+      await useMutationItemPrices([{ itemId, price: newPrice }])
+      set(itemId, newPrice)
+      await refreshRecursive([itemId])
+    } catch (e) {
+      console.error('Erreur update prix:', e)
+    }
+  }, 500)
+}
 
 function findAllIngredients(itemId: number): WorkshopItemIngredient[] {
   const ingredients: WorkshopItemIngredient[] = []
@@ -136,19 +179,35 @@ async function onInput(event: Event) {
     </div>
 
     <div class="controls">
-      <button class="min" @click="setMin" v-if="isOwner">min</button>
-      <button class="max" @click="setMax" v-if="isOwner">max</button>
-      <button class="decrement" @click="decrement" v-if="isOwner">−</button>
-      <input
-        type="number"
-        :value="resource.qty"
-        @input="onInput"
-        min="0"
-        :max="resource.max"
-        :disabled="!isOwner"
-      >
-      <button class="increment" @click="increment" v-if="isOwner">+</button>
-      <span class="max">/ {{ resource.max }}</span>
+      <div class="controls-row">
+        <button class="min" @click="setMin" v-if="isOwner">min</button>
+        <button class="max" @click="setMax" v-if="isOwner">max</button>
+        <button class="decrement" @click="decrement" v-if="isOwner">−</button>
+        <input
+          type="number"
+          :value="resource.qty"
+          @input="onInput"
+          min="0"
+          :max="resource.max"
+          :disabled="!isOwner"
+        >
+        <button class="increment" @click="increment" v-if="isOwner">+</button>
+        <span class="max">/ {{ resource.max }}</span>
+      </div>
+      <div class="price-row" v-if="isOwner && !condensed">
+        <span class="price-label">Mon prix</span>
+        <input
+          type="text"
+          inputmode="numeric"
+          class="price-input"
+          :value="formatNumber(getUserPrice(resource.item.id))"
+          @input="(event) => {
+            onPriceInput(event)
+            const target = event.target as HTMLInputElement
+            updateItemPrice(resource.item.id, target.value)
+          }"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -158,7 +217,7 @@ async function onInput(event: Event) {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 0.5rem;
-  align-items: center;
+  align-items: start;
   padding: 0.3rem;
   border-radius: var(--pico-border-radius);
   transition: background 0.15s;
@@ -203,8 +262,35 @@ async function onInput(event: Event) {
 
 .controls {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-end;
   gap: 0.2rem;
+
+  .controls-row {
+    display: flex;
+    align-items: center;
+    gap: 0.2rem;
+  }
+
+  .price-row {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .price-label {
+    font-size: 0.65rem;
+    color: var(--pico-muted-color);
+  }
+
+  .price-input {
+    width: 5rem;
+    padding: 0.1rem 0.2rem;
+    font-size: 0.65rem;
+    margin: 0;
+    height: auto;
+    text-align: right;
+  }
 
   button {
     padding: 0.05rem 0.25rem;
@@ -226,7 +312,7 @@ async function onInput(event: Event) {
     }
   }
 
-  input {
+  input[type="number"] {
     width: 2.8rem;
     padding: 0.1rem 0.2rem;
     text-align: center;
@@ -238,6 +324,25 @@ async function onInput(event: Event) {
   .decrement,
   .increment {
     font-size: 0.98rem;
+  }
+
+  .max-label {
+    font-size: 0.65rem;
+    color: var(--pico-muted-color);
+  }
+
+  .price-label {
+    font-size: 0.65rem;
+    color: var(--pico-muted-color);
+  }
+
+  .price-input {
+    width: 5rem;
+    padding: 0.1rem 0.2rem;
+    font-size: 0.65rem;
+    margin: 0;
+    height: auto;
+    text-align: right;
   }
 }
 
