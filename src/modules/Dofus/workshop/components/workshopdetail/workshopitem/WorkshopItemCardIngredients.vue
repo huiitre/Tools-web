@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 import { useClipboard } from '@/composables/useClipboard'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
@@ -6,8 +7,10 @@ import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSe
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import { useWorkshopPriceCalculator } from '@/modules/Dofus/workshop/composables/useWorkshopPriceCalculator'
 import type { WorkshopItem, WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
-import { normalizePositiveIntegerInput } from '@/utils/formatNumber'
+import { formatNumber, normalizePositiveIntegerInput } from '@/utils/formatNumber'
 import { storeToRefs } from 'pinia'
+import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
+import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 
 type CraftCard = {
   type: 'main' | 'craft'
@@ -22,8 +25,10 @@ const props = defineProps<{
 const store = useWorkshopDetailStore()
 const { isOwner, isCondensed } = storeToRefs(store)
 const { getUnitPrice } = useWorkshopPriceCalculator()
-
+const { get, set, refreshRecursive } = useItemPrices()
 const { copy } = useClipboard()
+
+const priceUpdateTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 function getIngredientsByParent(
   ingredients: WorkshopItemIngredient[],
@@ -111,14 +116,44 @@ function getIngredientPrices(ingredient: WorkshopItemIngredient) {
   const totalPrice = unitPrice * ingredient.quantityRequired
   const remaining = Math.max(0, ingredient.quantityRequired - ingredient.quantityObtained)
   const remainingPrice = unitPrice * remaining
-
-  return {
-    unitPrice,
-    totalPrice,
-    remainingPrice
-  }
+  return { unitPrice, totalPrice, remainingPrice }
 }
 
+function getUserPrice(itemId: number): number {
+  return get(itemId)?.userPrice ?? 0
+}
+
+const onPriceInput = (event: Event) => {
+  const input = event.target as HTMLInputElement
+  const raw = input.value
+  const normalized = normalizePositiveIntegerInput(raw)
+  const formatted = formatNumber(normalized)
+  input.value = formatted
+}
+
+async function updateItemPrice(itemId: number, rawValue: string) {
+  if (priceUpdateTimeout.value) {
+    clearTimeout(priceUpdateTimeout.value)
+  }
+
+  priceUpdateTimeout.value = setTimeout(async () => {
+    const sanitized = rawValue.replace(/[^0-9]/g, '')
+    const newPrice = parseInt(sanitized, 10)
+
+    if (isNaN(newPrice) || newPrice < 0) return
+
+    const oldPrice = getUserPrice(itemId)
+    if (newPrice === oldPrice) return
+
+    try {
+      await useMutationItemPrices([{ itemId, price: newPrice }])
+      set(itemId, newPrice)
+      await refreshRecursive([itemId])
+    } catch (e) {
+      console.error('Erreur update prix:', e)
+    }
+  }, 500)
+}
 </script>
 
 <template>
@@ -168,9 +203,26 @@ function getIngredientPrices(ingredient: WorkshopItemIngredient) {
       </div>
 
       <div v-if="!isCondensed" class="price-details">
-        <span>Prix unitaire : {{ getIngredientPrices(ingredient).unitPrice.toLocaleString() }} ₭</span>
-        <span>Prix total : {{ getIngredientPrices(ingredient).totalPrice.toLocaleString() }} ₭</span>
-        <span>Restant : <span class="colored">{{ getIngredientPrices(ingredient).remainingPrice.toLocaleString() }} ₭</span></span>
+        <div class="price-left">
+          <span>Prix unitaire : {{ getIngredientPrices(ingredient).unitPrice.toLocaleString() }} ₭</span>
+          <span>Prix total : {{ getIngredientPrices(ingredient).totalPrice.toLocaleString() }} ₭</span>
+          <span>Restant : <span class="colored">{{ getIngredientPrices(ingredient).remainingPrice.toLocaleString() }} ₭</span></span>
+        </div>
+        <div class="price-right" v-if="isOwner">
+          <span class="price-label">Mon prix</span>
+          <input
+            type="text"
+            inputmode="numeric"
+            class="ing-input price-input"
+            :value="formatNumber(getUserPrice(ingredient.item.id))"
+            :disabled="!isOwner"
+            @input="(event) => {
+              onPriceInput(event)
+              const target = event.target as HTMLInputElement
+              updateItemPrice(ingredient.item.id, target.value)
+            }"
+          />
+        </div>
       </div>
     </div>
   </section>
@@ -295,11 +347,40 @@ function getIngredientPrices(ingredient: WorkshopItemIngredient) {
 
   .price-details {
     display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
     font-size: 0.6rem;
     color: var(--pico-muted-color);
     padding-left: 2.4rem;
+
+    .price-left {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+    }
+
+    .price-right {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      align-items: flex-end;
+    }
+
+    .price-label {
+      font-size: 0.6rem;
+      color: var(--pico-muted-color);
+    }
+
+    .price-input {
+      width: 5rem;
+      font-size: 0.6rem;
+      padding: 0.1rem 0.2rem;
+      margin: 0 !important;
+      height: auto;
+      text-align: right;
+    }
   }
 
   .colored {

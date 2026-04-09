@@ -25,7 +25,7 @@ const { isOwner } = storeToRefs(workshopDetailStore)
 
 const { refreshRecursive } = useItemPrices()
 
-const priceUpdateTimeout = ref<NodeJS.Timeout | null>(null)
+const priceUpdateTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
 function getFormattedUnitPrice(itemId: number): string {
   return formatNumber(getUnitPrice(itemId))
