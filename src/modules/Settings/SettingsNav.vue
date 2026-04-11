@@ -34,7 +34,7 @@ const goTo = (section: SettingsSection) => {
         <ul>
           <li @click="goTo('account-profile')">Profil</li>
           <li @click="goTo('account-security')">Sécurité</li>
-          <li @click="goTo('account-providers')">Comptes liés (non implémenté)</li>
+          <li @click="goTo('account-providers')">Comptes liés</li>
         </ul>
       </div>
 
@@ -66,7 +66,7 @@ const goTo = (section: SettingsSection) => {
       <ul>
         <li :class="{ active: currentSection === 'account-profile' }" @click="goTo('account-profile')">Profil</li>
         <li :class="{ active: currentSection === 'account-security' }" @click="goTo('account-security')">Sécurité</li>
-        <li :class="{ active: currentSection === 'account-providers' }" @click="goTo('account-providers')">Comptes liés (non implémenté)</li>
+        <li :class="{ active: currentSection === 'account-providers' }" @click="goTo('account-providers')">Comptes liés</li>
       </ul>
 
       <!-- <h4>Préférences</h4>
