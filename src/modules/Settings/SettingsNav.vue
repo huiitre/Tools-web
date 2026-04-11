@@ -149,6 +149,7 @@ nav ul {
 nav li {
   padding: 0.35rem 0;
   cursor: pointer;
+  margin-left: 1rem;
 }
 
 nav li.active {
