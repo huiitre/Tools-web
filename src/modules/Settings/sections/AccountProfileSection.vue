@@ -96,7 +96,7 @@ defineProps<Props>()
   flex-direction: column;
   gap: 0.15rem;
   padding: 0.35rem 0;
-  border-bottom: 1px dashed #eee;
+  border-bottom: 1px solid #eee;
 }
 
 .line:last-child {
