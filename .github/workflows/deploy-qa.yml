@@ -78,6 +78,7 @@ jobs:
           tag_name: qa-latest
           name: QA Latest
           prerelease: true
+          overwrite: true
           files: |
             dist/*.AppImage
             dist/*.exe
