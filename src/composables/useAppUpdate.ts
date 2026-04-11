@@ -5,6 +5,7 @@ import { useEnv } from './useEnv'
 const updateAvailable = ref(false)
 
 updateService.onUpdateAvailable(() => {
+  console.log('[PWA] updateAvailable = true')
   updateAvailable.value = true
 })
 
