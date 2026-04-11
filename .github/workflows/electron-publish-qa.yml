@@ -1,7 +1,8 @@
 name: Electron Build QA
 
 on:
-  workflow_dispatch:
+  push:
+    branches: [ "qa" ]
 
 jobs:
   build:
