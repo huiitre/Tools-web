@@ -15,7 +15,7 @@ export function useAppUpdate() {
   onMounted(() => {
     if (!isWeb) return
     const interval = setInterval(() => {
-      console.log('[PWA] Vérification mise à jour...')
+      // console.log('[PWA] Vérification mise à jour...')
       navigator.serviceWorker.getRegistration().then(r => r?.update())
     }, 10 * 1000)
 
