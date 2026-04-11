@@ -42,3 +42,7 @@ export const useFetchRegister = async (credentials: useFetchRegisterType) => {
 export const useFetchVerifyEmail = async (token: string) => {
   return await clientV3.post(`/auth/verify-email?token=${token}`);
 };
+
+export const useFetchSetPassword = async (password: string) => {
+  return await clientV3.patch('/user/password', { password });
+};
