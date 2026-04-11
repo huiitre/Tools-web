@@ -28,6 +28,7 @@ initPicoTheme();
 pwa.updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
+    console.log('[PWA] onNeedRefresh déclenché')
     pwa.onNeedRefresh?.();
   },
   onOfflineReady() {
