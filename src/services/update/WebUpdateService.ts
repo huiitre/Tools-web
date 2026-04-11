@@ -7,6 +7,17 @@ export class WebUpdateService implements IUpdateService {
   }
 
   applyUpdate(): void {
-    pwa.updateSW?.(true)
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if (reg?.waiting) {
+        reg.waiting.postMessage({ type: 'SKIP_WAITING' })
+        reg.waiting.addEventListener('statechange', (e) => {
+          if ((e.target as ServiceWorker).state === 'activated') {
+            window.location.reload()
+          }
+        })
+      } else {
+        window.location.reload()
+      }
+    })
   }
 }

@@ -12,6 +12,9 @@ import UpdateButton from '@/components/Header/UpdateButton.vue'
 
 type ThemeMode = 'auto' | 'light' | 'dark'
 
+const env = import.meta.env.MODE
+const showEnvBadge = env === 'development' || env === 'qa'
+
 const router = useRouter()
 const auth = useAuthStore()
 const ui = useUIStore()
@@ -61,7 +64,7 @@ const handleLogout = async () => {
         <i class="fa-solid fa-bars" aria-hidden="true"></i>
       </button>
 
-      <RouterLink to="/" class="app-title">Tools</RouterLink>
+      <RouterLink to="/" class="app-title">Tools</RouterLink> <span v-if="showEnvBadge" class="env-badge">{{ env }}</span>
     </div>
 
     <div class="header-center"></div>
@@ -155,6 +158,17 @@ const handleLogout = async () => {
 
 .theme-accent :deep(.theme-button:hover) {
   color: var(--pico-primary-hover);
+}
+
+.env-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0.35rem;
+  border-radius: var(--pico-border-radius);
+  background: var(--pico-primary-background);
+  color: var(--pico-primary-inverse);
 }
 
 </style>
