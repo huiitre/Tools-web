@@ -105,7 +105,7 @@ jobs:
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
 
       - name: Build Electron Linux + Windows
-        run: npx electron-builder --linux --win
+        run: npx electron-builder --linux --win --publish never
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -21,6 +21,7 @@ jobs:
       - name: Build Docker image (QA)
         run: |
           docker build \
+            --build-arg VITE_MODE=qa \
             --build-arg VITE_TOOLS_API_BASE_URL="https://qa.api.tools.huiitre.fr" \
             --build-arg VITE_GOOGLE_CLIENT_ID_WEB="${{ secrets.VITE_GOOGLE_CLIENT_ID_WEB }}" \
             --build-arg VITE_GOOGLE_CLIENT_ID_ANDROID="${{ secrets.VITE_GOOGLE_CLIENT_ID_ANDROID }}" \
