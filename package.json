@@ -12,7 +12,8 @@
       "electron/**/*"
     ],
     "linux": {
-      "target": "AppImage"
+      "target": "AppImage",
+      "category": "Utility"
     },
     "win": {
       "target": "nsis"
