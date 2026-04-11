@@ -4,6 +4,9 @@ import SettingsNav, { SettingsSection } from './SettingsNav.vue'
 import AccountProfileSection from './sections/AccountProfileSection.vue';
 import AccountSecuritySection from './sections/AccountSecuritySection.vue';
 
+import { useAuthStore } from '@/modules/Auth/auth.store'
+const auth = useAuthStore()
+
 const currentSection = ref<SettingsSection>('account-profile')
 </script>
 
@@ -17,9 +20,9 @@ const currentSection = ref<SettingsSection>('account-profile')
     <main class="settings-content">
       <AccountProfileSection
         v-if="currentSection === 'account-profile'"
-        display-name="huiitre"
-        email="toto@gmail.fr"
-        :avatar-url="null"
+        :display-name="auth.user?.name"
+        :email="auth.user?.email"
+        :avatar-url="auth.user?.avatarUrl"
       />
 
       <AccountSecuritySection
