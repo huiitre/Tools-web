@@ -21,7 +21,8 @@
     ],
     "linux": {
       "target": "AppImage",
-      "category": "Utility"
+      "category": "Utility",
+      "artifactName": "Tools.huiitre.fr.AppImage"
     },
     "win": {
       "target": "nsis"
