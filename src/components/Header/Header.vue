@@ -8,6 +8,7 @@ import { useFetchLogout } from '@/modules/Auth/fetch/auth.fetch'
 import { useRouter } from 'vue-router'
 import { getTheme } from '@/ui/theme'
 import { useUIStore } from '@/stores/ui.store'
+import UpdateButton from '@/components/Header/UpdateButton.vue'
 
 type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -66,6 +67,9 @@ const handleLogout = async () => {
     <div class="header-center"></div>
 
     <div class="header-right">
+      <!-- Update button -->
+      <UpdateButton />
+
       <!-- Theme color -->
       <div class="theme-accent">
         <ThemePaletteButton />
