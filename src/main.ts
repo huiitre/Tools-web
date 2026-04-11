@@ -8,6 +8,7 @@ import { useAuthStore } from '@/modules/Auth/auth.store';
 
 // PWA auto-update
 import { registerSW } from 'virtual:pwa-register';
+import { pwa } from '@/services/update/pwa';
 
 import { getTheme, initThemeListener, setTheme } from '@/ui/theme';
 
@@ -23,14 +24,14 @@ initThemeListener();
 (window as any).getPicoTheme = getPicoTheme;
 initPicoTheme();
 
-// --- PWA auto update ---
-const updateSW = registerSW({
+// --- PWA ---
+pwa.updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    updateSW(true);
+    pwa.onNeedRefresh?.();
   },
   onOfflineReady() {
-    console.log('PWA prête pour utilisation hors-ligne 🚀');
+    console.log('PWA prête hors-ligne 🚀');
   },
 });
 
