@@ -2,6 +2,9 @@
 import { RouterLink } from 'vue-router'
 
 const year = new Date().getFullYear()
+
+const version = __APP_VERSION__
+
 </script>
 
 <template>
@@ -26,7 +29,7 @@ const year = new Date().getFullYear()
 
       <!-- DROITE -->
       <div class="footer-right">
-        <span class="app-version">v2.0.0</span>
+        <span class="app-version">{{ version }}</span>
 
         <button class="icon-button" aria-label="Feedback">
           <i class="fa-solid fa-bug" aria-hidden="true"></i>
