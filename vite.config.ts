@@ -50,10 +50,6 @@ export default defineConfig({
           '**/index.*.js'
         ],
 
-        // 5. Activation immédiate
-        skipWaiting: true,
-        clientsClaim: true,
-
         // 6. Runtime : thèmes = NETWORK ONLY (OBLIGATOIRE)
         runtimeCaching: [
           {
