@@ -4,30 +4,54 @@ Les releases sont générées automatiquement à chaque push sur `master` via `s
 
 ## Convention de commits
 
-Le type du commit détermine le niveau d'incrément de version :
-
 | Préfixe | Exemple | Impact |
 |---------|---------|--------|
 | `fix:` | `fix: correction du calcul de prix` | Patch `1.0.0` → `1.0.1` |
 | `feat:` | `feat: ajout du module almanax` | Minor `1.0.0` → `1.1.0` |
 | `feat!:` | `feat!: refonte de l'authentification` | Major `1.0.0` → `2.0.0` |
-| *(rien)* | `mise à jour du readme` | Aucune release |
+| *(rien)* | `mise à jour du readme` | Aucune release créée |
 
 ## Comportement
 
-- Si aucun commit ne correspond à la convention → pas de release, pas de tag
-- Plusieurs commits patch regroupés → un seul bump patch
-- Le niveau le plus élevé parmi les commits gagne (`feat:` + `fix:` → minor)
+- Plusieurs commits regroupés → un seul bump (niveau le plus élevé gagne)
+- Commit sans préfixe reconnu → pas de release, pas de tag, pas de build Electron
+- Le build Docker web se fait à chaque push sur `master`, indépendamment
 
-## Releases GitHub
+## Workflow de déploiement
 
-Chaque release crée automatiquement :
-- Un tag GitHub (`v1.0.1`, `v1.1.0`, etc.)
-- Une release GitHub avec les notes générées depuis les commits
-- Les binaires Electron joints (AppImage Linux + exe Windows)
+### QA (`deploy-qa.yml`)
+Déclenché sur push `qa` :
+- Build Docker → image `huiitre/tools_web:qa` avec mode `qa`
+- Build Electron Linux (AppImage) + Windows (exe) → uploadés sur la release GitHub `qa-latest`
 
-## Conseil pratique
+### Production (`deploy.yml`)
+Déclenché sur push `master` :
+1. `semantic-release` → analyse les commits, incrémente la version, crée le tag et la release GitHub
+2. Build Docker → image `huiitre/tools_web:latest` (utilise le `package.json` mis à jour)
+3. Build Electron Linux + Windows → uploadés sur la release GitHub versionnée (ex: `v1.0.1`)
 
-Pour les commits courants sans impact de version (refacto, doc, style) :
-utilise des préfixes non reconnus comme `chore:`, `docs:`, `style:`, `refactor:`.
-Ils ne déclencheront pas de release.
+Les jobs Docker et Electron tournent en parallèle après semantic-release.
+
+## Préfixes non versionnants (utiles pour commits sans impact)
+
+- `chore:` — maintenance, dépendances
+- `docs:` — documentation
+- `style:` — formatage
+- `refactor:` — refacto sans changement fonctionnel
+- `ci:` — modifications CI/CD
+
+## Affichage de la version
+
+La version est injectée au build via `__APP_VERSION__` dans `vite.config.ts` depuis `package.json`.
+Accessible dans n'importe quel composant Vue :
+
+```ts
+const version = __APP_VERSION__
+```
+
+Affichée dans le footer : `v{{ version }}`
+
+## Badge d'environnement
+
+Visible dans le header en mode `development` et `qa` uniquement.
+Basé sur `import.meta.env.MODE` injecté par Vite au build.
