@@ -29,6 +29,7 @@
     "dev": "vite --host --mode development",
     "dev:qa": "vite --host --mode qa",
     "dev:local": "vite --host --mode development",
+    "electron:watch": "ELECTRON_DEV=true electron electron/main.cjs",
     "electron:dev": "ELECTRON=true npm run build && electron electron/main.cjs",
     "electron:build": "ELECTRON=true npm run build && electron-builder"
   },

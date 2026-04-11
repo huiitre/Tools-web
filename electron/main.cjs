@@ -3,8 +3,8 @@ const path = require('path')
 
 function createWindow() {
   const win = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: 1600,
+    height: 960,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -12,9 +12,13 @@ function createWindow() {
     }
   })
 
-  const indexPath = path.join(__dirname, '..', 'dist', 'index.html')
-  console.log('Loading:', indexPath)
-  win.loadFile(indexPath)
+  const isDev = process.env.ELECTRON_DEV === 'true'
+
+  if (isDev) {
+    win.loadURL('http://localhost:5173')
+  } else {
+    win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+  }
 }
 
 app.commandLine.appendSwitch('disable-features', 'ServiceWorker')
