@@ -23,15 +23,37 @@ function createWindow() {
       win.webContents.closeDevTools()
     })
 
-    autoUpdater.checkForUpdates()
+    autoUpdater.on('checking-for-update', () => {
+      console.log('[updater] Vérification des mises à jour...')
+    })
 
-    autoUpdater.on('update-available', () => {
+    autoUpdater.on('update-available', (info) => {
+      console.log('[updater] Mise à jour disponible :', info.version)
       win.webContents.send('update-available')
     })
 
+    autoUpdater.on('update-not-available', (info) => {
+      console.log('[updater] Pas de mise à jour. Version actuelle :', info.version)
+    })
+
+    autoUpdater.on('error', (err) => {
+      console.error('[updater] Erreur :', err.message)
+    })
+
+    autoUpdater.on('download-progress', (progress) => {
+      console.log(`[updater] Téléchargement : ${Math.round(progress.percent)}%`)
+    })
+
+    autoUpdater.on('update-downloaded', (info) => {
+      console.log('[updater] Mise à jour téléchargée :', info.version)
+    })
+
     ipcMain.on('apply-update', () => {
+      console.log('[updater] Installation...')
       autoUpdater.quitAndInstall()
     })
+
+    autoUpdater.checkForUpdates()
   }
 }
 
