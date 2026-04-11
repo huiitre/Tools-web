@@ -9,6 +9,11 @@
   "build": {
     "appId": "fr.huiitre.tools",
     "productName": "Tools",
+    "publish": {
+      "provider": "github",
+      "owner": "huiitre",
+      "repo": "Tools-web"
+    },
     "files": [
       "dist/**/*",
       "electron/**/*"
@@ -47,6 +52,7 @@
     "@picocss/pico": "^2.1.1",
     "@tanstack/vue-table": "^8.21.3",
     "axios": "^1.1.3",
+    "electron-updater": "^6.8.3",
     "mosha-vue-toastify": "^1.0.23",
     "pinia": "^3.0.4",
     "vue": "^3.2.47",

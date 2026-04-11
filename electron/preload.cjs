@@ -1,10 +1,10 @@
-const { contextBridge } = require('electron')
+const { contextBridge, ipcRenderer } = require('electron')
 
 contextBridge.exposeInMainWorld('electron', {
   onUpdateAvailable: (callback) => {
-    // branché plus tard sur electron-updater
+    ipcRenderer.on('update-available', callback)
   },
   applyUpdate: () => {
-    // branché plus tard sur electron-updater
+    ipcRenderer.send('apply-update')
   }
 })
