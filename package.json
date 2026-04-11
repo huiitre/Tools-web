@@ -3,6 +3,21 @@
   "private": true,
   "version": "2.0.0",
   "type": "module",
+  "main": "electron/main.cjs",
+  "build": {
+    "appId": "fr.huiitre.tools",
+    "productName": "Tools",
+    "files": [
+      "dist/**/*",
+      "electron/**/*"
+    ],
+    "linux": {
+      "target": "AppImage"
+    },
+    "win": {
+      "target": "nsis"
+    }
+  },
   "scripts": {
     "build": "vue-tsc && vite build",
     "build:android": "vue-tsc && vite build && cp -R ./dist/* ../../pro/distrilog/EasyMobile2.0/www/",
@@ -13,7 +28,9 @@
     "reset": "rm -rf node_modules package-lock.json",
     "dev": "vite --host --mode development",
     "dev:qa": "vite --host --mode qa",
-    "dev:local": "vite --host --mode development"
+    "dev:local": "vite --host --mode development",
+    "electron:dev": "ELECTRON=true npm run build && electron electron/main.cjs",
+    "electron:build": "ELECTRON=true npm run build && electron-builder"
   },
   "dependencies": {
     "@floating-ui/vue": "^1.1.9",
@@ -38,6 +55,8 @@
     "@vitejs/plugin-vue": "^3.2.0",
     "@vue/eslint-config-prettier": "^7.0.0",
     "@vue/eslint-config-typescript": "^11.0.2",
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^8.27.0",
     "eslint-plugin-prettier": "^4.2.1",
     "eslint-plugin-vue": "^9.7.0",
