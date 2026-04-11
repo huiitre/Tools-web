@@ -1,4 +1,5 @@
-const { app, BrowserWindow } = require('electron')
+const { app, BrowserWindow, ipcMain } = require('electron')
+const { autoUpdater } = require('electron-updater')
 const path = require('path')
 
 function createWindow() {
@@ -20,6 +21,16 @@ function createWindow() {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
     win.webContents.on('devtools-opened', () => {
       win.webContents.closeDevTools()
+    })
+
+    autoUpdater.checkForUpdates()
+
+    autoUpdater.on('update-available', () => {
+      win.webContents.send('update-available')
+    })
+
+    ipcMain.on('apply-update', () => {
+      autoUpdater.quitAndInstall()
     })
   }
 }
