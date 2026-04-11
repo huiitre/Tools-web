@@ -18,6 +18,9 @@ function createWindow() {
     win.loadURL('http://localhost:5173')
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
+    win.webContents.on('devtools-opened', () => {
+      win.webContents.closeDevTools()
+    })
   }
 }
 
