@@ -16,6 +16,9 @@ import {
 } from '../fetch/auth.fetch'
 
 import { validatePassword, PasswordValidationError } from '@/modules/Auth/views/passwordValidation'
+import { useEnv } from '@/composables/useEnv'
+
+const { isElectron } = useEnv()
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -226,7 +229,7 @@ const clearRegisterFields = () => {
     </form>
 
     <!-- OAuth -->
-    <template v-if="!isRegister">
+    <template v-if="!isRegister && !isElectron">
       <small class="separator">ou</small>
 
       <div class="oauth-wrapper">

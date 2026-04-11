@@ -5,24 +5,29 @@ import {
   validatePassword,
   PasswordValidationError
 } from '@/modules/Auth/views/passwordValidation'
+import { useFetchSetPassword } from '@/modules/Auth/fetch/auth.fetch'
 
 const newPassword = ref('')
 const confirmPassword = ref('')
+const isSubmitting = ref(false)
 
 const feedback = ref<{
   type: 'success' | 'error'
   message: string
 } | null>(null)
 
-const onUpdatePassword = () => {
+const onUpdatePassword = async () => {
   feedback.value = null
 
   try {
+    isSubmitting.value = true
     validatePassword(newPassword.value, confirmPassword.value)
+
+    await useFetchSetPassword(newPassword.value)
 
     feedback.value = {
       type: 'success',
-      message: 'Mot de passe mis à jour (simulation).'
+      message: 'Mot de passe mis à jour avec succès.'
     }
 
     newPassword.value = ''
@@ -33,6 +38,8 @@ const onUpdatePassword = () => {
     } else {
       feedback.value = { type: 'error', message: 'Erreur inattendue.' }
     }
+  } finally {
+    isSubmitting.value = false
   }
 }
 </script>
@@ -77,7 +84,7 @@ const onUpdatePassword = () => {
         </small>
 
         <div class="actions">
-          <button type="submit">Mettre à jour</button>
+          <button type="submit" :aria-busy="isSubmitting">Mettre à jour</button>
         </div>
 
         <p v-if="feedback" class="feedback">
