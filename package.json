@@ -12,7 +12,8 @@
     "publish": {
       "provider": "github",
       "owner": "huiitre",
-      "repo": "Tools-web"
+      "repo": "Tools-web",
+      "releaseType": "release"
     },
     "files": [
       "dist/**/*",
