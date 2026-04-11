@@ -1,3 +1,5 @@
+import { useEnv } from '@/composables/useEnv'
+
 export const PICO_THEMES = [
   'azure',
   'amber',
@@ -30,10 +32,12 @@ function applyPicoTheme(theme: PicoTheme): void {
   const link = document.getElementById(LINK_ID) as HTMLLinkElement | null
   if (!link) return
 
-  link.href =
-    theme === 'azure'
-      ? '/themes/pico.min.css'
-      : `/themes/pico.${theme}.min.css`
+  const { isElectron } = useEnv()
+  const base = isElectron ? './themes' : '/themes'
+
+  link.href = theme === 'azure'
+    ? `${base}/pico.min.css`
+    : `${base}/pico.${theme}.min.css`
 }
 
 export function getPicoTheme(): PicoTheme {

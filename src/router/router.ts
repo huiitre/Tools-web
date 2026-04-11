@@ -1,4 +1,4 @@
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router';
 
 // components
 import Home from '@/modules/Home/Home.vue';
@@ -15,6 +15,8 @@ import { useUIStore } from '@/stores/ui.store';
 
 import { routes as authRoutes } from '@/modules/Auth/auth.routes';
 import { routes as dofusRoutes } from '@/modules/Dofus/dofus.routes';
+
+const isElectron = navigator.userAgent.includes('Electron')
 
 //? meta: { desktopOnly: true } pour limiter la taille d'écran sur une route
 export const routes = [
@@ -53,7 +55,7 @@ export const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: isElectron ? createWebHashHistory() : createWebHistory(import.meta.env.BASE_URL),
   routes,
 });
 
