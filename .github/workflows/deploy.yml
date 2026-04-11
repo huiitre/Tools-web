@@ -123,3 +123,24 @@ jobs:
             dist/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  sync-version:
+    needs: release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout qa
+        uses: actions/checkout@v3
+        with:
+          ref: qa
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Sync package.json from master
+        run: |
+          git fetch origin master
+          git checkout origin/master -- package.json
+          git config user.email "github-actions@github.com"
+          git config user.name "github-actions"
+          git add package.json
+          git diff --staged --quiet || git commit -m "chore: sync version from master"
+          git push origin qa

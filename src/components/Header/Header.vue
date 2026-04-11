@@ -161,11 +161,11 @@ const handleLogout = async () => {
 }
 
 .env-badge {
-  font-size: 0.6rem;
+  font-size: 0.5rem;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  padding: 0.1rem 0.35rem;
+  padding: 0.20rem 0.20rem;
   border-radius: var(--pico-border-radius);
   background: var(--pico-primary-background);
   color: var(--pico-primary-inverse);
