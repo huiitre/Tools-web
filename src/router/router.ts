@@ -29,6 +29,12 @@ export const routes = [
     meta: { requireAuth: true },
   },
   {
+    name: 'DofusSwitcher',
+    path: '/dofus-switcher',
+    component: () => import('@/modules/Dofus/switcher/views/SwitcherView.vue'),
+    meta: { requireAuth: false, standalone: true },
+  },
+  {
     name: 'settings',
     path: '/settings',
     component: () => import('@/modules/Settings/Settings.vue'),

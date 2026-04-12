@@ -6,5 +6,10 @@ contextBridge.exposeInMainWorld('electron', {
   },
   applyUpdate: () => {
     ipcRenderer.send('apply-update')
-  }
+  },
+  openSwitcher: () => {
+    ipcRenderer.invoke('switcher:open')
+  },
+  onSwitcherClosed: (callback) => ipcRenderer.on('switcher:closed', () => callback()),
+  offSwitcherClosed: () => ipcRenderer.removeAllListeners('switcher:closed'),
 })

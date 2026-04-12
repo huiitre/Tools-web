@@ -6,6 +6,7 @@ import DofusGameSelect from './DofusGameSelect.vue'
 import DofusConfigButton from './DofusConfigButton.vue'
 import { useAuthStore } from '@/modules/Auth/auth.store'
 import { RoleCode } from '@/modules/Auth/types/auth.types'
+import DofusSwitcherButton from '@/modules/Dofus/switcher/components/DofusSwitcherButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -65,6 +66,7 @@ const goTo = (tabName: string) => {
     <!-- RIGHT spacer (symétrie) -->
     <div class="dofus-nav-spacer">
       <DofusConfigButton />
+      <DofusSwitcherButton />
     </div>
   </nav>
 </template>

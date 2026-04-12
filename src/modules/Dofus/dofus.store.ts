@@ -13,6 +13,7 @@ type DofusState = {
   gameServers: GameServer[];
   currentGameServerId: number | null;
   renderKey: number;
+  switcherOpen: boolean;
 };
 
 /* ======================
@@ -26,6 +27,7 @@ export const useDofusStore = defineStore('dofus', {
     gameServers: [],
     currentGameServerId: null,
     renderKey: 0,
+    switcherOpen: false,
   }),
 
   getters: {
@@ -39,6 +41,10 @@ export const useDofusStore = defineStore('dofus', {
   actions: {
     setGameVersions(gameVersions: GameVersion[]) {
       this.gameVersions = gameVersions;
+    },
+
+    setSwitcherOpen(open: boolean) {
+      this.switcherOpen = open;
     },
 
     setCurrentGameVersion(id: number) {
