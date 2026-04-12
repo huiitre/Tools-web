@@ -166,7 +166,7 @@ async function onInput(event: Event) {
     :class="{ complete: resource.qty === resource.max }"
   >
     <ItemContextTrigger :item="resource.item">
-      <img :src="resource.icon" :alt="resource.name" @click="openImagePreview(resource.icon, resource.name)">
+      <img :src="resource.icon" @click="openImagePreview(resource.icon, resource.name)">
     </ItemContextTrigger>
 
     <div class="resource-info">
