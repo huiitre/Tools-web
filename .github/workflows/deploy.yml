@@ -86,6 +86,17 @@ jobs:
         with:
           node-version: 18
 
+      - name: Install X11 dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev \
+            libxtst-dev \
+            libxi-dev \
+            libxrandr-dev \
+            libxinerama-dev \
+            libxt-dev
+
       - name: Install dependencies
         run: npm ci
 
