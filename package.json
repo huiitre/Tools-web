@@ -19,6 +19,12 @@
       "dist/**/*",
       "electron/**/*"
     ],
+    "npmRebuild": true,
+    "buildDependenciesFromSource": false,
+    "nodeGypRebuild": false,
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**"
+    ],
     "linux": {
       "target": "AppImage",
       "category": "Utility",
