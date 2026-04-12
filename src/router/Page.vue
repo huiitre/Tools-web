@@ -4,7 +4,7 @@ import Footer from '@/components/Footer/Footer.vue'
 import { useRoute } from 'vue-router';
 import { useScreen } from '@/composables/useScreen';
 import NotAvailableOnScreen from '@/components/NotAvailableOnScreen.vue';
-import { computed } from 'vue';
+import { computed, watch } from 'vue';
 
 const route = useRoute();
 const { isDesktop } = useScreen();
@@ -13,10 +13,15 @@ const isBlocked = computed(() => {
   return route.meta.desktopOnly === true && !isDesktop.value
 })
 
+const isStandalone = computed(() => route.meta.standalone === true)
+
 </script>
 
 <template>
-  <div class="page">
+  <template v-if="isStandalone">
+    <slot />
+  </template>
+  <div v-else class="page">
     <Header />
 
     <NotAvailableOnScreen v-if="isBlocked" />

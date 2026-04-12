@@ -57,7 +57,9 @@
     "electron-updater": "^6.8.3",
     "mosha-vue-toastify": "^1.0.23",
     "pinia": "^3.0.4",
+    "uiohook-napi": "^1.5.5",
     "vue": "^3.2.47",
+    "vue-draggable-plus": "^0.6.1",
     "vue-router": "^4.2.2"
   },
   "devDependencies": {
