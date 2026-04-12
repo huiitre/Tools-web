@@ -3,7 +3,7 @@
   "description": "Sandbox privée — modules utilitaires personnels",
   "author": "Huiitre",
   "private": true,
-  "version": "1.6.0",
+  "version": "1.6.1",
   "type": "module",
   "main": "electron/main.cjs",
   "build": {
@@ -18,6 +18,12 @@
     "files": [
       "dist/**/*",
       "electron/**/*"
+    ],
+    "npmRebuild": true,
+    "buildDependenciesFromSource": false,
+    "nodeGypRebuild": false,
+    "asarUnpack": [
+      "node_modules/uiohook-napi/**"
     ],
     "linux": {
       "target": "AppImage",
