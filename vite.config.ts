@@ -40,6 +40,7 @@ export default defineConfig({
 
         // 3. Navigation SPA
         navigateFallback: 'index.html',
+        navigateFallbackDenylist: [/\.[jt]s$/, /\.css$/, /\.wasm$/],
 
         // 4. Ignorer explicitement TOUT ce qui peut poser problème
         globIgnores: [
