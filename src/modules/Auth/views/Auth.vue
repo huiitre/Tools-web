@@ -170,7 +170,7 @@ const clearRegisterFields = () => {
     <form v-if="!isRegister" @submit.prevent="onLoginSubmit">
       <input
         v-model="loginEmail"
-        type="email"
+        type="text"
         autocomplete="email"
         placeholder="Adresse email"
         required
