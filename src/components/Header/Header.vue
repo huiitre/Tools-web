@@ -9,6 +9,9 @@ import { useRouter } from 'vue-router'
 import { getTheme } from '@/ui/theme'
 import { useUIStore } from '@/stores/ui.store'
 import UpdateButton from '@/components/Header/UpdateButton.vue'
+import { useDevice } from '@/composables/useDevice'
+import { useScreen } from '@/composables/useScreen'
+import { useEnv } from '@/composables/useEnv'
 
 type ThemeMode = 'auto' | 'light' | 'dark'
 
@@ -18,6 +21,9 @@ const showEnvBadge = env === 'development' || env === 'qa'
 const router = useRouter()
 const auth = useAuthStore()
 const ui = useUIStore()
+const { isMobileDevice } = useDevice();
+const { isDesktop } = useScreen();
+const { isElectron } = useEnv()
 
 const theme = ref<ThemeMode>('auto')
 
@@ -67,7 +73,17 @@ const handleLogout = async () => {
       <RouterLink to="/" class="app-title">Tools</RouterLink> <span v-if="showEnvBadge" class="env-badge">{{ env }}</span>
     </div>
 
-    <div class="header-center"></div>
+    <!-- header-center -->
+    <div class="header-center">
+      <RouterLink
+        v-if="!isMobileDevice && isDesktop && !isElectron"
+        to="/downloads"
+        class="download-pill"
+      >
+        <i class="fa-solid fa-display" aria-hidden="true"></i>
+        Disponible sur Windows & Linux
+      </RouterLink>
+    </div>
 
     <div class="header-right">
       <!-- Update button -->
@@ -121,6 +137,36 @@ const handleLogout = async () => {
 
 .header-center {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  .download-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    padding: 0.3rem 0.75rem;
+    border-radius: 999px;
+    border: 1px solid var(--pico-muted-border-color);
+    background: var(--pico-card-background-color);
+
+    font-size: 1rem;
+    text-decoration: none;
+    color: var(--pico-color);
+
+    transition: border-color 0.2s ease, color 0.2s ease;
+  }
+
+  .download-pill:hover {
+    border-color: var(--pico-primary);
+    color: var(--pico-primary);
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.4; transform: scale(0.7); }
+  }
 }
 
 .app-title {

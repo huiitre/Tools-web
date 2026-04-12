@@ -35,6 +35,12 @@ export const routes = [
     meta: { requireAuth: true },
   },
   {
+    name: 'Downloads',
+    path: '/downloads',
+    component: () => import('@/modules/Downloads/Downloads.vue'),
+    meta: { requireAuth: false },
+  },
+  {
     name: 'PrivacyPolicy',
     path: '/privacy-policy',
     component: PrivacyPolicy,
