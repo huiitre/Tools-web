@@ -115,6 +115,9 @@ jobs:
           VITE_GOOGLE_API_KEY: ${{ secrets.VITE_GOOGLE_API_KEY }}
           VITE_GITHUB_CLIENT_ID: ${{ secrets.VITE_GITHUB_CLIENT_ID }}
 
+      - name: Install node-gyp
+        run: npm install -g node-gyp
+
       - name: Build Electron Linux
         run: npx electron-builder --linux --publish always
         env:
