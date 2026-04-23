@@ -65,6 +65,16 @@ export const useDofusStore = defineStore('dofus', {
 
     setGameServers(gameServers: GameServer[]) {
       this.gameServers = gameServers;
+
+      if (gameServers.length > 0) {
+        const isCurrentServerValid = gameServers.some((s) => s.id === this.currentGameServerId);
+        if (!isCurrentServerValid) {
+          this.setCurrentGameServer(gameServers[0].id);
+        }
+      } else {
+        this.currentGameServerId = null;
+        localStorage.removeItem('dofus.gameServerId');
+      }
     },
 
     hydrateFromStorage() {

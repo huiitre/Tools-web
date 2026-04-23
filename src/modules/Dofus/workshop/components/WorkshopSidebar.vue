@@ -2,23 +2,13 @@
 import { computed, ref } from 'vue'
 import { useWorkshopStore } from '@/modules/Dofus/workshop/store/workshop.store'
 import WorkshopTagEditor from './WorkshopTagEditor.vue'
-import { useRouter } from 'vue-router'
-import { Workshop } from '@/modules/Dofus/workshop/types/workshop.types'
 import { useRoute } from 'vue-router'
 
-const router = useRouter()
 const store = useWorkshopStore()
 
 const route = useRoute()
 
 const pinnedWorkshops = computed(() => store.workshops.filter(w => w.pinned))
-
-const openWorkshop = (workshop: Workshop) => {
-  router.push({
-    name: 'dofus-workshop-detail',
-    params: { workshopId: workshop.id }
-  })
-}
 
 const isList = computed(() =>
   route.name === 'dofus-workshop-list'

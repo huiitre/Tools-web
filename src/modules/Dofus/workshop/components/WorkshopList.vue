@@ -1,14 +1,16 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect } from 'vue'
+import { ref, computed, watchEffect, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useWorkshopStore } from '@/modules/Dofus/workshop/store/workshop.store'
 import { Workshop } from '@/modules/Dofus/workshop/types/workshop.types'
 import WorkshopTagSelector from '@/modules/Dofus/workshop/components/WorkshopTagSelector.vue'
 import WorkshopEditor from '@/modules/Dofus/workshop/components/WorkshopEditor.vue'
 import { getContrastColor } from '@/utils/color'
+import { useDofusStore } from '@/modules/Dofus/dofus.store'
 
 const router = useRouter()
 const store = useWorkshopStore()
+const dofusStore = useDofusStore()
 
 const route = useRoute()
 
