@@ -1,4 +1,5 @@
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { useDofusStore } from '@/modules/Dofus/dofus.store'
 import { useFetchWorkshopDetail } from '@/modules/Dofus/workshop/fetch/workshop.fetch'
 import { useAddItemsToWorkshop, useCraftIngredient, useDeleteWorkshopItem, useUncraftIngredient, useUpdateIngredientQuantityObtained, useUpdateWorkshopItemQuantity } from '@/modules/Dofus/workshop/fetch/workshopItem.fetch'
 import { WorkshopItem, WorkshopSummary } from '@/modules/Dofus/workshop/types/workshop.types'

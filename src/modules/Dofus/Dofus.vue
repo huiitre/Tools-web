@@ -45,18 +45,23 @@ const loadDofusModuleData = async () => {
     console.error('Dofus.vue | loadDofusModuleData', e)
     toast.error(e?.message || 'Erreur lors du chargement des données du module Dofus')
   }
-
-  const workshopStore = useWorkshopStore()
-  await workshopStore.fetchTags()
-  await workshopStore.fetchWorkshops()
 }
 
 watch(
   () => dofusStore.currentGameVersionId,
   async () => {
+    if (dofusStore.currentGameVersionId === null) return
+
     dofusStore.setGameServers([])
     await loadGameServers()
-  }
+
+    const workshopStore = useWorkshopStore()
+    await Promise.all([
+      workshopStore.fetchTags(),
+      workshopStore.fetchWorkshops()
+    ])
+  },
+  { immediate: true }
 )
 
 onMounted(() => {
