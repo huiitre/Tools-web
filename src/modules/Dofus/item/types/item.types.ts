@@ -83,6 +83,16 @@ type FarmZone = {
    ITEM (DOMAINE)
 ========================= */
 
+export type ItemLight = {
+  id: number
+  name: string
+  level: number
+  gameVersionId: number
+  assetId: number
+  itemType: ItemType
+  images: ItemImage[]
+}
+
 export type Item = {
   id: number
   name: string
