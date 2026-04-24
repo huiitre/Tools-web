@@ -3,6 +3,7 @@ const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { createSwitcherWindow } = require('./windows/dofusSwitcher.cjs')
 const { registerSwitcherIpc } = require('./ipc/switcher.ipc.cjs')
+const { registerSnifferIpc } = require('./ipc/sniffer.ipc.cjs')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -67,6 +68,7 @@ app.commandLine.appendSwitch('disable-features', 'ServiceWorker')
 
 app.whenReady().then(() => {
   registerSwitcherIpc()
+  registerSnifferIpc()
   createWindow()
 
   app.on('activate', () => {

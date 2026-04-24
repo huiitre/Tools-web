@@ -7,6 +7,10 @@ declare global {
       openSwitcher: () => void
       onSwitcherClosed: (callback: () => void) => void
       offSwitcherClosed: () => void
+      startSniffing: () => Promise<{ success: boolean; error?: string }>;
+      stopSniffing: () => Promise<{ success: boolean }>;
+      onSnifferData: (callback: (data: any[]) => void) => void;
+      checkSnifferRequirements: () => Promise<{ tcpdumpInstalled: boolean; hasPermissions: boolean } | null>;
     }
     switcher?: {
       scan: () => Promise<DofusWindow[]>

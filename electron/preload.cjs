@@ -12,4 +12,8 @@ contextBridge.exposeInMainWorld('electron', {
   },
   onSwitcherClosed: (callback) => ipcRenderer.on('switcher:closed', () => callback()),
   offSwitcherClosed: () => ipcRenderer.removeAllListeners('switcher:closed'),
+
+  startSniffing: () => ipcRenderer.invoke('sniffer:start'),
+  stopSniffing: () => ipcRenderer.invoke('sniffer:stop'),
+  onSnifferData: (callback) => ipcRenderer.on('sniffer:data', (event, data) => callback(data)),
 })
