@@ -4,99 +4,167 @@ const { getDofusConnection } = require('./SnifferDetector.cjs');
 class SnifferService {
     constructor() {
         this.process = null;
-        this.dataBuffer = '';
+        this.dataBuffer = ''; 
+        this.bankBuffer = ''; 
         this.parseTimeout = null;
+
+        this.mainWindow = null;
+        this.currentConfig = null;
+
+        this.modules = {
+            hdv: true,
+            bank: true
+        };
     }
 
-    start(onPriceCallback) {
-        const config = getDofusConnection();
+    setMainWindow(window) {
+        this.mainWindow = window;
+    }
+
+    getActiveConfig() {
+        return this.currentConfig;
+    }
+
+    updateModules(config) {
+        this.modules = { ...this.modules, ...config };
+        console.log("[Sniffer] Modules mis à jour :", this.modules);
+        
+        if (!this.modules.hdv && !this.modules.bank && this.process) {
+            this.stop();
+        }
+    }
+
+    start(forcedConfig = null) {
+        if (this.process) {
+            this.stop();
+        }
+
+        let config = forcedConfig;
+        if (!config) {
+            config = getDofusConnection();
+        }
+
         if (!config) throw new Error("Dofus non détecté.");
 
-        console.log("[DEBUG] Config trouvée :", config);
+        this.currentConfig = config;
+        console.log("[Sniffer] Démarrage moteur avec config :", config);
 
         const args = ['-i', 'any', '-A', '-l', '-nn', '-q', 'tcp', 'port', config.remotePort, 'and', 'host', config.remoteIp];
         
         this.process = spawn('tcpdump', args);
 
         this.process.stdout.on('data', (data) => {
-            // On accumule le texte ASCII
-            this.dataBuffer += data.toString('latin1');
+            const chunk = data.toString('latin1');
+            
+            if (this.modules.hdv) {
+                this.dataBuffer += chunk;
+                clearTimeout(this.parseTimeout);
+                this.parseTimeout = setTimeout(() => {
+                    this.processFullBuffer();
+                }, 50); 
+            }
 
-            // On attend 50ms pour être sûr d'avoir le burst complet (les 50 items)
-            clearTimeout(this.parseTimeout);
-            this.parseTimeout = setTimeout(() => {
-                this.processFullBuffer(onPriceCallback);
-            }, 50); 
+            if (this.modules.bank) {
+                this.processBankPacket(chunk);
+            }
+        });
+
+        this.process.on('exit', () => {
+            console.log("[Sniffer] Moteur tcpdump arrêté.");
+            this.process = null;
         });
     }
 
-    processFullBuffer(onPriceCallback) {
+    processBankPacket(chunk) {
+        this.bankBuffer += chunk;
+
+        // Détection du début de dump complet (EL)
+        if (this.bankBuffer.includes('EL') && this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('bank-full-dump');
+        }
+
+        const regex = /O[0-9a-f]+~[0-9a-f]+~[0-9a-f]+~[^;|\0]*/g;
+        let match;
+
+        while ((match = regex.exec(this.bankBuffer)) !== null) {
+            const rawItem = match[0];
+            if (rawItem.includes('~')) {
+                const parsed = this.parseBankItem(rawItem);
+                if (this.mainWindow && !this.mainWindow.isDestroyed()) {
+                    this.mainWindow.webContents.send('bank-item-captured', parsed);
+                }
+            }
+        }
+
+        const lastO = this.bankBuffer.lastIndexOf(';O');
+        if (lastO !== -1) {
+            this.bankBuffer = this.bankBuffer.substring(lastO + 1);
+        } else if (this.bankBuffer.length > 5000) {
+            this.bankBuffer = ''; 
+        }
+    }
+
+    parseBankItem(raw) {
+        const content = raw.startsWith('O') ? raw.substring(1) : raw;
+        const parts = content.split('~');
+        return {
+            instanceId: parts[0],
+            assetId: parseInt(parts[1], 16),
+            quantity: parseInt(parts[2], 16) || 1,
+            position: parts[3] || null,
+            stats: parts[4] || ''
+        };
+    }
+
+    processFullBuffer() {
         const ehlIndex = this.dataBuffer.indexOf('EHl');
         if (ehlIndex === -1) {
             this.dataBuffer = '';
             return;
         }
-
         const results = this.parseHDV(this.dataBuffer.substring(ehlIndex));
-        if (results.length > 0) {
-            onPriceCallback(results);
+        if (results.length > 0 && this.mainWindow && !this.mainWindow.isDestroyed()) {
+            this.mainWindow.webContents.send('sniffer:data', results);
         }
-        
         this.dataBuffer = '';
     }
 
     parseHDV(rawContent) {
-        // 1. On split par pipe. SURTOUT PAS DE REPLACE ICI.
         const segments = rawContent.split('|');
         if (segments.length < 2) return [];
-
-        // 2. Extraction PROPRE de l'itemId (uniquement les chiffres collés à EHl)
         const itemIdMatch = segments[0].match(/EHl(\d+)/);
         if (!itemIdMatch) return [];
         const itemId = parseInt(itemIdMatch[1]);
-
         const allInstances = [];
 
-        // 3. On traite chaque ligne de l'HDV
         for (let i = 1; i < segments.length; i++) {
             const fields = segments[i].split(';');
             if (fields.length < 5) continue;
-
-            // FONCTION DE NETTOYAGE CHIRURGICALE
             const cleanValue = (val) => {
                 if (!val) return 0;
-                // A. On prend ce qu'il y a AVANT la virgule (pour virer le flag ,0 ou ,1)
                 const beforeComma = val.split(',')[0];
-                // B. On vire les résidus de texte tcpdump (points, lettres)
                 const digitsOnly = beforeComma.replace(/\D/g, '');
                 const num = parseInt(digitsOnly);
-                
-                // Sécurité : si c'est l'itemId ou un nombre de baisé (> 1 milliard), c'est une erreur de parsing
-                if (isNaN(num) || num === itemId || num > 1000000000) return 0;
-                return num;
+                return isNaN(num) ? 0 : num;
             };
-
-            const p1 = cleanValue(fields[2]);
-            const p10 = cleanValue(fields[3]);
-            const p100 = cleanValue(fields[4]);
-
-            if (p1 > 0 || p10 > 0 || p100 > 0) {
-                allInstances.push({
-                    itemId: itemId,
-                    instanceId: fields[0].replace(/\D/g, ''), // Nettoyage de l'instanceId aussi
-                    p1, p10, p100
-                });
-            }
+            allInstances.push({
+                itemId: itemId,
+                instanceId: fields[0].replace(/\D/g, ''),
+                p1: cleanValue(fields[2]),
+                p10: cleanValue(fields[3]),
+                p100: cleanValue(fields[4])
+            });
         }
         return allInstances;
     }
 
     stop() {
         if (this.process) {
-            this.process.kill();
+            this.process.kill('SIGINT');
             this.process = null;
-            this.dataBuffer = '';
         }
+        this.dataBuffer = '';
+        this.bankBuffer = '';
     }
 }
 
