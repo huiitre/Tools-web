@@ -11,7 +11,7 @@ declare global {
       stopSniffing: () => Promise<{ success: boolean }>;
       onSnifferData: (callback: (data: any[]) => void) => void;
       checkSnifferRequirements: () => Promise<{ tcpdumpInstalled: boolean; hasPermissions: boolean } | null>;
-      detectCandidates: () => Promise<Array<{ ip: string; port: string; processName: string; isRecommended: boolean }>>;
+      detectCandidates: () => Promise<Array<{ ip: string; port: string; processName: string; isRecommended: boolean; localPort: string }>>;
       getActiveConfig: () => Promise<{ remoteIp: string; remotePort: string } | null>;
       updateSnifferModules: (config: { hdv?: boolean; bank?: boolean }) => Promise<{ success: boolean }>;
       startBankSniffing: () => Promise<{ success: boolean; error?: string }>;

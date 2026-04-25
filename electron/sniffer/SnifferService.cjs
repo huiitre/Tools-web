@@ -49,7 +49,14 @@ class SnifferService {
         this.currentConfig = config;
         console.log("[Sniffer] Démarrage moteur avec config :", config);
 
-        const args = ['-i', 'any', '-A', '-l', '-nn', '-q', 'tcp', 'port', config.remotePort, 'and', 'host', config.remoteIp];
+        // Construction du filtre tcpdump : on préfère le port local pour isoler la session
+        const args = ['-i', 'any', '-A', '-l', '-nn', '-q', 'tcp'];
+        
+        if (config.localPort) {
+            args.push('port', config.localPort.toString());
+        } else {
+            args.push('port', config.remotePort.toString(), 'and', 'host', config.remoteIp);
+        }
         
         this.process = spawn('tcpdump', args);
 

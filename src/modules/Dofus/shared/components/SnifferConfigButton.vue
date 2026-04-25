@@ -37,6 +37,7 @@ const toggleOpen = async () => {
     if (!localConfig.value.forceManual && configStore.activeConfig) {
       localConfig.value.remoteIp = configStore.activeConfig.remoteIp;
       localConfig.value.remotePort = configStore.activeConfig.remotePort;
+      localConfig.value.localPort = configStore.activeConfig.localPort || '';
     }
 
     configStore.scan();
@@ -46,11 +47,17 @@ const toggleOpen = async () => {
 const selectCandidate = (c: SnifferCandidate) => {
   localConfig.value.remoteIp = c.ip;
   localConfig.value.remotePort = c.port;
+  localConfig.value.localPort = c.localPort;
   localConfig.value.forceManual = true;
 };
 
 const handleSave = async () => {
-  configStore.saveConfig(localConfig.value.remoteIp, localConfig.value.remotePort, localConfig.value.forceManual);
+  configStore.saveConfig(
+    localConfig.value.remoteIp, 
+    localConfig.value.remotePort, 
+    localConfig.value.localPort, 
+    localConfig.value.forceManual
+  );
   
   if (configStore.isSniffing && window.electron) {
     const forcedConfig = configStore.getForcedConfig();
@@ -128,13 +135,22 @@ onBeforeUnmount(() => {
               :readonly="!localConfig.forceManual"
               :class="{ disabled: !localConfig.forceManual }"
             />
-            <input 
-              type="text" 
-              v-model="localConfig.remotePort" 
-              placeholder="Port" 
-              :readonly="!localConfig.forceManual"
-              :class="{ disabled: !localConfig.forceManual }"
-            />
+            <div class="ports-row">
+              <input 
+                type="text" 
+                v-model="localConfig.remotePort" 
+                placeholder="Distant" 
+                :readonly="!localConfig.forceManual"
+                :class="{ disabled: !localConfig.forceManual }"
+              />
+              <input 
+                type="text" 
+                v-model="localConfig.localPort" 
+                placeholder="Local" 
+                :readonly="!localConfig.forceManual"
+                :class="{ disabled: !localConfig.forceManual }"
+              />
+            </div>
           </div>
 
           <button @click="handleSave" class="save-btn" :disabled="localConfig.forceManual && (!localConfig.remoteIp || !localConfig.remotePort)">
@@ -153,13 +169,13 @@ onBeforeUnmount(() => {
           <div class="candidates-list" v-if="configStore.candidates.length > 0">
             <div 
               v-for="c in configStore.candidates" 
-              :key="c.ip + c.port" 
+              :key="c.ip + c.port + c.localPort" 
               class="candidate-item"
               @click="selectCandidate(c)"
             >
               <div class="candidate-info">
                 <span class="process">{{ c.processName }}</span>
-                <span class="address">{{ c.ip }}:{{ c.port }}</span>
+                <span class="address">{{ c.ip }}:{{ c.port }} <small>(Local: {{ c.localPort }})</small></span>
               </div>
               <i v-if="c.isRecommended" class="mdi mdi-check-decagram recommended" title="Recommandé"></i>
             </div>
@@ -262,10 +278,17 @@ onBeforeUnmount(() => {
     }
 
     .inputs-grid {
-      display: grid;
-      grid-template-columns: 1fr 60px;
+      display: flex;
+      flex-direction: column;
       gap: 0.4rem;
       margin-bottom: 0.5rem;
+
+      .ports-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.4rem;
+      }
+
       input { 
         height: 28px; 
         padding: 0 0.5rem; 

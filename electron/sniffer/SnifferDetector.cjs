@@ -5,41 +5,39 @@ function detectPotentialConnections() {
         const output = execSync('ss -4tpn').toString();
         const lines = output.split('\n');
 
-        // On importe le switcherService dynamiquement pour éviter les dépendances circulaires
         const { switcherService } = require('../ipc/switcher.ipc.cjs');
         const knownWindows = switcherService ? switcherService.getWindows() : [];
 
-        // On cherche toutes les connexions établies par des processus liés à Dofus ou Ankama
         const candidates = lines
             .filter(l => l.includes('ESTAB') && (l.toLowerCase().includes('dofus') || l.toLowerCase().includes('ankama')))
             .map(l => {
                 const parts = l.trim().split(/\s+/);
-                const remoteAddr = parts[4];
+                const localAddr = parts[3];  // Ton IP:Port local
+                const remoteAddr = parts[4]; // IP:Port du serveur
                 const processPart = parts[6] || ""; 
 
                 if (!remoteAddr || !remoteAddr.includes(':')) return null;
 
-                const separator = remoteAddr.lastIndexOf(':');
-                let ip = remoteAddr.substring(0, separator);
-                ip = ip.replace('[::ffff:', '').replace(']', '').trim();
-                const port = remoteAddr.substring(separator + 1).trim();
+                const remoteSep = remoteAddr.lastIndexOf(':');
+                const ip = remoteAddr.substring(0, remoteSep).replace('[::ffff:', '').replace(']', '').trim();
+                const port = remoteAddr.substring(remoteSep + 1).trim();
 
                 if (ip === '127.0.0.1') return null;
 
-                // Extraire le PID
-                // Format ss: users:(("Dofus.exe",pid=1234,fd=5))
+                // Extraction du Port Local
+                const localSep = localAddr.lastIndexOf(':');
+                const localPort = localAddr.substring(localSep + 1).trim();
+
                 let pid = null;
                 const pidMatch = processPart.match(/pid=(\d+)/);
                 if (pidMatch) pid = parseInt(pidMatch[1]);
 
-                // Tenter de matcher avec une fenêtre connue via le PID
                 let processName = "Inconnu";
                 if (pid) {
                     const window = knownWindows.find(w => w.pid === pid);
                     if (window && window.characterName) {
                         processName = window.characterName;
                     } else {
-                        // Fallback sur le nom du binaire si possible
                         const binMatch = processPart.match(/"([^"]+)"/);
                         if (binMatch) processName = binMatch[1];
                     }
@@ -48,7 +46,8 @@ function detectPotentialConnections() {
                 return {
                     ip,
                     port,
-                    processName,
+                    localPort, // On transmet le port local
+                    processName: `${processName} (Port: ${localPort})`,
                     isRecommended: port === "443" || port === "5555"
                 };
             })
@@ -64,16 +63,13 @@ function detectPotentialConnections() {
 function getDofusConnection() {
     const candidates = detectPotentialConnections();
     if (candidates.length === 0) return null;
-
     let gameConn = candidates.find(c => c.isRecommended);
-
-    if (!gameConn) {
-        gameConn = candidates[candidates.length - 1];
-    }
+    if (!gameConn) gameConn = candidates[candidates.length - 1];
 
     return {
         remoteIp: gameConn.ip,
-        remotePort: gameConn.port
+        remotePort: gameConn.port,
+        localPort: gameConn.localPort // Inclus ici aussi
     };
 }
 

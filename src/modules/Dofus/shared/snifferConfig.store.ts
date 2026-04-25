@@ -4,12 +4,14 @@ import { toRaw } from 'vue';
 export interface SnifferConfig {
   remoteIp: string;
   remotePort: string;
+  localPort: string;
   forceManual: boolean;
 }
 
 export interface SnifferCandidate {
   ip: string;
   port: string;
+  localPort: string;
   processName: string;
   isRecommended: boolean;
 }
@@ -19,9 +21,10 @@ export const useSnifferConfigStore = defineStore('snifferConfig', {
     config: {
       remoteIp: '',
       remotePort: '',
+      localPort: '',
       forceManual: false
     } as SnifferConfig,
-    activeConfig: null as { remoteIp: string; remotePort: string } | null,
+    activeConfig: null as { remoteIp: string; remotePort: string; localPort?: string } | null,
     modules: {
       hdv: true,
       bank: true
@@ -76,8 +79,8 @@ export const useSnifferConfigStore = defineStore('snifferConfig', {
       }
     },
 
-    saveConfig(ip: string, port: string, force: boolean) {
-      this.config = { remoteIp: ip, remotePort: port, forceManual: force };
+    saveConfig(ip: string, port: string, localPort: string, force: boolean) {
+      this.config = { remoteIp: ip, remotePort: port, localPort, forceManual: force };
       localStorage.setItem('sniffer.config', JSON.stringify(this.config));
     },
 
@@ -93,7 +96,11 @@ export const useSnifferConfigStore = defineStore('snifferConfig', {
 
     getForcedConfig() {
       if (this.config.forceManual && this.config.remoteIp && this.config.remotePort) {
-        return { remoteIp: this.config.remoteIp, remotePort: this.config.remotePort };
+        return { 
+          remoteIp: this.config.remoteIp, 
+          remotePort: this.config.remotePort,
+          localPort: this.config.localPort
+        };
       }
       return null;
     }
