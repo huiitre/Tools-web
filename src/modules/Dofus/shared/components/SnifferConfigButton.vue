@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, ref, computed } from 'vue';
-import { useFloating, offset } from '@floating-ui/vue';
+import { useFloating, offset, autoUpdate } from '@floating-ui/vue';
 import { useSnifferConfigStore, type SnifferCandidate } from '../snifferConfig.store';
 import { useEnv } from '@/composables/useEnv';
 
@@ -16,6 +16,7 @@ const localConfig = ref({ ...configStore.config });
 const { floatingStyles } = useFloating(reference, floating, {
   placement: 'bottom-end',
   middleware: [offset(5)],
+  whileElementsMounted: autoUpdate,
 });
 
 const onClickOutside = (e: MouseEvent) => {
@@ -23,10 +24,6 @@ const onClickOutside = (e: MouseEvent) => {
   if (reference.value && floating.value && !reference.value.contains(target) && !floating.value.contains(target)) {
     isOpen.value = false;
   }
-};
-
-const onScroll = () => {
-  if (isOpen.value) isOpen.value = false;
 };
 
 const toggleOpen = async () => {
@@ -65,12 +62,10 @@ const handleSave = async () => {
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside);
-  document.addEventListener('scroll', onScroll, true);
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onClickOutside);
-  document.removeEventListener('scroll', onScroll, true);
 });
 </script>
 
@@ -317,8 +312,9 @@ onBeforeUnmount(() => {
       display: flex;
       flex-direction: column;
       gap: 0.25rem;
-      max-height: 120px;
+      max-height: 200px;
       overflow-y: auto;
+      overscroll-behavior: contain;
     }
 
     .candidate-item {
