@@ -75,4 +75,4 @@ function registerSwitcherIpc() {
   })
 }
 
-module.exports = { registerSwitcherIpc }
+module.exports = { registerSwitcherIpc, switcherService: service }

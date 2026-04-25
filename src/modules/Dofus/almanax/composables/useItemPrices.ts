@@ -159,10 +159,10 @@ export function useItemPrices() {
   watch(
     prices,
     (newPrices) => {
-      console.log(
+      /* console.log(
         'prices updated:',
         prices.value,
-      )
+      ) */
     },
     { deep: false }
   )

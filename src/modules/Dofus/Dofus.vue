@@ -7,6 +7,7 @@ import { useFetchGameVersions } from '@/modules/Dofus/game/fetch/game.fetch'
 import { useFetchGameServers } from '@/modules/Dofus/game/fetch/game.fetch'
 import { useDofusStore } from '@/modules/Dofus/dofus.store'
 import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
+import { useSnifferConfigStore } from '@/modules/Dofus/shared/snifferConfig.store'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 import { useWorkshopStore } from '@/modules/Dofus/workshop/store/workshop.store'
 
@@ -14,6 +15,7 @@ const { startAutoRefresh, stopAutoRefresh } = useItemPrices()
 
 const dofusStore = useDofusStore()
 const dofusConfig = useDofusConfigStore()
+const snifferConfig = useSnifferConfigStore()
 
 const loadGameServers = async () => {
   if (dofusStore.currentGameVersionId === null) return
@@ -66,7 +68,8 @@ watch(
 
 onMounted(() => {
   loadDofusModuleData()
-  startAutoRefresh() //? "3_000" = 3sec pour debug
+  snifferConfig.hydrate()
+  startAutoRefresh() 
 })
 
 onBeforeUnmount(() => {

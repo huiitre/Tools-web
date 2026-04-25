@@ -33,3 +33,11 @@ Conformité : Utilisation impérative du guide de variables PicoCSS fourni dans 
 [Style] Dossier /doc identifié comme source de vérité pour PicoCSS et le design system.
 
 [Architecture] Vue.js 3 orienté services métier (Clean Arch).
+
+[Sniffer] Nécessite un environnement Electron sous Linux (dépendances `ss -tpn` et `tcpdump`).
+
+[Protocol] Dofus Retro utilise les paquets `EHl` pour les prix HDV.
+
+[Sync] Pattern Batch/Debounce (2s) unifié pour le fetch des métadonnées et la synchronisation des prix.
+
+[Prix] Synchronisation couplée à `useItemPrices.refreshRecursive` pour mettre à jour le cache local et recalculer les crafts dépendants.

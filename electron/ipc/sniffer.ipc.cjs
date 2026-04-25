@@ -1,9 +1,9 @@
 const { ipcMain, BrowserWindow } = require('electron');
 const snifferService = require('../sniffer/SnifferService.cjs');
-const { checkRequirements } = require('../sniffer/SnifferDoctor.cjs'); // On importe le vérificateur
+const { checkRequirements } = require('../sniffer/SnifferDoctor.cjs');
+const { detectPotentialConnections } = require('../sniffer/SnifferDetector.cjs');
 
 function registerSnifferIpc() {
-    // 1. Vérification des prérequis (tcpdump + permissions)
     ipcMain.handle('sniffer:check-requirements', async () => {
         try {
             return checkRequirements();
@@ -12,25 +12,45 @@ function registerSnifferIpc() {
         }
     });
 
-    // 2. Démarrage du sniffer
-    ipcMain.handle('sniffer:start', async () => {
+    ipcMain.handle('sniffer:detect-candidates', async () => {
+        return detectPotentialConnections();
+    });
+
+    ipcMain.handle('sniffer:get-active-config', async () => {
+        return snifferService.getActiveConfig();
+    });
+
+    ipcMain.handle('sniffer:update-modules', async (event, config) => {
+        snifferService.updateModules(config);
+        return { success: true };
+    });
+
+    ipcMain.handle('sniffer:start', async (event, forcedConfig = null) => {
         try {
-            snifferService.start((data) => {
-                // On récupère la fenêtre principale dynamiquement
-                const win = BrowserWindow.getAllWindows()[0]; 
-                if (win && !win.isDestroyed()) {
-                    win.webContents.send('sniffer:data', data);
-                }
-            });
+            const win = BrowserWindow.getAllWindows()[0];
+            if (win) {
+                snifferService.setMainWindow(win);
+            }
+            snifferService.start(forcedConfig);
             return { success: true };
         } catch (error) {
             return { success: false, error: error.message };
         }
     });
 
-    // 3. Arrêt du sniffer
     ipcMain.handle('sniffer:stop', () => {
         snifferService.stop();
+        return { success: true };
+    });
+
+    // Ces handles deviennent obsolètes mais on les garde pour la compatibilité si besoin
+    ipcMain.handle('sniffer:bank-start', async () => {
+        snifferService.updateModules({ bank: true });
+        return { success: true };
+    });
+
+    ipcMain.handle('sniffer:bank-stop', async () => {
+        snifferService.updateModules({ bank: false });
         return { success: true };
     });
 }
