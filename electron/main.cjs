@@ -4,6 +4,7 @@ const path = require('path')
 const { createSwitcherWindow } = require('./windows/dofusSwitcher.cjs')
 const { registerSwitcherIpc } = require('./ipc/switcher.ipc.cjs')
 const { registerSnifferIpc } = require('./ipc/sniffer.ipc.cjs')
+const { registerProxyIpc } = require('./ipc/proxy.ipc.cjs')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -20,6 +21,7 @@ function createWindow() {
 
   if (isDev) {
     win.loadURL('http://localhost:5173')
+    win.webContents.openDevTools()
   } else {
     win.loadFile(path.join(__dirname, '..', 'dist', 'index.html'))
     win.webContents.on('devtools-opened', () => {
@@ -67,8 +69,13 @@ function createWindow() {
 app.commandLine.appendSwitch('disable-features', 'ServiceWorker')
 
 app.whenReady().then(() => {
+  // Cleanup Proxy stale rules if any
+  const proxyService = require('./proxy/ProxyService.cjs');
+  proxyService.stop();
+
   registerSwitcherIpc()
   registerSnifferIpc()
+  registerProxyIpc()
   createWindow()
 
   app.on('activate', () => {

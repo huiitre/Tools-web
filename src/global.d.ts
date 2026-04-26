@@ -7,6 +7,8 @@ declare global {
       openSwitcher: () => void
       onSwitcherClosed: (callback: () => void) => void
       offSwitcherClosed: () => void
+      
+      // Sniffer (Old)
       startSniffing: (forcedConfig?: { remoteIp: string; remotePort: string } | null) => Promise<{ success: boolean; error?: string }>;
       stopSniffing: () => Promise<{ success: boolean }>;
       onSnifferData: (callback: (data: any[]) => void) => void;
@@ -14,6 +16,15 @@ declare global {
       detectCandidates: () => Promise<Array<{ ip: string; port: string; processName: string; isRecommended: boolean; localPort: string }>>;
       getActiveConfig: () => Promise<{ remoteIp: string; remotePort: string } | null>;
       updateSnifferModules: (config: { hdv?: boolean; bank?: boolean }) => Promise<{ success: boolean }>;
+      
+      // Proxy (New)
+      startProxy: (config: { remoteIp: string; remotePort: number; localPort: number }) => Promise<{ success: boolean; error?: string }>;
+      stopProxy: () => Promise<{ success: boolean }>;
+      onProxyStatus: (callback: (status: any) => void) => void;
+      onProxyHdvPrices: (callback: (data: any[]) => void) => void;
+      onProxyHdvCategory: (callback: (data: number[]) => void) => void;
+
+      // Bank
       startBankSniffing: () => Promise<{ success: boolean; error?: string }>;
       stopBankSniffing: () => Promise<{ success: boolean; data?: any[] }>;
       onBankItemsUpdate: (callback: (items: any[]) => void) => void;

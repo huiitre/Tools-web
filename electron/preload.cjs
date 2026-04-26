@@ -13,6 +13,14 @@ contextBridge.exposeInMainWorld('electron', {
   onSwitcherClosed: (callback) => ipcRenderer.on('switcher:closed', () => callback()),
   offSwitcherClosed: () => ipcRenderer.removeAllListeners('switcher:closed'),
 
+  // Proxy
+  startProxy: (config) => ipcRenderer.invoke('proxy:start', config),
+  stopProxy: () => ipcRenderer.invoke('proxy:stop'),
+  onProxyStatus: (callback) => ipcRenderer.on('proxy:status', (event, status) => callback(status)),
+  onProxyHdvPrices: (callback) => ipcRenderer.on('proxy:hdv-prices', (event, data) => callback(data)),
+  onProxyHdvCategory: (callback) => ipcRenderer.on('proxy:hdv-category', (event, data) => callback(data)),
+
+  // Sniffer (Old)
   startSniffing: (forcedConfig = null) => ipcRenderer.invoke('sniffer:start', forcedConfig),
   stopSniffing: () => ipcRenderer.invoke('sniffer:stop'),
   onSnifferData: (callback) => ipcRenderer.on('sniffer:data', (event, data) => callback(data)),
@@ -21,6 +29,7 @@ contextBridge.exposeInMainWorld('electron', {
   updateSnifferModules: (config) => ipcRenderer.invoke('sniffer:update-modules', config),
   checkSnifferRequirements: () => ipcRenderer.invoke('sniffer:check-requirements'),
 
+  // Bank
   startBankSniffing: () => ipcRenderer.invoke('sniffer:bank-start'),
   stopBankSniffing: () => ipcRenderer.invoke('sniffer:bank-stop'),
   onBankItemsUpdate: (callback) => ipcRenderer.on('bank-items-update', (event, items) => callback(items)),
