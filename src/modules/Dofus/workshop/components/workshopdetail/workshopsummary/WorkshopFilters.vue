@@ -1,61 +1,87 @@
 <script setup lang="ts">
 import WorkshopItemSearchDropdown from './WorkshopItemSearchDropdown.vue'
+import type { WorkshopSortBy, WorkshopSortOrder } from '../../../store/workshopDetail.store'
 
 interface Props {
   showCompleted: boolean
   condensed: boolean
-  activeSortMode: 'quantity' | 'name'
+  displayByZone: boolean
+  sortBy: WorkshopSortBy
+  sortOrder: WorkshopSortOrder
 }
 
 interface Emits {
   (e: 'update:showCompleted', value: boolean): void
   (e: 'update:condensed', value: boolean): void
-  (e: 'sortByQuantity'): void
-  (e: 'sortByName'): void
+  (e: 'update:displayByZone', value: boolean): void
+  (e: 'update:sortBy', value: WorkshopSortBy): void
+  (e: 'update:sortOrder', value: WorkshopSortOrder): void
 }
 
 defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+const sortOptions: { value: WorkshopSortBy; label: string }[] = [
+  { value: 'name', label: 'Nom' },
+  { value: 'quantity', label: 'Quantité' },
+  { value: 'unitPrice', label: 'Prix Unitaire' },
+  { value: 'totalPrice', label: 'Prix Total' },
+  { value: 'remainingPrice', label: 'Prix Restant' }
+]
+
+function toggleSortOrder(current: WorkshopSortOrder) {
+  emit('update:sortOrder', current === 'asc' ? 'desc' : 'asc')
+}
 </script>
 
 <template>
   <div class="options">
-    <label>
-      <input 
-        type="checkbox" 
-        :checked="showCompleted"
-        @change="emit('update:showCompleted', ($event.target as HTMLInputElement).checked)"
-      >
-      Ressources complètes
-    </label>
-    <label>
-      <input 
-        type="checkbox" 
-        :checked="condensed"
-        @change="emit('update:condensed', ($event.target as HTMLInputElement).checked)"
-      >
-      Affichage condensé
-    </label>
+    <div class="checkboxes">
+        <label>
+            <input 
+                type="checkbox" 
+                :checked="showCompleted"
+                @change="emit('update:showCompleted', ($event.target as HTMLInputElement).checked)"
+            >
+            Complètes
+        </label>
+        <label>
+            <input 
+                type="checkbox" 
+                :checked="condensed"
+                @change="emit('update:condensed', ($event.target as HTMLInputElement).checked)"
+            >
+            Condensé
+        </label>
+        <label>
+            <input 
+                type="checkbox" 
+                :checked="displayByZone"
+                @change="emit('update:displayByZone', ($event.target as HTMLInputElement).checked)"
+            >
+            Zone
+        </label>
+    </div>
 
-    <div class="sort-buttons">
-      <button 
-        type="button" 
-        class="sort-btn" 
-        :class="{ active: activeSortMode === 'quantity' }"
-        @click="emit('sortByQuantity')"
-        title="Trier par quantité"
-      >
-        <i class="fa-solid fa-arrow-down-1-9"></i>
-      </button>
-      <button 
-        type="button" 
-        class="sort-btn" 
-        :class="{ active: activeSortMode === 'name' }"
-        @click="emit('sortByName')"
-        title="Trier par nom"
-      >
-        <i class="fa-solid fa-arrow-down-a-z"></i>
-      </button>
+    <div class="sort-controls">
+        <select 
+            :value="sortBy" 
+            @change="emit('update:sortBy', ($event.target as HTMLSelectElement).value as WorkshopSortBy)"
+            class="sort-select"
+        >
+            <option v-for="opt in sortOptions" :key="opt.value" :value="opt.value">
+                {{ opt.label }}
+            </option>
+        </select>
+        
+        <button 
+            type="button" 
+            class="sort-order-btn"
+            @click="toggleSortOrder(sortOrder)"
+            :title="sortOrder === 'asc' ? 'Croissant' : 'Décroissant'"
+        >
+            <i class="fa-solid" :class="sortOrder === 'asc' ? 'fa-sort-amount-up' : 'fa-sort-amount-down'"></i>
+        </button>
     </div>
 
     <WorkshopItemSearchDropdown />
@@ -65,16 +91,22 @@ const emit = defineEmits<Emits>()
 <style scoped>
 .options {
   display: flex;
-  gap: 0.5rem;
+  gap: 1rem;
   align-items: center;
+}
+
+.checkboxes {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
 }
 
 .options label {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.3rem;
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   cursor: pointer;
   white-space: nowrap;
 }
@@ -84,40 +116,37 @@ const emit = defineEmits<Emits>()
   cursor: pointer;
 }
 
-.sort-buttons {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
+.sort-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
 }
 
-.sort-btn {
-  padding: 0.2rem 0.35rem;
-  font-size: 0.75rem;
-  line-height: 1;
-  background: var(--pico-form-element-background-color);
-  border: 1px solid var(--pico-form-element-border-color);
-  color: var(--pico-form-element-color);
-  border-radius: var(--pico-border-radius);
-  cursor: pointer;
-  transition: all 0.15s;
-  margin: 0;
-  height: auto;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.sort-select {
+    margin: 0;
+    height: 2rem;
+    padding: 0 2rem 0 0.5rem;
+    font-size: 0.75rem;
+    width: auto;
+    min-width: 100px;
 }
 
-.sort-btn:hover:not(.active) {
-  color: var(--pico-primary);
+.sort-order-btn {
+    margin: 0;
+    height: 2rem;
+    width: 2rem;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--pico-form-element-background-color);
+    border: 1px solid var(--pico-form-element-border-color);
+    color: var(--pico-form-element-color);
+    cursor: pointer;
 }
 
-.sort-btn.active {
-  background: var(--pico-primary-background);
-  border-color: var(--pico-primary-border);
-  color: var(--pico-primary-inverse);
-}
-
-.sort-btn i {
-  font-size: 0.75rem;
+.sort-order-btn:hover {
+    border-color: var(--pico-primary);
+    color: var(--pico-primary);
 }
 </style>

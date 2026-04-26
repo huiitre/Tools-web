@@ -2,28 +2,40 @@
 import { ref, computed } from 'vue'
 import { useWorkshopSummary } from '@/modules/Dofus/workshop/composables/useWorkshopSummary'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
-import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
-import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
-import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { useWorkshopDetailStore, type WorkshopSortBy, type WorkshopSortOrder } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import WorkshopStats from './WorkshopStats.vue'
 import WorkshopPrices from './WorkshopPrices.vue'
 import WorkshopFilters from './WorkshopFilters.vue'
 import WorkshopResourcesList from './WorkshopResourcesList.vue'
-import { storeToRefs } from 'pinia'
 
 const { summary } = useWorkshopSummary()
-const { get: getPrice } = useItemPrices()
-const dofusConfigStore = useDofusConfigStore()
+const itemPricesStore = useItemPrices()
 const workshopDetailStore = useWorkshopDetailStore()
+
 /* ========================= FILTERS ========================= */
 const showCompleted = ref(false)
+
 const condensed = computed({
   get: () => workshopDetailStore.condensed,
   set: (value: boolean) => workshopDetailStore.setCondensed(value)
 })
-const sortMode = ref<'quantity' | 'name'>('quantity')
+
+const displayByZone = computed({
+  get: () => workshopDetailStore.displayByZone,
+  set: (value: boolean) => workshopDetailStore.setDisplayByZone(value)
+})
+
+const sortBy = computed({
+  get: () => workshopDetailStore.sortBy,
+  set: (value: WorkshopSortBy) => workshopDetailStore.setSortBy(value)
+})
+
+const sortOrder = computed({
+  get: () => workshopDetailStore.sortOrder,
+  set: (value: WorkshopSortOrder) => workshopDetailStore.setSortOrder(value)
+})
 
 /* ========================= COMPUTED DATA ========================= */
 const stats = computed(() => ({
@@ -35,8 +47,7 @@ const stats = computed(() => ({
 
 const prices = computed(() => ({
   buyItems: summary.value.buyItemsCost,
-  buyItemsRemaining: summary.value.buyItemsRemaining, // NOUVEAU
-  // buy: summary.value.totalCost, ← SUPPRIMÉ (deprecated)
+  buyItemsRemaining: summary.value.buyItemsRemaining,
   craft: summary.value.craftCost,
   craftAdjusted: summary.value.craftAdjusted,
   mixedCost: summary.value.mixedCost,
@@ -44,12 +55,13 @@ const prices = computed(() => ({
 }))
 
 const zones = computed(() => {
-  let processedZones = summary.value.zones.map(zone => ({
+  const processedZones = summary.value.zones.map(zone => ({
     name: zone.name,
     percent: zone.percent,
     resources: zone.resources.map(resource => {
-      const itemPrice = getPrice(resource.item.id)
-      const unitPrice = itemPrice ? getItemPriceByMode(itemPrice, dofusConfigStore.priceDisplayMode) : 0
+      // On récupère le prix de manière réactive via le store
+      const itemPrice = itemPricesStore.get(resource.item.id)
+      const unitPrice = itemPrice?.userPrice ?? 0
       const img = getItemImageByResolution(resource.item.images ?? [], AssetResolution.X2)
 
       return {
@@ -64,34 +76,40 @@ const zones = computed(() => {
     })
   }))
 
-  processedZones = processedZones.map(zone => ({
+  return processedZones.map(zone => ({
     ...zone,
-    resources: [...zone.resources].sort((a, b) => {
-      if (sortMode.value === 'quantity') {
-        return a.max - b.max
-      } else {
-        return a.name.localeCompare(b.name)
-      }
-    })
+    resources: sortResources(zone.resources)
   }))
-
-  return processedZones
 })
+
+function sortResources(resources: any[]) {
+    return [...resources].sort((a, b) => {
+        let result = 0;
+        if (sortBy.value === 'quantity') {
+            result = a.max - b.max;
+        } else if (sortBy.value === 'unitPrice') {
+            result = (a.price || 0) - (b.price || 0);
+        } else if (sortBy.value === 'totalPrice') {
+            result = ((a.price || 0) * a.max) - ((b.price || 0) * b.max);
+        } else if (sortBy.value === 'remainingPrice') {
+            result = ((a.price || 0) * (a.max - a.qty)) - ((b.price || 0) * (b.max - b.qty));
+        } else {
+            result = a.name.localeCompare(b.name);
+        }
+        
+        if (result === 0) {
+            result = a.name.localeCompare(b.name);
+        }
+
+        return sortOrder.value === 'asc' ? result : -result;
+    });
+}
 
 /* ========================= HANDLERS ========================= */
 function updateResourceQty(itemId: number, value: number) {
   // TODO: Mutation API
   console.log('Update resource qty', { itemId, value })
 }
-
-function sortByQuantity() {
-  sortMode.value = 'quantity'
-}
-
-function sortByName() {
-  sortMode.value = 'name'
-}
-
 </script>
 
 <template>
@@ -117,9 +135,9 @@ function sortByName() {
         <WorkshopFilters
           v-model:show-completed="showCompleted"
           v-model:condensed="condensed"
-          :active-sort-mode="sortMode"
-          @sort-by-quantity="sortByQuantity"
-          @sort-by-name="sortByName"
+          v-model:display-by-zone="displayByZone"
+          v-model:sort-by="sortBy"
+          v-model:sort-order="sortOrder"
         />
       </div>
     </div>
@@ -128,6 +146,9 @@ function sortByName() {
       :zones="zones"
       :show-completed="showCompleted"
       :condensed="condensed"
+      :display-by-zone="displayByZone"
+      :sort-by="sortBy"
+      :sort-order="sortOrder"
       @update:resource-qty="updateResourceQty"
     />
   </aside>
