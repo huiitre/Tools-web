@@ -18,6 +18,10 @@ function registerProxyIpc() {
         await proxyService.stop();
         return { success: true };
     });
+
+    ipcMain.on('proxy:update-modules', (event, modules) => {
+        proxyService.updateModules(modules);
+    });
 }
 
 module.exports = { registerProxyIpc };

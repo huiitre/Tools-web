@@ -69,10 +69,6 @@ function createWindow() {
 app.commandLine.appendSwitch('disable-features', 'ServiceWorker')
 
 app.whenReady().then(() => {
-  // Cleanup Proxy stale rules if any
-  const proxyService = require('./proxy/ProxyService.cjs');
-  proxyService.stop();
-
   registerSwitcherIpc()
   registerSnifferIpc()
   registerProxyIpc()

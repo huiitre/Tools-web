@@ -12,6 +12,13 @@ const currentTheme = ref<PicoTheme>('azure')
 
 onMounted(() => {
   currentTheme.value = getPicoTheme()
+  document.addEventListener('click', close)
+  window.addEventListener('scroll', onScroll, true)
+})
+
+onBeforeUnmount(() => {
+  document.removeEventListener('click', close)
+  window.removeEventListener('scroll', onScroll, true)
 })
 
 const toggle = () => {
@@ -30,10 +37,11 @@ const close = (e: MouseEvent) => {
   }
 }
 
-document.addEventListener('click', close)
-onBeforeUnmount(() => {
-  document.removeEventListener('click', close)
-})
+const onScroll = () => {
+  if (open.value) {
+    open.value = false
+  }
+}
 </script>
 
 <template>
@@ -42,7 +50,7 @@ onBeforeUnmount(() => {
       class="theme-button"
       aria-label="Changer la couleur"
       title="Couleur"
-      @click.stop="toggle"
+      @click="toggle"
     >
       <i class="mdi mdi-palette" aria-hidden="true"></i>
     </button>

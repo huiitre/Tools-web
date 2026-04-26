@@ -27,10 +27,6 @@ class MessageDispatcher {
                 }
                 break;
         }
-
-        if (result) {
-            // console.log(`[Dispatcher] Message traité : ${prefix}`);
-        }
     }
 }
 

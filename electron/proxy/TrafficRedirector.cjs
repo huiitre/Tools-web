@@ -6,18 +6,16 @@ class TrafficRedirector {
         this.platform = os.platform();
         this.activeRules = [];
     }
+async enable(targetIp, targetPort, localPort) {
+    this.lastLocalPort = localPort;
 
-    async enable(targetIp, targetPort, localPort) {
-        // Au démarrage, on commence par purger tout ce qui aurait pu rester d'une session précédente
-        await this.disable();
-
-        if (this.platform === 'linux') {
-            return this._enableLinux(targetIp, targetPort, localPort);
-        } else if (this.platform === 'win32') {
-            return this._enableWindows(targetIp, targetPort, localPort);
-        }
-        throw new Error(`Plateforme non supportée : ${this.platform}`);
+    if (this.platform === 'linux') {
+        return this._enableLinux(targetIp, targetPort, localPort);
+    } else if (this.platform === 'win32') {
+        return this._enableWindows(targetIp, targetPort, localPort);
     }
+    throw new Error(`Plateforme non supportée : ${this.platform}`);
+}
 
     async disable() {
         if (this.platform === 'linux') {

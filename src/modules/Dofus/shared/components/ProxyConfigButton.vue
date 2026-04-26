@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onBeforeUnmount, onMounted, ref } from 'vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useFloating, offset, autoUpdate } from '@floating-ui/vue';
 import { useProxyConfigStore } from '../proxyConfig.store';
 import { useEnv } from '@/composables/useEnv';
@@ -10,8 +10,6 @@ const { isElectron } = useEnv();
 const isOpen = ref(false);
 const reference = ref<HTMLElement | null>(null);
 const floating = ref<HTMLElement | null>(null);
-
-const localConfig = ref({ ...configStore.config });
 
 const { floatingStyles } = useFloating(reference, floating, {
   placement: 'bottom-end',
@@ -26,43 +24,43 @@ const onClickOutside = (e: MouseEvent) => {
   }
 };
 
+const onScroll = () => {
+  if (isOpen.value) {
+    isOpen.value = false;
+  }
+};
+
 const toggleOpen = async () => {
   isOpen.value = !isOpen.value;
   if (isOpen.value) {
     configStore.hydrate();
-    localConfig.value = { ...configStore.config };
     configStore.scan();
   }
 };
 
 const selectCandidate = (c: any) => {
-  localConfig.value.remoteIp = c.ip;
-  localConfig.value.remotePort = c.port;
-  localConfig.value.forceManual = true;
-};
-
-const handleSave = async () => {
-  configStore.saveConfig(
-    localConfig.value.remoteIp, 
-    localConfig.value.remotePort, 
-    localConfig.value.localPort, 
-    localConfig.value.forceManual
-  );
-  
-  if (configStore.status.active) {
-    await configStore.toggleProxy();
-    await configStore.toggleProxy();
-  }
-  
-  isOpen.value = false;
+  configStore.config.remoteIp = c.ip;
+  configStore.config.remotePort = c.port.toString();
+  configStore.config.forceManual = true;
+  configStore.saveConfig();
 };
 
 onMounted(() => {
   document.addEventListener('click', onClickOutside);
+  window.addEventListener('scroll', onScroll, true); // Capture scroll even on containers
 });
 
 onBeforeUnmount(() => {
   document.removeEventListener('click', onClickOutside);
+  window.removeEventListener('scroll', onScroll, true);
+});
+
+watch(() => configStore.config.modules, () => {
+    configStore.saveConfig();
+}, { deep: true });
+
+watch(() => configStore.config.forceManual, () => {
+    configStore.saveConfig();
 });
 </script>
 
@@ -111,39 +109,50 @@ onBeforeUnmount(() => {
 
         <hr />
 
+        <section class="modules-section">
+            <header>Modules Actifs</header>
+            <div class="switches-list">
+                <label class="switch-label">
+                    <input type="checkbox" v-model="configStore.config.modules.hdvAuto" role="switch" />
+                    HDV Automatique
+                </label>
+                <label class="switch-label">
+                    <input type="checkbox" v-model="configStore.config.modules.hdvManual" role="switch" />
+                    HDV Manuel (Clic)
+                </label>
+                <label class="switch-label">
+                    <input type="checkbox" v-model="configStore.config.modules.bank" role="switch" />
+                    Gestion Banque
+                </label>
+            </div>
+        </section>
+
+        <hr />
+
         <section class="config-form">
-          <label class="switch-label">
-            <input type="checkbox" v-model="localConfig.forceManual" role="switch" />
-            Configuration manuelle
+          <label class="switch-label header-switch">
+            <input type="checkbox" v-model="configStore.config.forceManual" role="switch" />
+            Réseau Manuel
           </label>
 
-          <div class="inputs-grid" v-if="localConfig.forceManual">
+          <div class="inputs-grid" v-if="configStore.config.forceManual">
             <input 
               type="text" 
-              v-model="localConfig.remoteIp" 
+              v-model="configStore.config.remoteIp" 
               placeholder="IP Distante" 
             />
             <div class="ports-row">
-              <input 
-                type="text" 
-                v-model="localConfig.remotePort" 
-                placeholder="Port" 
-              />
-              <input 
-                type="text" 
-                v-model="localConfig.localPort" 
-                placeholder="Local" 
-              />
+              <input type="text" v-model="configStore.config.remotePort" placeholder="Port" />
+              <input type="text" v-model="configStore.config.localPort" placeholder="Local" />
             </div>
+            <button @click="configStore.saveConfig()" class="save-btn">
+                APPLIQUER CONFIG
+            </button>
           </div>
           <div v-else class="auto-badge">
             <i class="mdi mdi-auto-fix"></i>
-            Plages d'IP Ankama automatiques
+            Plages d'IP Ankama Auto
           </div>
-
-          <button @click="handleSave" class="save-btn" :disabled="localConfig.forceManual && !localConfig.remoteIp">
-            Appliquer
-          </button>
         </section>
 
         <hr />
@@ -165,10 +174,10 @@ onBeforeUnmount(() => {
                 <span class="process">{{ c.processName }}</span>
                 <span class="address">{{ c.ip }}:{{ c.port }}</span>
               </div>
-              <i v-if="c.isRecommended" class="mdi mdi-check-decagram recommended" title="Recommandé"></i>
+              <i v-if="c.isRecommended" class="mdi mdi-check-decagram recommended"></i>
             </div>
           </div>
-          <p v-else-if="!configStore.isScanning" class="no-data">Aucune connexion détectée</p>
+          <p v-else-if="!configStore.isScanning" class="no-data">Aucune connexion</p>
         </section>
       </div>
     </div>
@@ -176,390 +185,63 @@ onBeforeUnmount(() => {
 </template>
 
 <style lang="scss" scoped>
-.proxy-config-container {
-  display: inline-flex;
-}
-
+.proxy-config-container { display: inline-flex; }
 .proxy-config-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  margin: 0;
-  border-radius: var(--pico-border-radius);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--pico-muted-color);
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    color: var(--pico-primary);
-    background-color: var(--pico-card-background-color);
-    border-color: var(--pico-muted-border-color);
-  }
-
-  i {
-    font-size: 1.2rem;
-    line-height: 1;
-    &.active { color: var(--pico-primary); }
-  }
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2.25rem; height: 2.25rem; padding: 0; margin: 0;
+  border-radius: var(--pico-border-radius); border: 1px solid transparent; background: transparent;
+  color: var(--pico-muted-color); cursor: pointer; transition: all 0.15s ease;
+  &:hover { color: var(--pico-primary); background-color: var(--pico-card-background-color); border-color: var(--pico-muted-border-color); }
+  i { font-size: 1.2rem; &.active { color: var(--pico-primary); } }
 }
-
 .floating-panel {
-  position: absolute;
-  z-index: 1000;
-  width: 260px;
-  padding: 0.75rem;
-  background: var(--pico-background-color);
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
-  box-shadow: var(--pico-card-box-shadow);
-  font-size: 0.75rem;
+  position: absolute; z-index: 1000; width: 260px; padding: 0.75rem;
+  background: var(--pico-background-color); border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius); box-shadow: var(--pico-card-box-shadow); font-size: 0.75rem;
 }
-
 .proxy-panel {
   .main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
+    display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;
     strong { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
-    
-    .global-toggle {
-      margin: 0;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.65rem;
-      font-weight: 800;
-      width: auto;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      border-radius: 4px;
-    }
+    .global-toggle { margin: 0; padding: 0.2rem 0.6rem; font-size: 0.65rem; font-weight: 800; width: auto; display: flex; align-items: center; gap: 0.3rem; border-radius: 4px; }
   }
-
   .status-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-    background: var(--pico-card-background-color);
-    border-radius: 4px;
-    
-    .status-row {
-      display: flex;
-      justify-content: space-between;
-      span:first-child { color: var(--pico-muted-color); }
-      .count, .target { font-weight: 600; font-family: monospace; }
-    }
+    display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 0.5rem; padding: 0.5rem;
+    background: var(--pico-card-background-color); border-radius: 4px;
+    .status-row { display: flex; justify-content: space-between; span:first-child { color: var(--pico-muted-color); } .count, .target { font-weight: 600; font-family: monospace; } }
   }
-
-  .config-form {
-    .switch-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.7rem;
-      cursor: pointer;
-      input { margin: 0; scale: 0.8; }
-    }
-
-    .auto-badge {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 0.5rem;
-      padding: 0.5rem;
-      background: var(--pico-card-background-color);
-      border-radius: 4px;
-      color: var(--pico-primary);
-      font-weight: 600;
-      font-size: 0.65rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .inputs-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      margin-bottom: 0.5rem;
-
-      .ports-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.4rem;
-      }
-
-      input { 
-        height: 28px; 
-        padding: 0 0.5rem; 
-        font-size: 0.7rem;
-        margin: 0;
-      }
-    }
-
-    .save-btn {
-      width: 100%;
-      height: 28px;
-      padding: 0;
-      font-size: 0.7rem;
-      margin: 0;
-    }
+  .modules-section {
+    header { color: var(--pico-muted-color); font-weight: 700; margin-bottom: 0.5rem; text-transform: uppercase; font-size: 0.65rem; }
+    .switches-list { display: flex; flex-direction: column; gap: 0.4rem; }
   }
-
-  hr { margin: 0.75rem 0; opacity: 0.5; }
-
+  .switch-label {
+    display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.7rem;
+    input { margin: 0; scale: 0.7; }
+    &.header-switch { margin-bottom: 0.5rem; color: var(--pico-muted-color); font-weight: 700; text-transform: uppercase; font-size: 0.65rem; }
+  }
+  .auto-badge {
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.4rem;
+    background: var(--pico-card-background-color); border-radius: 4px; color: var(--pico-primary); font-weight: 600; font-size: 0.65rem;
+  }
+  .inputs-grid {
+    display: flex; flex-direction: column; gap: 0.4rem;
+    .ports-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
+    input { height: 26px; padding: 0 0.5rem; font-size: 0.7rem; margin: 0; }
+    .save-btn { height: 26px; padding: 0; font-size: 0.6rem; margin-top: 0.2rem; font-weight: 700; }
+  }
+  hr { margin: 0.75rem 0; opacity: 0.4; }
   .scan-section {
-    .scan-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--pico-muted-color);
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      i { 
-        font-size: 1rem;
-        cursor: pointer; 
-        transition: color 0.2s;
-        &:hover { color: var(--pico-primary); } 
-      }
-    }
-
-    .candidates-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-
+    .scan-header { display: flex; justify-content: space-between; align-items: center; color: var(--pico-muted-color); margin-bottom: 0.5rem; font-weight: 700; text-transform: uppercase; font-size: 0.65rem; i { font-size: 0.9rem; cursor: pointer; &:hover { color: var(--pico-primary); } } }
+    .candidates-list { display: flex; flex-direction: column; gap: 0.25rem; max-height: 120px; overflow-y: auto; }
     .candidate-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.4rem 0.5rem;
-      border-radius: 4px;
-      background: var(--pico-card-background-color);
-      cursor: pointer;
-      transition: background 0.1s;
-
+      display: flex; justify-content: space-between; align-items: center; padding: 0.3rem 0.5rem; border-radius: 4px; background: var(--pico-card-background-color); cursor: pointer;
       &:hover { background: var(--pico-muted-border-color); }
-
-      .candidate-info {
-        display: flex;
-        flex-direction: column;
-        .process { font-weight: 600; font-size: 0.65rem; }
-        .address { font-size: 0.6rem; opacity: 0.7; }
-      }
-      .recommended { color: var(--pico-primary); font-size: 0.9rem; }
+      .candidate-info { display: flex; flex-direction: column; .process { font-weight: 600; font-size: 0.65rem; } .address { font-size: 0.6rem; opacity: 0.7; } }
+      .recommended { color: var(--pico-primary); font-size: 0.8rem; }
     }
-
     .no-data { text-align: center; opacity: 0.5; margin: 0.5rem 0; }
   }
 }
-
-.fa-spin {
-  animation: fa-spin 2s infinite linear;
-}
-
-@keyframes fa-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(359deg); }
-}
-</style>
-
-<style lang="scss" scoped>
-.proxy-config-container {
-  display: inline-flex;
-}
-
-.proxy-config-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  padding: 0;
-  margin: 0;
-  border-radius: var(--pico-border-radius);
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--pico-muted-color);
-  cursor: pointer;
-  transition: all 0.15s ease;
-
-  &:hover {
-    color: var(--pico-primary);
-    background-color: var(--pico-card-background-color);
-    border-color: var(--pico-muted-border-color);
-  }
-
-  i {
-    font-size: 1.2rem;
-    line-height: 1;
-    &.active { color: var(--pico-primary); }
-  }
-}
-
-.floating-panel {
-  position: absolute;
-  z-index: 1000;
-  width: 260px;
-  padding: 0.75rem;
-  background: var(--pico-background-color);
-  border: 1px solid var(--pico-muted-border-color);
-  border-radius: var(--pico-border-radius);
-  box-shadow: var(--pico-card-box-shadow);
-  font-size: 0.75rem;
-}
-
-.proxy-panel {
-  .main-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-    strong { text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; }
-    
-    .global-toggle {
-      margin: 0;
-      padding: 0.2rem 0.6rem;
-      font-size: 0.65rem;
-      font-weight: 800;
-      width: auto;
-      display: flex;
-      align-items: center;
-      gap: 0.3rem;
-      border-radius: 4px;
-    }
-  }
-
-  .status-section {
-    display: flex;
-    flex-direction: column;
-    gap: 0.4rem;
-    margin-bottom: 0.5rem;
-    padding: 0.5rem;
-    background: var(--pico-card-background-color);
-    border-radius: 4px;
-    
-    .status-row {
-      display: flex;
-      justify-content: space-between;
-      span:first-child { color: var(--pico-muted-color); }
-      .count, .target { font-weight: 600; font-family: monospace; }
-    }
-  }
-
-  .config-form {
-    .switch-label {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 0.5rem;
-      font-size: 0.7rem;
-      cursor: pointer;
-      input { margin: 0; scale: 0.8; }
-    }
-
-    .inputs-grid {
-      display: flex;
-      flex-direction: column;
-      gap: 0.4rem;
-      margin-bottom: 0.5rem;
-
-      .ports-row {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.4rem;
-      }
-
-      input { 
-        height: 28px; 
-        padding: 0 0.5rem; 
-        font-size: 0.7rem;
-        margin: 0;
-        
-        &.disabled {
-          background-color: var(--pico-form-element-disabled-background-color);
-          border-color: var(--pico-form-element-disabled-border-color);
-          opacity: 0.6;
-          cursor: not-allowed;
-        }
-      }
-    }
-
-    .save-btn {
-      width: 100%;
-      height: 28px;
-      padding: 0;
-      font-size: 0.7rem;
-      margin: 0;
-    }
-  }
-
-  hr { margin: 0.75rem 0; opacity: 0.5; }
-
-  .scan-section {
-    .scan-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: var(--pico-muted-color);
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      i { 
-        font-size: 1rem;
-        cursor: pointer; 
-        transition: color 0.2s;
-        &:hover { color: var(--pico-primary); } 
-      }
-    }
-
-    .candidates-list {
-      display: flex;
-      flex-direction: column;
-      gap: 0.25rem;
-      max-height: 150px;
-      overflow-y: auto;
-    }
-
-    .candidate-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.4rem 0.5rem;
-      border-radius: 4px;
-      background: var(--pico-card-background-color);
-      cursor: pointer;
-      transition: background 0.1s;
-
-      &:hover { background: var(--pico-muted-border-color); }
-
-      .candidate-info {
-        display: flex;
-        flex-direction: column;
-        .process { font-weight: 600; font-size: 0.65rem; }
-        .address { font-size: 0.6rem; opacity: 0.7; }
-      }
-      .recommended { color: var(--pico-primary); font-size: 0.9rem; }
-    }
-
-    .no-data { text-align: center; opacity: 0.5; margin: 0.5rem 0; }
-  }
-}
-
-.fa-spin {
-  animation: fa-spin 2s infinite linear;
-}
-
-@keyframes fa-spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(359deg); }
-}
+.fa-spin { animation: fa-spin 2s infinite linear; }
+@keyframes fa-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(359deg); } }
 </style>

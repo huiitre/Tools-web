@@ -3,39 +3,36 @@ import { useFetchItemsByAssetIds, useMutationItemPrices } from '@/modules/Dofus/
 import { ItemLight } from '@/modules/Dofus/item/types/item.types';
 import { calculateAverageUnitPrice } from './utils/priceAverageCalculator';
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices';
-import { useSnifferConfigStore } from '@/modules/Dofus/shared/snifferConfig.store';
 
 export interface SnifferCapture {
   id: string;
   itemId: number;
-  timestamp: number;
   instances: any[];
   averagePrice: number;
+  timestamp: number;
+}
+
+export interface ScanProgress {
+  current: number;
+  total: number;
+  remaining: number;
 }
 
 export const useHdvSnifferStore = defineStore('hdvSniffer', {
   state: () => ({
-    isSniffing: false,
     captures: [] as SnifferCapture[], 
     itemsMetadata: {} as Record<number, ItemLight>,
-    pendingAssetIds: new Set<number>(),
-    pendingPrices: new Map<number, number>(),
-    fetchTimeout: null as any | null,
-    error: null as string | null,
+    pendingPrices: new Map<number, number>(), // assetId -> price
+    scanProgress: null as ScanProgress | null,
+    isSyncing: false,
     isListenerActive: false,
+    fetchTimeout: null as any | null,
     systemStatus: {
       tcpdumpInstalled: true,
       hasPermissions: true,
       checked: false
     }
   }),
-
-  getters: {
-    isSniffing(): boolean {
-      const config = useSnifferConfigStore();
-      return config.isSniffing && config.modules.hdv;
-    }
-  },
 
   actions: {
     async checkSystem() {
@@ -49,44 +46,61 @@ export const useHdvSnifferStore = defineStore('hdvSniffer', {
     setupListener() {
       if (this.isListenerActive || !window.electron) return;
       
-      window.electron.onSnifferData((data: any[]) => {
+      window.electron.onProxyHdvPrices((data: any[]) => {
         if (!data || data.length === 0) return;
-        
-        const itemId = data[0].itemId;
+        const assetId = data[0].itemId;
         const averagePrice = calculateAverageUnitPrice(data);
         
-        const capture: SnifferCapture = {
-          id: `${Date.now()}-${Math.random()}`,
-          itemId,
-          timestamp: Date.now(),
-          instances: data,
-          averagePrice
+        const capture = { 
+            id: `${assetId}-${Date.now()}-${Math.random()}`, 
+            itemId: assetId, 
+            instances: data, 
+            averagePrice, 
+            timestamp: Date.now() 
         };
+        
+        this.captures.unshift(capture);
+        if (this.captures.length > 200) this.captures.pop();
 
-        this.captures = [capture, ...this.captures].slice(0, 50);
-        this.queueCapture(itemId, averagePrice);
+        this.pendingPrices.set(assetId, averagePrice);
+        this._debounceSync();
       });
-      
+
+      window.electron.onProxyScanProgress((progress: ScanProgress) => {
+        this.scanProgress = progress;
+        if (progress.remaining === 0) {
+            this._debounceSync(true);
+            setTimeout(() => {
+                if (this.scanProgress && this.scanProgress.remaining === 0) {
+                    this.scanProgress = null;
+                }
+            }, 3000);
+        }
+      });
+
       this.isListenerActive = true;
     },
 
-    async processBatchTasks() {
+    _debounceSync(force = false) {
       if (this.fetchTimeout) clearTimeout(this.fetchTimeout);
-      this.fetchTimeout = setTimeout(async () => {
-        const assetIdsToFetch = Array.from(this.pendingAssetIds).filter(id => !this.itemsMetadata[id]);
-        const pricesSnapshot = Array.from(this.pendingPrices.entries());
-        this.pendingAssetIds.clear();
-        this.pendingPrices.clear();
-        this.fetchTimeout = null;
+      this.fetchTimeout = setTimeout(() => this.syncAll(), force ? 500 : 3000);
+    },
 
-        if (assetIdsToFetch.length > 0) {
-          try {
-            const { data } = await useFetchItemsByAssetIds(assetIdsToFetch);
-            data.forEach(item => { this.itemsMetadata[item.assetId] = item; });
-          } catch (e) { console.error('[SnifferStore] Metadata fetch error:', e); }
+    async syncAll() {
+      if (this.isSyncing || this.pendingPrices.size === 0) return;
+      this.isSyncing = true;
+
+      try {
+        const assetIds = Array.from(this.pendingPrices.keys());
+        const prices = Array.from(this.pendingPrices.entries());
+
+        const missingIds = assetIds.filter(id => !this.itemsMetadata[id]);
+        if (missingIds.length > 0) {
+          const { data } = await useFetchItemsByAssetIds(missingIds);
+          data.forEach(item => this.itemsMetadata[item.assetId] = item);
         }
 
-        const priceBatch = pricesSnapshot
+        const priceBatch = prices
           .map(([assetId, price]) => {
             const meta = this.itemsMetadata[assetId];
             return meta ? { itemId: meta.id, price } : null;
@@ -94,19 +108,31 @@ export const useHdvSnifferStore = defineStore('hdvSniffer', {
           .filter((p): p is { itemId: number; price: number } => p !== null);
 
         if (priceBatch.length > 0) {
-          try {
-            await useMutationItemPrices(priceBatch);
-            const { refreshRecursive } = useItemPrices();
-            await refreshRecursive(priceBatch.map(p => p.itemId));
-          } catch (e) { console.error('[SnifferStore] Price sync error:', e); }
+          await useMutationItemPrices(priceBatch);
+          const { refreshRecursive } = useItemPrices();
+          await refreshRecursive(priceBatch.map(p => p.itemId));
+          
+          priceBatch.forEach(p => {
+             const assetId = assetIds.find(id => this.itemsMetadata[id]?.id === p.itemId);
+             if (assetId) this.pendingPrices.delete(assetId);
+          });
         }
-      }, 2000);
+      } catch (e) {
+        console.error('[SnifferStore] Sync Error:', e);
+      } finally {
+        this.isSyncing = false;
+        if (this.pendingPrices.size > 0) this._debounceSync();
+      }
     },
 
-    async queueCapture(itemId: number, averagePrice: number) {
-      if (!this.itemsMetadata[itemId]) this.pendingAssetIds.add(itemId);
-      this.pendingPrices.set(itemId, averagePrice);
-      this.processBatchTasks();
+    clear() {
+      this.captures = [];
+      this.pendingPrices.clear();
+      this.scanProgress = null;
+    },
+
+    clearDisplay() {
+        this.captures = [];
     }
   }
 });

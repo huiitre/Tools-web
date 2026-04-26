@@ -18,11 +18,13 @@ declare global {
       updateSnifferModules: (config: { hdv?: boolean; bank?: boolean }) => Promise<{ success: boolean }>;
       
       // Proxy (New)
-      startProxy: (config: { remoteIp: string; remotePort: number; localPort: number }) => Promise<{ success: boolean; error?: string }>;
+      startProxy: (config: { remoteIp: string; remotePort: number; localPort: number; manualMode: boolean; modules: any }) => Promise<{ success: boolean; error?: string }>;
       stopProxy: () => Promise<{ success: boolean }>;
+      updateProxyModules: (modules: any) => void;
       onProxyStatus: (callback: (status: any) => void) => void;
       onProxyHdvPrices: (callback: (data: any[]) => void) => void;
       onProxyHdvCategory: (callback: (data: number[]) => void) => void;
+      onProxyScanProgress: (callback: (progress: any) => void) => void;
 
       // Bank
       startBankSniffing: () => Promise<{ success: boolean; error?: string }>;

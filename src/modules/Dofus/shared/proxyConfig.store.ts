@@ -6,6 +6,11 @@ export interface ProxyConfig {
   remotePort: string;
   localPort: string;
   forceManual: boolean;
+  modules: {
+    hdvAuto: boolean;
+    hdvManual: boolean;
+    bank: boolean;
+  };
 }
 
 export interface ProxyStatus {
@@ -19,8 +24,13 @@ export const useProxyConfigStore = defineStore('proxyConfig', {
     config: {
       remoteIp: '34.253.140.241',
       remotePort: '443',
-      localPort: '5555',
-      forceManual: false
+      localPort: '5558',
+      forceManual: false,
+      modules: {
+        hdvAuto: true,
+        hdvManual: true,
+        bank: true
+      }
     } as ProxyConfig,
     status: {
       active: false,
@@ -35,13 +45,13 @@ export const useProxyConfigStore = defineStore('proxyConfig', {
     hydrate() {
       const stored = localStorage.getItem('proxy.config');
       if (stored) {
-        this.config = JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        this.config = { ...this.config, ...parsed, modules: { ...this.config.modules, ...(parsed.modules || {}) } };
       }
       
       if (window.electron) {
         window.electron.onProxyStatus((status: ProxyStatus) => {
           this.status = status;
-          // On synchronise l'IP réelle affichée avec celle reçue du proxy si actif
           if (status.active && status.config) {
             this.config.remoteIp = status.config.remoteIp;
           }
@@ -60,7 +70,8 @@ export const useProxyConfigStore = defineStore('proxyConfig', {
             remoteIp: config.remoteIp,
             remotePort: parseInt(config.remotePort),
             localPort: parseInt(config.localPort),
-            manualMode: config.forceManual // On passe le mode manuel ici
+            manualMode: config.forceManual,
+            modules: config.modules
         });
         if (!result.success && result.error) {
             console.error('[ProxyStore] Erreur démarrage:', result.error);
@@ -68,9 +79,11 @@ export const useProxyConfigStore = defineStore('proxyConfig', {
       }
     },
 
-    saveConfig(ip: string, port: string, localPort: string, force: boolean) {
-      this.config = { remoteIp: ip, remotePort: port, localPort, forceManual: force };
+    saveConfig() {
       localStorage.setItem('proxy.config', JSON.stringify(this.config));
+      if (this.status.active && window.electron && window.electron.updateProxyModules) {
+        window.electron.updateProxyModules(toRaw(this.config.modules));
+      }
     },
 
     async scan() {

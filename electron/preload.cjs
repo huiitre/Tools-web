@@ -16,9 +16,11 @@ contextBridge.exposeInMainWorld('electron', {
   // Proxy
   startProxy: (config) => ipcRenderer.invoke('proxy:start', config),
   stopProxy: () => ipcRenderer.invoke('proxy:stop'),
+  updateProxyModules: (modules) => ipcRenderer.send('proxy:update-modules', modules),
   onProxyStatus: (callback) => ipcRenderer.on('proxy:status', (event, status) => callback(status)),
   onProxyHdvPrices: (callback) => ipcRenderer.on('proxy:hdv-prices', (event, data) => callback(data)),
   onProxyHdvCategory: (callback) => ipcRenderer.on('proxy:hdv-category', (event, data) => callback(data)),
+  onProxyScanProgress: (callback) => ipcRenderer.on('proxy:scan-progress', (event, data) => callback(data)),
 
   // Sniffer (Old)
   startSniffing: (forcedConfig = null) => ipcRenderer.invoke('sniffer:start', forcedConfig),
