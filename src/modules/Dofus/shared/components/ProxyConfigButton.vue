@@ -71,7 +71,7 @@ watch(() => configStore.config.forceManual, () => {
       class="proxy-config-button"
       type="button"
       aria-label="Configuration Proxy"
-      title="Proxy MitM"
+      title="Intercepteur de paquets (MitM)"
       @click="toggleOpen"
     >
       <i class="mdi mdi-server-network" :class="{ active: configStore.status.active }" />
@@ -85,7 +85,7 @@ watch(() => configStore.config.forceManual, () => {
     >
       <div class="proxy-panel">
         <header class="main-header">
-          <strong>Proxy MitM</strong>
+          <strong>Service MitM</strong>
           <button 
             :class="configStore.status.active ? 'secondary' : 'primary'"
             @click="configStore.toggleProxy"
@@ -136,14 +136,23 @@ watch(() => configStore.config.forceManual, () => {
           </label>
 
           <div class="inputs-grid" v-if="configStore.config.forceManual">
-            <input 
-              type="text" 
-              v-model="configStore.config.remoteIp" 
-              placeholder="IP Distante" 
-            />
+            <div class="input-group">
+                <span class="label">IP DISTANTE</span>
+                <input 
+                type="text" 
+                v-model="configStore.config.remoteIp" 
+                placeholder="Ex: 34.240.x.x" 
+                />
+            </div>
             <div class="ports-row">
-              <input type="text" v-model="configStore.config.remotePort" placeholder="Port" />
-              <input type="text" v-model="configStore.config.localPort" placeholder="Local" />
+              <div class="input-group">
+                <span class="label">PORT CIBLE</span>
+                <input type="text" v-model="configStore.config.remotePort" placeholder="443" />
+              </div>
+              <div class="input-group">
+                <span class="label">PORT LOCAL</span>
+                <input type="text" v-model="configStore.config.localPort" placeholder="5558" />
+              </div>
             </div>
             <button @click="configStore.saveConfig()" class="save-btn">
                 APPLIQUER CONFIG
@@ -224,7 +233,11 @@ watch(() => configStore.config.forceManual, () => {
     background: var(--pico-card-background-color); border-radius: 4px; color: var(--pico-primary); font-weight: 600; font-size: 0.65rem;
   }
   .inputs-grid {
-    display: flex; flex-direction: column; gap: 0.4rem;
+    display: flex; flex-direction: column; gap: 0.6rem;
+    .input-group {
+        display: flex; flex-direction: column; gap: 0.2rem;
+        .label { font-size: 0.55rem; font-weight: 800; color: var(--pico-muted-color); text-transform: uppercase; padding-left: 0.2rem; }
+    }
     .ports-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.4rem; }
     input { height: 26px; padding: 0 0.5rem; font-size: 0.7rem; margin: 0; }
     .save-btn { height: 26px; padding: 0; font-size: 0.6rem; margin-top: 0.2rem; font-weight: 700; }
