@@ -97,8 +97,12 @@ onMounted(() => {
 <style scoped lang="scss">
 .hdv-sniffer-page { display: flex; flex-direction: column; }
 .hdv-header {
-  background-color: var(--pico-background-color); border-bottom: 1px solid var(--pico-muted-border-color);
+  background-color: var(--pico-background-color);
+  border-bottom: 1px solid var(--pico-muted-border-color);
   padding: 1.5rem 0;
+  display: flex;
+  justify-content: center;
+
   &.sniffer-hero-header .hero-content { display: flex; flex-direction: column; align-items: center; gap: 1rem; hgroup { margin: 0; } }
 }
 .main-controls { display: flex; align-items: center; gap: 1.5rem; width: 100%; justify-content: center; }
