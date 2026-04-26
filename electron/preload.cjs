@@ -21,6 +21,10 @@ contextBridge.exposeInMainWorld('electron', {
   onProxyHdvPrices: (callback) => ipcRenderer.on('proxy:hdv-prices', (event, data) => callback(data)),
   onProxyHdvCategory: (callback) => ipcRenderer.on('proxy:hdv-category', (event, data) => callback(data)),
   onProxyScanProgress: (callback) => ipcRenderer.on('proxy:scan-progress', (event, data) => callback(data)),
+  
+  onProxyBankOpened: (callback) => ipcRenderer.on('proxy:bank-opened', (event) => callback()),
+  onProxyBankItems: (callback) => ipcRenderer.on('proxy:bank-items', (event, items) => callback(items)),
+  onProxyBankKamas: (callback) => ipcRenderer.on('proxy:bank-kamas', (event, kamas) => callback(kamas)),
 
   // Sniffer (Old)
   startSniffing: (forcedConfig = null) => ipcRenderer.invoke('sniffer:start', forcedConfig),

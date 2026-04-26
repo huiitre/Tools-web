@@ -12,7 +12,7 @@ class ProxySession extends EventEmitter {
         this.serverBuffer = "";
         this.lastBlob = "";
         this.itemQueue = [];
-        this.autoRequestedIds = new Set(); // Pour identifier ce que le proxy demande
+        this.autoRequestedIds = new Set();
         this.totalInQueue = 0;
         this.currentProcessed = 0;
         this.isProcessing = false;
@@ -36,7 +36,6 @@ class ProxySession extends EventEmitter {
 
         this.serverSocket.on('error', () => this.destroy());
 
-        // TRAFIC CLIENT -> SERVEUR (Manuel)
         this.clientSocket.on('data', (data) => {
             if (this.isDestroyed) return;
             const raw = data.toString('latin1');
@@ -49,11 +48,9 @@ class ProxySession extends EventEmitter {
                 this.totalInQueue = 0; 
                 this.currentProcessed = 0; 
             }
-
             if (this.serverSocket.writable) this.serverSocket.write(data);
         });
 
-        // TRAFIC SERVEUR -> CLIENT (Réponses)
         this.serverSocket.on('data', (data) => {
             if (this.isDestroyed) return;
             this.serverBuffer += data.toString('latin1');
@@ -63,37 +60,27 @@ class ProxySession extends EventEmitter {
             for (let rawMessage of messages) {
                 if (!rawMessage) continue;
                 const cleanMsg = rawMessage.replace(/^Ã¹.*?Ã¹/, '');
-                if (cleanMsg.startsWith('AYK')) { this.emit('message', cleanMsg); continue; }
 
-                // Réception liste catégorie
+                this.emit('message', cleanMsg);
+
+                if (cleanMsg.startsWith('AYK')) continue; 
+
                 if (cleanMsg.startsWith('EHL')) {
                     if (this.modules.hdvAuto) this._handleCategoryMessage(cleanMsg);
                 }
 
-                // Réception prix
                 if (cleanMsg.startsWith('EHl')) {
                     const idMatch = cleanMsg.match(/EHl(\d+)/);
                     const id = idMatch ? parseInt(idMatch[1]) : null;
-                    
                     const wasRequestedByAuto = id && this.autoRequestedIds.has(id);
-
-                    // LOGIQUE DE FILTRAGE PAR SWITCHS
-                    let shouldDispatch = false;
                     if (wasRequestedByAuto) {
-                        if (this.modules.hdvAuto) shouldDispatch = true;
-                        this.autoRequestedIds.delete(id); // On libère l'ID après réception
-                    } else {
-                        if (this.modules.hdvManual) shouldDispatch = true;
+                        this.autoRequestedIds.delete(id);
                     }
-
-                    if (shouldDispatch) {
-                        this.emit('message', cleanMsg);
-                    }
-                } else {
-                    this.emit('message', cleanMsg);
                 }
 
-                if (this.clientSocket.writable) this.clientSocket.write(rawMessage + '\0', 'latin1');
+                if (this.clientSocket.writable) {
+                    this.clientSocket.write(rawMessage + '\0', 'latin1');
+                }
             }
         });
 
@@ -116,26 +103,18 @@ class ProxySession extends EventEmitter {
     async _processQueue() {
         if (this.isProcessing || this.itemQueue.length === 0) return;
         this.isProcessing = true;
-
         while (this.itemQueue.length > 0) {
             if (this.isDestroyed || !this.modules.hdvAuto) break;
             if (!this.lastBlob) { await new Promise(r => setTimeout(r, 1000)); continue; }
-
             const id = this.itemQueue.shift();
-            this.autoRequestedIds.add(id); // On enregistre que c'est une demande Auto
-            
+            this.autoRequestedIds.add(id);
             const packetContent = `EHl${id}`;
             const hash = crypto.createHash('md5').update(packetContent + "cC+*#!$pie").digest('hex');
             const b64Hash = Buffer.from(hash, 'hex').toString('base64');
             const forgedPacket = `Ã¹${b64Hash}${this.lastBlob}Ã¹${packetContent}\n\0`;
-            
             if (this.serverSocket.writable) {
                 this.serverSocket.write(forgedPacket, 'latin1');
-                this.emit('scan-progress', { 
-                    current: ++this.currentProcessed, 
-                    total: this.totalInQueue,
-                    remaining: this.itemQueue.length 
-                });
+                this.emit('scan-progress', { current: ++this.currentProcessed, total: this.totalInQueue, remaining: this.itemQueue.length });
             }
             await new Promise(r => setTimeout(r, 200));
         }

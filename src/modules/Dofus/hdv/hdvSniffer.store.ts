@@ -22,11 +22,13 @@ export const useHdvSnifferStore = defineStore('hdvSniffer', {
   state: () => ({
     captures: [] as SnifferCapture[], 
     itemsMetadata: {} as Record<number, ItemLight>,
+    failedAssetIds: new Set<number>(),
     pendingPrices: new Map<number, number>(), // assetId -> price
     scanProgress: null as ScanProgress | null,
     isSyncing: false,
     isListenerActive: false,
     fetchTimeout: null as any | null,
+    // RESTAURATION DE systemStatus POUR LA BANQUE
     systemStatus: {
       tcpdumpInstalled: true,
       hasPermissions: true,
@@ -62,8 +64,10 @@ export const useHdvSnifferStore = defineStore('hdvSniffer', {
         this.captures.unshift(capture);
         if (this.captures.length > 200) this.captures.pop();
 
-        this.pendingPrices.set(assetId, averagePrice);
-        this._debounceSync();
+        if (!this.failedAssetIds.has(assetId)) {
+            this.pendingPrices.set(assetId, averagePrice);
+            this._debounceSync();
+        }
       });
 
       window.electron.onProxyScanProgress((progress: ScanProgress) => {
@@ -94,10 +98,23 @@ export const useHdvSnifferStore = defineStore('hdvSniffer', {
         const assetIds = Array.from(this.pendingPrices.keys());
         const prices = Array.from(this.pendingPrices.entries());
 
-        const missingIds = assetIds.filter(id => !this.itemsMetadata[id]);
+        const missingIds = assetIds.filter(id => !this.itemsMetadata[id] && !this.failedAssetIds.has(id));
+        
         if (missingIds.length > 0) {
-          const { data } = await useFetchItemsByAssetIds(missingIds);
-          data.forEach(item => this.itemsMetadata[item.assetId] = item);
+          try {
+            const { data } = await useFetchItemsByAssetIds(missingIds);
+            const foundIds = new Set(data.map(item => item.assetId));
+            data.forEach(item => this.itemsMetadata[item.assetId] = item);
+            
+            missingIds.forEach(id => {
+                if (!foundIds.has(id)) {
+                    this.failedAssetIds.add(id);
+                    this.pendingPrices.delete(id);
+                }
+            });
+          } catch (e) {
+            console.error('[SnifferStore] Metadata fetch error:', e);
+          }
         }
 
         const priceBatch = prices

@@ -25,6 +25,9 @@ declare global {
       onProxyHdvPrices: (callback: (data: any[]) => void) => void;
       onProxyHdvCategory: (callback: (data: number[]) => void) => void;
       onProxyScanProgress: (callback: (progress: any) => void) => void;
+      onProxyBankOpened: (callback: () => void) => void;
+      onProxyBankItems: (callback: (items: any[]) => void) => void;
+      onProxyBankKamas: (callback: (kamas: number) => void) => void;
 
       // Bank
       startBankSniffing: () => Promise<{ success: boolean; error?: string }>;

@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { useSnifferConfigStore } from '@/modules/Dofus/shared/snifferConfig.store';
+import { useProxyConfigStore } from '@/modules/Dofus/shared/proxyConfig.store';
 import { useDofusStore } from '@/modules/Dofus/dofus.store';
 import { IndexedDBBankAdapter } from './infrastructure/IndexedDBBankAdapter';
 import { SyncBankService } from './application/services/SyncBankService';
@@ -16,8 +17,6 @@ export const useBankManagementStore = defineStore('bankmanagement', {
     lastSync: null as number | null,
     isListenerActive: false,
     isSyncing: false,
-    
-    // Buffer temporaire pour le sniffer
     rawBuffer: [] as RawBankItem[],
     isFullDumpPending: false,
     syncTimeout: null as any | null
@@ -25,8 +24,9 @@ export const useBankManagementStore = defineStore('bankmanagement', {
 
   getters: {
     isSniffing(): boolean {
-      const config = useSnifferConfigStore();
-      return config.isSniffing && config.modules.bank;
+      const sniffer = useSnifferConfigStore();
+      const proxy = useProxyConfigStore();
+      return (sniffer.isSniffing && sniffer.modules.bank) || (proxy.status.active && proxy.config.modules.bank);
     }
   },
 
@@ -40,16 +40,10 @@ export const useBankManagementStore = defineStore('bankmanagement', {
       const dofusStore = useDofusStore();
       const versionId = dofusStore.currentGameVersionId;
       const serverId = dofusStore.currentGameServerId;
-
       if (versionId && serverId) {
         this.items = await repository.getByServer(versionId, serverId);
         this.lastSync = await repository.getLastSync(versionId, serverId);
-
-        // Refresh des prix
-        const itemIds = this.items
-          .map(i => i.metadata?.id)
-          .filter((id): id is number => id !== undefined);
-        
+        const itemIds = this.items.map(i => i.metadata?.id).filter((id): id is number => id !== undefined);
         if (itemIds.length > 0) {
           const { load } = useItemPrices();
           await load(itemIds);
@@ -66,39 +60,48 @@ export const useBankManagementStore = defineStore('bankmanagement', {
       });
 
       window.electron.onBankItemCaptured((item: RawBankItem) => {
+        this._handleIncomingRawItems(item);
+      });
+
+      window.electron.onProxyBankOpened(() => {
         if (!this.isSniffing) return;
+        this.isFullDumpPending = true;
+      });
 
-        const capturedItems = Array.isArray(item) ? item : [item];
-        this.rawBuffer.push(...capturedItems);
-
-        if (this.syncTimeout) clearTimeout(this.syncTimeout);
-        this.syncTimeout = setTimeout(async () => {
-          await this.triggerSync();
-        }, 1200);
+      window.electron.onProxyBankItems((items: RawBankItem[]) => {
+        // Pour le proxy, on considère que la réception massive d'items EL est un dump
+        if (items.length > 10) {
+            this.isFullDumpPending = true;
+        }
+        this._handleIncomingRawItems(items);
       });
       
       this.isListenerActive = true;
+    },
+
+    _handleIncomingRawItems(items: RawBankItem | RawBankItem[]) {
+      if (!this.isSniffing) return;
+      const capturedItems = Array.isArray(items) ? items : [items];
+      this.rawBuffer.push(...capturedItems);
+      if (this.syncTimeout) clearTimeout(this.syncTimeout);
+      this.syncTimeout = setTimeout(async () => {
+        await this.triggerSync();
+      }, 1500); // On augmente un peu pour laisser le temps au dump d'arriver
     },
 
     async triggerSync() {
       const dofusStore = useDofusStore();
       const versionId = dofusStore.currentGameVersionId;
       const serverId = dofusStore.currentGameServerId;
-
       if (!versionId || !serverId || this.rawBuffer.length === 0) return;
 
       this.isSyncing = true;
       try {
         await syncService.sync(this.rawBuffer, versionId, serverId, this.isFullDumpPending);
-        
-        // Mettre à jour la date de synchro (uniquement si c'est un dump complet ou si on veut tracker chaque petite modif)
-        // On décide de tracker chaque synchro réussie
         const now = Date.now();
         await repository.saveLastSync(versionId, serverId, now);
         this.lastSync = now;
-
         await this.loadFromDB();
-        
         this.rawBuffer = [];
         this.isFullDumpPending = false;
       } finally {
