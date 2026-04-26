@@ -41,9 +41,10 @@ export class SyncBankService {
     }
 
     // 3. Batch fetch metadata
-    if (assetIdsToFetch.size > 0) {
+    const validAssetIds = Array.from(assetIdsToFetch).filter(id => !isNaN(id));
+    if (validAssetIds.length > 0) {
       try {
-        const { data: metadataList } = await useFetchItemsByAssetIds(Array.from(assetIdsToFetch));
+        const { data: metadataList } = await useFetchItemsByAssetIds(validAssetIds);
         const metaMap = new Map(metadataList.map(m => [m.assetId, m]));
 
         itemsToSave.forEach(item => {
