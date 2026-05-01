@@ -34,11 +34,11 @@ const goTo = (section: SettingsSection) => {
         <ul>
           <li @click="goTo('account-profile')">Profil</li>
           <li @click="goTo('account-security')">Sécurité</li>
-          <!-- <li @click="goTo('account-providers')">Comptes liés</li> -->
+          <li @click="goTo('account-providers')">Comptes liés</li>
         </ul>
       </div>
 
-      <!-- <div class="nav-group">
+      <div class="nav-group">
         <strong>Préférences</strong>
         <ul>
           <li @click="goTo('prefs-general')">Général</li>
@@ -54,8 +54,7 @@ const goTo = (section: SettingsSection) => {
           <li @click="goTo('module-dofus')">Dofus</li>
         </ul>
       </div>
-
-      </details>
+    </details>
   </nav>
 
   <!-- DESKTOP SIDEBAR (INCHANGÉ LOGIQUEMENT) -->
@@ -65,10 +64,10 @@ const goTo = (section: SettingsSection) => {
       <ul>
         <li :class="{ active: currentSection === 'account-profile' }" @click="goTo('account-profile')">Profil</li>
         <li :class="{ active: currentSection === 'account-security' }" @click="goTo('account-security')">Sécurité</li>
-        <!-- <li :class="{ active: currentSection === 'account-providers' }" @click="goTo('account-providers')">Comptes liés</li> -->
+        <li :class="{ active: currentSection === 'account-providers' }" @click="goTo('account-providers')">Comptes liés</li>
       </ul>
 
-      <!-- <h4>Préférences</h4>
+      <h4>Préférences</h4>
       <ul>
         <li :class="{ active: currentSection === 'prefs-general' }" @click="goTo('prefs-general')">Général</li>
         <li :class="{ active: currentSection === 'prefs-appearance' }" @click="goTo('prefs-appearance')">Apparence</li>
@@ -78,7 +77,8 @@ const goTo = (section: SettingsSection) => {
 
       <h4>Modules</h4>
       <ul>
-      </ul> -->
+        <li :class="{ active: currentSection === 'module-dofus' }" @click="goTo('module-dofus')">Dofus</li>
+      </ul>
     </nav>
   </aside>
 </template>
@@ -160,23 +160,6 @@ nav li.active {
 
 .mobile-only {
   display: none;
-}
-
-.desktop-only {
-  display: block;
-}
-
-@media (max-width: 768px) {
-  .desktop-only {
-    display: none;
-  }
-
-  .mobile-only {
-    display: block;
-  }
-}
-</style>
-lay: none;
 }
 
 .desktop-only {

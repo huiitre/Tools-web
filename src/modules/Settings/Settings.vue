@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import SettingsNav, { SettingsSection } from './SettingsNav.vue'
 import AccountProfileSection from './sections/AccountProfileSection.vue';
 import AccountSecuritySection from './sections/AccountSecuritySection.vue';
+import AutofocusMappingSection from './sections/AutofocusMappingSection.vue';
 
 import { useAuthStore } from '@/modules/Auth/auth.store'
 const auth = useAuthStore()
@@ -39,7 +40,7 @@ const currentSection = ref<SettingsSection>('account-profile')
         <p>Langue, options globales</p>
       </section>
 
-      <!-- <section v-if="currentSection === 'prefs-appearance'">
+      <section v-if="currentSection === 'prefs-appearance'">
         <h2>Apparence</h2>
         <p>Thème, affichage</p>
       </section>
@@ -57,8 +58,8 @@ const currentSection = ref<SettingsSection>('account-profile')
         <h2>Todolist</h2>
         <p>Paramètres spécifiques Todolist</p>
       </section>
-      </main>
-      </div>
+    </main>
+  </div>
 </template>
 
 <style scoped>
@@ -70,15 +71,6 @@ const currentSection = ref<SettingsSection>('account-profile')
 .settings-content {
   flex: 1;
   padding: 2rem;
-}
-
-@media (max-width: 768px) {
-  .settings-layout {
-    flex-direction: column;
-  }
-}
-</style>
-adding: 2rem;
 }
 
 @media (max-width: 768px) {

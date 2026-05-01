@@ -35,6 +35,10 @@ declare global {
       onBankItemsUpdate: (callback: (items: any[]) => void) => void;
       onBankItemCaptured: (callback: (item: any) => void) => void;
       onBankFullDump: (callback: () => void) => void;
+
+      // Autofocus Mapping
+      setAutofocusMapping: (mapping: Record<string, string>) => void;
+      onAutofocusMappingUpdated: (callback: (mapping: Record<string, string>) => void) => void;
     }
     switcher?: {
       scan: () => Promise<DofusWindow[]>
@@ -52,6 +56,11 @@ declare global {
       captureKey: () => Promise<number>
       onCurrentChanged: (callback: (windowId: string | null) => void) => void
       offCurrentChanged: () => void
+
+      // Autofocus
+      setAutofocusMapping?: (mapping: Record<string, string>) => void
+      startAutofocus: (config: { interface: string; mapping: Record<string, string> }) => Promise<void>
+      stopAutofocus: () => Promise<void>
     }
   }
 
