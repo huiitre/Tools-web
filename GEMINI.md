@@ -41,3 +41,7 @@ Conformité : Utilisation impérative du guide de variables PicoCSS fourni dans 
 [Sync] Pattern Batch/Debounce (2s) unifié pour le fetch des métadonnées et la synchronisation des prix.
 
 [Prix] Synchronisation couplée à `useItemPrices.refreshRecursive` pour mettre à jour le cache local et recalculer les crafts dépendants.
+
+[Autofocus] Intégration du moteur `tshark` pour le focus automatique basé sur l'initiative (paquets `6a626c`, `697977`, `6a6163`).
+
+[Autofocus] Mapping ID/Nom persisté dans IndexedDB (v4) avec synchronisation bidirectionnelle Electron/Renderer.

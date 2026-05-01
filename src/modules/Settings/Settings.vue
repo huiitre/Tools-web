@@ -50,16 +50,15 @@ const currentSection = ref<SettingsSection>('account-profile')
       </section>
 
       <section v-if="currentSection === 'module-dofus'">
-        <h2>Dofus</h2>
-        <p>Paramètres spécifiques Dofus</p>
+        <AutofocusMappingSection />
       </section>
 
       <section v-if="currentSection === 'module-todolist'">
         <h2>Todolist</h2>
         <p>Paramètres spécifiques Todolist</p>
-      </section> -->
-    </main>
-  </div>
+      </section>
+      </main>
+      </div>
 </template>
 
 <style scoped>
@@ -71,6 +70,15 @@ const currentSection = ref<SettingsSection>('account-profile')
 .settings-content {
   flex: 1;
   padding: 2rem;
+}
+
+@media (max-width: 768px) {
+  .settings-layout {
+    flex-direction: column;
+  }
+}
+</style>
+adding: 2rem;
 }
 
 @media (max-width: 768px) {

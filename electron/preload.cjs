@@ -41,4 +41,10 @@ contextBridge.exposeInMainWorld('electron', {
   onBankItemsUpdate: (callback) => ipcRenderer.on('bank-items-update', (event, items) => callback(items)),
   onBankItemCaptured: (callback) => ipcRenderer.on('bank-item-captured', (event, item) => callback(item)),
   onBankFullDump: (callback) => ipcRenderer.on('bank-full-dump', (event) => callback()),
+
+  // Autofocus
+  startAutofocus: (config) => ipcRenderer.invoke('autofocus:start', config),
+  stopAutofocus: () => ipcRenderer.invoke('autofocus:stop'),
+  setAutofocusMapping: (mapping) => ipcRenderer.invoke('autofocus:set-mapping', mapping),
+  onAutofocusMappingUpdated: (callback) => ipcRenderer.on('autofocus:mapping-updated', (event, mapping) => callback(mapping)),
 })

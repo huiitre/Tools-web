@@ -52,11 +52,10 @@ const goTo = (section: SettingsSection) => {
         <strong>Modules</strong>
         <ul>
           <li @click="goTo('module-dofus')">Dofus</li>
-          <li @click="goTo('module-todolist')">Todolist</li>
         </ul>
-      </div> -->
+      </div>
 
-    </details>
+      </details>
   </nav>
 
   <!-- DESKTOP SIDEBAR (INCHANGÉ LOGIQUEMENT) -->
@@ -161,6 +160,23 @@ nav li.active {
 
 .mobile-only {
   display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+@media (max-width: 768px) {
+  .desktop-only {
+    display: none;
+  }
+
+  .mobile-only {
+    display: block;
+  }
+}
+</style>
+lay: none;
 }
 
 .desktop-only {

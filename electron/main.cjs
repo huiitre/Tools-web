@@ -5,6 +5,7 @@ const { createSwitcherWindow } = require('./windows/dofusSwitcher.cjs')
 const { registerSwitcherIpc } = require('./ipc/switcher.ipc.cjs')
 const { registerSnifferIpc } = require('./ipc/sniffer.ipc.cjs')
 const { registerProxyIpc } = require('./ipc/proxy.ipc.cjs')
+const { registerAutofocusIpc } = require('./ipc/autofocus.ipc.cjs')
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -69,9 +70,11 @@ function createWindow() {
 app.commandLine.appendSwitch('disable-features', 'ServiceWorker')
 
 app.whenReady().then(() => {
+  const { registerSwitcherIpc, switcherService } = require('./ipc/switcher.ipc.cjs')
   registerSwitcherIpc()
   registerSnifferIpc()
   registerProxyIpc()
+  registerAutofocusIpc(switcherService)
   createWindow()
 
   app.on('activate', () => {

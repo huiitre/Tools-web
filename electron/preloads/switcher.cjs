@@ -29,4 +29,10 @@ contextBridge.exposeInMainWorld('switcher', {
   offCurrentChanged: () => {
     ipcRenderer.removeAllListeners('switcher:current-changed')
   },
+
+  // Autofocus
+  startAutofocus: (config) => ipcRenderer.invoke('autofocus:start', config),
+  stopAutofocus: () => ipcRenderer.invoke('autofocus:stop'),
+  setAutofocusMapping: (mapping) => ipcRenderer.invoke('autofocus:set-mapping', mapping),
+  onAutofocusMappingUpdated: (callback) => ipcRenderer.on('autofocus:mapping-updated', (event, mapping) => callback(mapping)),
 })
