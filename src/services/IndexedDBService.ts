@@ -1,7 +1,7 @@
 export class IndexedDBService {
   private db: IDBDatabase | null = null;
   private readonly dbName = 'ToolsWebDB';
-  private readonly version = 3; // Passage en v3 pour bank_metadata
+  private readonly version = 4; // Passage en v4 pour autofocus_mapping
 
   async init(): Promise<IDBDatabase> {
     if (this.db) return this.db;
@@ -23,6 +23,11 @@ export class IndexedDBService {
         // Store pour les métadonnées de la banque (dernière synchro, etc.)
         if (!db.objectStoreNames.contains('bank_metadata')) {
           db.createObjectStore('bank_metadata', { keyPath: ['gameVersionId', 'serverId'] });
+        }
+
+        // Store pour l'autofocus mapping
+        if (!db.objectStoreNames.contains('autofocus_mapping')) {
+          db.createObjectStore('autofocus_mapping', { keyPath: 'id' });
         }
       };
 

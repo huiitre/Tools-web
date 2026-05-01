@@ -5,6 +5,7 @@ import SwitcherHeader from '../components/SwitcherHeader.vue'
 import SwitcherEmptyState from '../components/SwitcherEmptyState.vue'
 import SwitcherSettings from '../components/SwitcherSettings.vue'
 import SwitcherWindowItem from '../components/SwitcherWindowItem.vue'
+import { useAutofocusMapping } from '../composables/useAutofocusMapping'
 
 interface DofusWindow {
   windowId: string
@@ -20,8 +21,10 @@ interface HotkeyConfig {
   nextLabel: string | null
   debounce: number
   syncMode: boolean
+  autofocus: boolean
 }
 
+const { mapping, loadMapping } = useAutofocusMapping()
 const windows = ref<DofusWindow[]>([])
 const scanning = ref(false)
 const showSettings = ref(false)
@@ -71,6 +74,16 @@ async function onHotkeysChanged(config: HotkeyConfig) {
     nextKeycode: config.nextKeycode,
     debounce: config.debounce,
   })
+
+  if (config.autofocus) {
+    await loadMapping()
+    await window.switcher!.startAutofocus({
+      interface: 'any',
+      mapping: mapping.value
+    })
+  } else {
+    await window.switcher!.stopAutofocus()
+  }
 }
 
 onMounted(async () => {
