@@ -10,21 +10,37 @@ const mapping = ref<Record<string, string>>({});
 
 export function useAutofocusMapping() {
     async function loadMapping() {
-        const store = await indexedDBService.getStore('autofocus_mapping', 'readonly');
-        return new Promise<void>((resolve) => {
-            const request = store.getAll();
-            request.onsuccess = () => {
-                const results = request.result as AutofocusMapping[];
-                const map: Record<string, string> = {};
-                results.forEach(item => {
-                    map[item.id] = item.name;
-                });
-                mapping.value = map;
-                // Sync with electron
-                window.electron?.setAutofocusMapping(map);
-                resolve();
-            };
-        });
+        const log = (msg: string, data?: any) => {
+            window.switcher?.log({ level: 'info', service: 'useAutofocusMapping', message: msg, data });
+        };
+
+        try {
+            log('Tentative de lecture du mapping depuis IndexedDB');
+            const store = await indexedDBService.getStore('autofocus_mapping', 'readonly');
+            return new Promise<void>((resolve, reject) => {
+                const request = store.getAll();
+                request.onsuccess = () => {
+                    const results = request.result as AutofocusMapping[];
+                    const map: Record<string, string> = {};
+                    results.forEach(item => {
+                        map[item.id] = item.name;
+                    });
+                    mapping.value = map;
+                    log(`Mapping chargé : ${Object.keys(map).length} entrées`);
+                    // Sync with electron
+                    window.electron?.setAutofocusMapping(map);
+                    window.switcher?.setAutofocusMapping(map);
+                    resolve();
+                };
+                request.onerror = () => {
+                    log('Erreur lors de getAll()', request.error);
+                    reject(request.error);
+                };
+            });
+        } catch (err: any) {
+            log('Erreur getStore', err.message);
+            throw err;
+        }
     }
 
     async function saveEntry(id: string, name: string) {
@@ -33,7 +49,8 @@ export function useAutofocusMapping() {
             const request = store.put({ id, name });
             request.onsuccess = () => {
                 mapping.value[id] = name;
-                window.electron?.setAutofocusMapping(mapping.value);
+                // On passe une copie simple (POJO) pour éviter DataCloneError avec le Proxy Vue
+                window.electron?.setAutofocusMapping({ ...mapping.value });
                 resolve();
             };
             request.onerror = () => reject(request.error);
@@ -46,7 +63,8 @@ export function useAutofocusMapping() {
             const request = store.delete(id);
             request.onsuccess = () => {
                 delete mapping.value[id];
-                window.electron?.setAutofocusMapping(mapping.value);
+                // On passe une copie simple (POJO) pour éviter DataCloneError avec le Proxy Vue
+                window.electron?.setAutofocusMapping({ ...mapping.value });
                 resolve();
             };
             request.onerror = () => reject(request.error);

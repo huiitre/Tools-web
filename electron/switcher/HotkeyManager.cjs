@@ -1,4 +1,7 @@
 const { uIOhook } = require('uiohook-napi')
+const logger = require('../logger/LoggerService.cjs')
+
+const SVC = 'HotkeyManager'
 
 class HotkeyManager {
   constructor(onPrev, onNext) {
@@ -16,17 +19,23 @@ class HotkeyManager {
     this.prevKeycode = prevKeycode ?? null
     this.nextKeycode = nextKeycode ?? null
     this.debounce = debounce ?? 1
+    logger.info(SVC, `Configuration : prev=${this.prevKeycode} next=${this.nextKeycode} debounce=${this.debounce}ms`)
   }
 
   captureNextKey(callback) {
+    logger.debug(SVC, 'Attente de la prochaine touche...')
     this.captureCallback = callback
   }
 
   start() {
-    if (this.started) return
+    if (this.started) {
+      logger.warn(SVC, 'Déjà démarré — ignoré')
+      return
+    }
 
     uIOhook.on('keyup', (e) => {
       if (this.captureCallback) {
+        logger.info(SVC, `Touche capturée : keycode=${e.keycode}`)
         this.captureCallback(e.keycode)
         this.captureCallback = null
         return
@@ -38,20 +47,27 @@ class HotkeyManager {
       this.lastTrigger = now
 
       if (this.prevKeycode && e.keycode === this.prevKeycode) {
+        logger.debug(SVC, `Hotkey PREV déclenché (keycode=${e.keycode})`)
         this.onPrev()
       } else if (this.nextKeycode && e.keycode === this.nextKeycode) {
+        logger.debug(SVC, `Hotkey NEXT déclenché (keycode=${e.keycode})`)
         this.onNext()
       }
     })
 
     uIOhook.start()
     this.started = true
+    logger.info(SVC, 'uIOhook démarré')
   }
 
   stop() {
-    if (!this.started) return
+    if (!this.started) {
+      logger.warn(SVC, 'Pas démarré — stop ignoré')
+      return
+    }
     uIOhook.stop()
     this.started = false
+    logger.info(SVC, 'uIOhook arrêté')
   }
 }
 

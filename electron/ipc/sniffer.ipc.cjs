@@ -1,4 +1,4 @@
-const { ipcMain, BrowserWindow } = require('electron');
+const { ipcMain } = require('electron');
 const snifferService = require('../sniffer/SnifferService.cjs');
 const { checkRequirements } = require('../sniffer/SnifferDoctor.cjs');
 const { detectPotentialConnections } = require('../sniffer/SnifferDetector.cjs');
@@ -27,10 +27,6 @@ function registerSnifferIpc() {
 
     ipcMain.handle('sniffer:start', async (event, forcedConfig = null) => {
         try {
-            const win = BrowserWindow.getAllWindows()[0];
-            if (win) {
-                snifferService.setMainWindow(win);
-            }
             snifferService.start(forcedConfig);
             return { success: true };
         } catch (error) {

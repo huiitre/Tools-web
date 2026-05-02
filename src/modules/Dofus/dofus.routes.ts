@@ -3,6 +3,7 @@ import { bankRoutes } from '@/modules/Dofus/bankmanagement/bankmanagement.routes
 import { routes as catalogueRoutes } from '@/modules/Dofus/catalogue/catalogue.routes'
 import { hdvRoutes } from '@/modules/Dofus/hdv/hdv.routes'
 import { routes as atelierRoutes } from '@/modules/Dofus/workshop/workshop.routes'
+import { logsRoutes } from '@/modules/Dofus/logs/logs.routes'
 
 export const routes = [
   {
@@ -19,7 +20,8 @@ export const routes = [
       ...catalogueRoutes,
       ...atelierRoutes,
       ...hdvRoutes,
-      ...bankRoutes
+      ...bankRoutes,
+      ...logsRoutes,
     ],
   }
 ]

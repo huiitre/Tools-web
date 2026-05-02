@@ -1,13 +1,9 @@
-const { ipcMain, BrowserWindow } = require('electron');
+const { ipcMain } = require('electron');
 const proxyService = require('../proxy/ProxyService.cjs');
 
 function registerProxyIpc() {
     ipcMain.handle('proxy:start', async (event, config) => {
         try {
-            const win = BrowserWindow.getAllWindows()[0];
-            if (win) {
-                proxyService.setMainWindow(win);
-            }
             return await proxyService.start(config);
         } catch (error) {
             return { success: false, error: error.message };

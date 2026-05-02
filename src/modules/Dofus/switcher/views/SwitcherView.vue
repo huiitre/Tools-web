@@ -68,21 +68,34 @@ async function renameWindow(windowId: string, name: string) {
 }
 
 async function onHotkeysChanged(config: HotkeyConfig) {
-  debounce.value = config.debounce
-  await window.switcher!.configureHotkeys({
-    prevKeycode: config.prevKeycode,
-    nextKeycode: config.nextKeycode,
-    debounce: config.debounce,
-  })
-
-  if (config.autofocus) {
-    await loadMapping()
-    await window.switcher!.startAutofocus({
-      interface: 'any',
-      mapping: mapping.value
+  window.switcher!.log({ level: 'info', service: 'SwitcherView', message: 'onHotkeysChanged triggered', data: { autofocus: config.autofocus } })
+  console.log('[SwitcherView] onHotkeysChanged →', JSON.stringify(config))
+  try {
+    debounce.value = config.debounce
+    await window.switcher!.configureHotkeys({
+      prevKeycode: config.prevKeycode,
+      nextKeycode: config.nextKeycode,
+      debounce: config.debounce,
     })
-  } else {
-    await window.switcher!.stopAutofocus()
+
+    if (config.autofocus) {
+      window.switcher!.log({ level: 'info', service: 'SwitcherView', message: 'Loading mapping...' })
+      await loadMapping()
+      window.switcher!.log({ level: 'info', service: 'SwitcherView', message: 'Mapping loaded, calling startAutofocus...', data: { mappingSize: Object.keys(mapping.value).length } })
+      
+      const result = await window.switcher!.startAutofocus({
+        interface: 'any',
+        mapping: { ...mapping.value }
+      })
+      window.switcher!.log({ level: 'info', service: 'SwitcherView', message: 'startAutofocus result received', data: result })
+      console.log('[Switcher] startAutofocus result:', result)
+    } else {
+      await window.switcher!.stopAutofocus()
+      window.switcher!.log({ level: 'info', service: 'SwitcherView', message: 'Autofocus stopped' })
+    }
+  } catch (e: any) {
+    window.switcher!.log({ level: 'error', service: 'SwitcherView', message: 'Error in onHotkeysChanged', data: e.message })
+    console.error('[Switcher] onHotkeysChanged error:', e)
   }
 }
 

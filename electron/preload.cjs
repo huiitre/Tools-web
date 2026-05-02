@@ -47,4 +47,10 @@ contextBridge.exposeInMainWorld('electron', {
   stopAutofocus: () => ipcRenderer.invoke('autofocus:stop'),
   setAutofocusMapping: (mapping) => ipcRenderer.invoke('autofocus:set-mapping', mapping),
   onAutofocusMappingUpdated: (callback) => ipcRenderer.on('autofocus:mapping-updated', (event, mapping) => callback(mapping)),
+
+  // Logs
+  getElectronLogs: () => ipcRenderer.invoke('electron:get-logs'),
+  clearElectronLogs: () => ipcRenderer.invoke('electron:clear-logs'),
+  onElectronLog: (callback) => ipcRenderer.on('electron:log', (_, entry) => callback(entry)),
+  offElectronLog: () => ipcRenderer.removeAllListeners('electron:log'),
 })
