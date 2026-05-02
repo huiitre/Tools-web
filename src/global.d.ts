@@ -1,3 +1,12 @@
+interface ElectronLogEntry {
+  id: string
+  timestamp: string
+  level: 'info' | 'warn' | 'error' | 'debug'
+  service: string
+  message: string
+  data: unknown
+}
+
 declare global {
   interface Window {
     google?: any
@@ -39,6 +48,12 @@ declare global {
       // Autofocus Mapping
       setAutofocusMapping: (mapping: Record<string, string>) => void;
       onAutofocusMappingUpdated: (callback: (mapping: Record<string, string>) => void) => void;
+
+      // Electron Logs
+      getElectronLogs: () => Promise<ElectronLogEntry[]>;
+      clearElectronLogs: () => Promise<{ success: boolean }>;
+      onElectronLog: (callback: (entry: ElectronLogEntry) => void) => void;
+      offElectronLog: () => void;
     }
     switcher?: {
       scan: () => Promise<DofusWindow[]>
@@ -58,9 +73,12 @@ declare global {
       offCurrentChanged: () => void
 
       // Autofocus
-      setAutofocusMapping?: (mapping: Record<string, string>) => void
+      setAutofocusMapping: (mapping: Record<string, string>) => void
       startAutofocus: (config: { interface: string; mapping: Record<string, string> }) => Promise<void>
       stopAutofocus: () => Promise<void>
+
+      // Logging
+      log: (entry: { level: string; service: string; message: string; data?: any }) => void
     }
   }
 

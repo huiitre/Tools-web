@@ -35,4 +35,7 @@ contextBridge.exposeInMainWorld('switcher', {
   stopAutofocus: () => ipcRenderer.invoke('autofocus:stop'),
   setAutofocusMapping: (mapping) => ipcRenderer.invoke('autofocus:set-mapping', mapping),
   onAutofocusMappingUpdated: (callback) => ipcRenderer.on('autofocus:mapping-updated', (event, mapping) => callback(mapping)),
+
+  // Logging
+  log: (entry) => ipcRenderer.send('electron:log', entry),
 })

@@ -43,7 +43,7 @@ const priceStatus = computed(() =>
   prices.value ? getPriceAgeStatus(prices.value, priceDisplayMode.value) : null
 )
 
-</script>p
+</script>
 
 <template>
   <div class="almanax-item-wrapper">

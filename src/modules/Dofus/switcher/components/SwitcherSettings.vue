@@ -79,6 +79,7 @@ onMounted(() => {
 
 function save() {
   LS.set(LS_KEY, config.value)
+  console.log('[SwitcherSettings] save() → hotkeys-changed', JSON.stringify(config.value))
   emit('hotkeys-changed', config.value)
 }
 
