@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useWorkshopSummary } from '@/modules/Dofus/workshop/composables/useWorkshopSummary'
-import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { useWorkshopPriceCalculator } from '@/modules/Dofus/workshop/composables/useWorkshopPriceCalculator'
 import { useWorkshopDetailStore, type WorkshopSortBy, type WorkshopSortOrder } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
@@ -11,7 +11,7 @@ import WorkshopFilters from './WorkshopFilters.vue'
 import WorkshopResourcesList from './WorkshopResourcesList.vue'
 
 const { summary } = useWorkshopSummary()
-const itemPricesStore = useItemPrices()
+const { getUnitPrice } = useWorkshopPriceCalculator()
 const workshopDetailStore = useWorkshopDetailStore()
 
 /* ========================= FILTERS ========================= */
@@ -60,8 +60,7 @@ const zones = computed(() => {
     percent: zone.percent,
     resources: zone.resources.map(resource => {
       // On récupère le prix de manière réactive via le store
-      const itemPrice = itemPricesStore.get(resource.item.id)
-      const unitPrice = itemPrice?.userPrice ?? 0
+      const unitPrice = getUnitPrice(resource.item.id)
       const img = getItemImageByResolution(resource.item.images ?? [], AssetResolution.X2)
 
       return {
