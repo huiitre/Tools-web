@@ -22,7 +22,7 @@ export function useItemPrices() {
       new Set([...trackedItemIds.value, ...newIds])
     )
 
-    const { data } = await useFetchItemPrices(newIds)
+    const { data }: { data: ItemPrice[] } = await useFetchItemPrices(newIds)
 
     for (const entry of data) {
       prices.value.set(entry.itemId, entry)
@@ -37,7 +37,7 @@ export function useItemPrices() {
       const allIds = Array.from(prices.value.keys())
       if (allIds.length === 0) return
 
-      const { data } = await useFetchItemPrices(allIds)
+      const { data }: { data: ItemPrice[] } = await useFetchItemPrices(allIds)
       for (const entry of data) {
         prices.value.set(entry.itemId, entry)
       }
@@ -61,7 +61,7 @@ export function useItemPrices() {
     const ids = Array.from(idsToRefresh)
     if (ids.length === 0) return
 
-    const { data } = await useFetchItemPrices(ids)
+    const { data }: { data: ItemPrice[] } = await useFetchItemPrices(ids)
 
     for (const entry of data) {
       prices.value.set(entry.itemId, entry)
@@ -108,7 +108,7 @@ export function useItemPrices() {
     const ids = Array.from(visited)
     if (ids.length === 0) return
 
-    const { data } = await useFetchItemPrices(ids)
+    const { data }: { data: ItemPrice[] } = await useFetchItemPrices(ids)
 
     for (const entry of data) {
       prices.value.set(entry.itemId, entry)

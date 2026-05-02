@@ -43,6 +43,10 @@ export type ItemPrice = {
   craftCommunityPrice: number
   craftLastPrice: number
   craftCalculatedPrice: number
+
+  userPriceCreatedAt: Date | null
+  communityAveragePriceCreatedAt: Date | null
+  lastUpdatedPriceCreatedAt: Date | null
 }
 
 /* =========================

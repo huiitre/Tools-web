@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import type { Item, ItemPrice } from '@/modules/Dofus/item/types/item.types'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { formatNumber } from '@/utils/formatNumber'
 import { PriceDisplayMode } from '@/modules/Dofus/preferences/types/priceDisplayMode.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
+import { getItemPriceDateByMode, getPriceAgeStatus } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import PriceAgeColor from '@/modules/Dofus/item/components/PriceAgeColor.vue'
 
 const props = defineProps<{
   item: Item
@@ -21,6 +24,15 @@ const primaryZone =
 
 const otherZones =
   (props.item.farmZones ?? []).filter((z: any) => z !== primaryZone)
+
+const userPriceDate = computed(() => props.price ? getItemPriceDateByMode(props.price, PriceDisplayMode.USER) : null)
+const userPriceStatus = computed(() => props.price ? getPriceAgeStatus(props.price, PriceDisplayMode.USER) : null)
+
+const communityPriceDate = computed(() => props.price ? getItemPriceDateByMode(props.price, PriceDisplayMode.COMMUNITY) : null)
+const communityPriceStatus = computed(() => props.price ? getPriceAgeStatus(props.price, PriceDisplayMode.COMMUNITY) : null)
+
+const lastPriceDate = computed(() => props.price ? getItemPriceDateByMode(props.price, PriceDisplayMode.LAST) : null)
+const lastPriceStatus = computed(() => props.price ? getPriceAgeStatus(props.price, PriceDisplayMode.LAST) : null)
 </script>
 
 <template>
@@ -57,17 +69,26 @@ const otherZones =
 
       <div class="price-line" :class="{ primary: priceDisplayMode === PriceDisplayMode.USER }">
         <span>👤 Mon prix</span>
-        <strong>{{ formatNumber(price.userPrice) }} ₭</strong>
+        <div class="price-value">
+          <strong>{{ formatNumber(price.userPrice) }} ₭</strong>
+          <PriceAgeColor v-if="userPriceDate" :status="userPriceStatus" class="price-age">{{ userPriceDate }}</PriceAgeColor>
+        </div>
       </div>
 
       <div class="price-line" :class="{ primary: priceDisplayMode === PriceDisplayMode.COMMUNITY }">
         <span>🌍 Prix communautaire</span>
-        <strong>{{ formatNumber(price.communityAveragePrice) }} ₭</strong>
+        <div class="price-value">
+          <strong>{{ formatNumber(price.communityAveragePrice) }} ₭</strong>
+          <PriceAgeColor v-if="communityPriceDate" :status="communityPriceStatus" class="price-age">{{ communityPriceDate }}</PriceAgeColor>
+        </div>
       </div>
 
       <div class="price-line" :class="{ primary: priceDisplayMode === PriceDisplayMode.LAST }">
         <span>🕒 Dernier prix</span>
-        <strong>{{ formatNumber(price.lastUpdatedPrice) }} ₭</strong>
+        <div class="price-value">
+          <strong>{{ formatNumber(price.lastUpdatedPrice) }} ₭</strong>
+          <PriceAgeColor v-if="lastPriceDate" :status="lastPriceStatus" class="price-age">{{ lastPriceDate }}</PriceAgeColor>
+        </div>
       </div>
 
       <div class="price-separator" />
@@ -200,6 +221,7 @@ const otherZones =
 .price-line {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
   padding: 0.2rem 0;
 }
 
@@ -209,6 +231,19 @@ const otherZones =
 
 .price-line.strong {
   font-weight: 600;
+}
+
+.price-value {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.price-age {
+  font-size: 0.65rem;
+  font-style: italic;
+  margin-top: 0.1rem;
+  font-weight: bold;
 }
 
 .price-separator {
