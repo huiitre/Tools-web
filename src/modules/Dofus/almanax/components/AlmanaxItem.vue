@@ -4,7 +4,8 @@ import { computed } from 'vue'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
-import { getItemPriceByMode } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { getItemPriceByMode, getPriceAgeStatus } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import PriceAgeColor from '@/modules/Dofus/item/components/PriceAgeColor.vue'
 import { storeToRefs } from 'pinia'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
 import { formatNumber } from '@/utils/formatNumber'
@@ -36,6 +37,10 @@ const price = computed(() => {
 
 const totalPrice = computed(() =>
   price.value * props.quantity
+)
+
+const priceStatus = computed(() =>
+  prices.value ? getPriceAgeStatus(prices.value, priceDisplayMode.value) : null
 )
 
 </script>p
@@ -71,9 +76,9 @@ const totalPrice = computed(() =>
         💰
         <span class="price-value">
           {{ formatNumber(totalPrice) }} ₭ 
-          <span class="price-unit-value" v-if="price > 0">
+          <PriceAgeColor v-if="price > 0" :status="priceStatus" class="price-unit-value">
             ({{ formatNumber(price) }} ₭ / u)
-          </span>
+          </PriceAgeColor>
         </span>
       </div>
     </div>

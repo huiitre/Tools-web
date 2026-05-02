@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useClipboard } from '@/composables/useClipboard'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
+import PriceAgeColor from '@/modules/Dofus/item/components/PriceAgeColor.vue'
 import { AssetResolution } from '@/modules/Dofus/item/types/assetResolution.enum'
 import { getItemImageByResolution } from '@/modules/Dofus/item/utils/itemImageSelector'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
@@ -11,6 +12,8 @@ import { formatNumber, normalizePositiveIntegerInput } from '@/utils/formatNumbe
 import { storeToRefs } from 'pinia'
 import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { getPriceAgeStatus } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
 
 type CraftCard = {
   type: 'main' | 'craft'
@@ -27,6 +30,12 @@ const { isOwner, isCondensed } = storeToRefs(store)
 const { getUnitPrice } = useWorkshopPriceCalculator()
 const { get, set, refreshRecursive } = useItemPrices()
 const { copy } = useClipboard()
+const { priceDisplayMode } = storeToRefs(useDofusConfigStore())
+
+function getIngredientPriceStatus(ingredient: WorkshopItemIngredient) {
+  const prices = get(ingredient.item.id)
+  return prices ? getPriceAgeStatus(prices, priceDisplayMode.value) : null
+}
 
 const priceUpdateTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
@@ -204,7 +213,7 @@ async function updateItemPrice(itemId: number, rawValue: string) {
 
       <div v-if="!isCondensed" class="price-details">
         <div class="price-left">
-          <span>Prix unitaire : {{ getIngredientPrices(ingredient).unitPrice.toLocaleString() }} ₭</span>
+          <span>Prix unitaire : <PriceAgeColor :status="getIngredientPriceStatus(ingredient)">{{ getIngredientPrices(ingredient).unitPrice.toLocaleString() }} ₭</PriceAgeColor></span>
           <span>Prix total : {{ getIngredientPrices(ingredient).totalPrice.toLocaleString() }} ₭</span>
           <span>Restant : <span class="colored">{{ getIngredientPrices(ingredient).remainingPrice.toLocaleString() }} ₭</span></span>
         </div>

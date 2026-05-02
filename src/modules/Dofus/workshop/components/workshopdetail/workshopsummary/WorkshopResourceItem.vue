@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useClipboard } from '@/composables/useClipboard'
 import { useImagePreview } from '@/composables/useImagePreview'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
+import PriceAgeColor from '@/modules/Dofus/item/components/PriceAgeColor.vue'
 import { Item } from '@/modules/Dofus/item/types/item.types'
 import { useWorkshopDetailStore } from '@/modules/Dofus/workshop/store/workshopDetail.store'
 import type { WorkshopItemIngredient } from '@/modules/Dofus/workshop/types/workshop.types'
@@ -10,6 +11,8 @@ import { formatNumber, normalizePositiveIntegerInput } from '@/utils/formatNumbe
 import { storeToRefs } from 'pinia'
 import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices'
+import { getPriceAgeStatus } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { useDofusConfigStore } from '@/modules/Dofus/preferences/preferences.store'
 
 interface Resource {
   id: number
@@ -35,6 +38,12 @@ const workshopDetailStore = useWorkshopDetailStore()
 const { isOwner } = storeToRefs(workshopDetailStore)
 
 const { get, set, refreshRecursive } = useItemPrices()
+const { priceDisplayMode } = storeToRefs(useDofusConfigStore())
+
+const priceStatus = computed(() => {
+  const prices = get(props.resource.item.id)
+  return prices ? getPriceAgeStatus(prices, priceDisplayMode.value) : null
+})
 
 const priceUpdateTimeout = ref<ReturnType<typeof setTimeout> | null>(null)
 
@@ -172,7 +181,7 @@ async function onInput(event: Event) {
     <div class="resource-info">
       <div class="name copyable" @click="copy(resource.name)">{{ resource.name }}</div>
       <div class="price-details" v-if="!condensed">
-        <span>Prix unitaire : {{ resource.price.toLocaleString() }} ₭</span>
+        <span>Prix unitaire : <PriceAgeColor :status="priceStatus">{{ resource.price.toLocaleString() }} ₭</PriceAgeColor></span>
         <span>Prix total : {{ (resource.price * resource.max).toLocaleString() }} ₭</span>
         <span>Restant : <span class="colored">{{ (resource.price * (resource.max - resource.qty)).toLocaleString() }} ₭</span></span>
       </div>

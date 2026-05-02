@@ -14,8 +14,11 @@ import { useMutationItemPrices } from '@/modules/Dofus/item/fetch/item.fetch'
 import { useUIStore } from '@/stores/ui.store'
 import { Item } from '@/modules/Dofus/item/types/item.types'
 import ItemContextTrigger from '@/modules/Dofus/item/components/ItemContextTrigger.vue'
+import PriceAgeColor from '@/modules/Dofus/item/components/PriceAgeColor.vue'
 import { useAuthStore } from '@/modules/Auth/auth.store'
 import { RoleCode } from '@/modules/Auth/types/auth.types'
+import { getPriceAgeStatus } from '@/modules/Dofus/item/utils/itemPriceSelector'
+import { PriceDisplayMode } from '@/modules/Dofus/preferences/types/priceDisplayMode.enum'
 
 defineOptions({ name: 'CatalogueRow' })
 
@@ -76,6 +79,10 @@ const imageUrl = computed(() => {
 /* ========================= PRICES ========================= */
 const { get, refreshRecursive } = useItemPrices()
 const prices = computed(() => get(props.item.id))
+
+const userPriceStatus = computed(() => prices.value ? getPriceAgeStatus(prices.value, PriceDisplayMode.USER) : null)
+const communityPriceStatus = computed(() => prices.value ? getPriceAgeStatus(prices.value, PriceDisplayMode.COMMUNITY) : null)
+const lastPriceStatus = computed(() => prices.value ? getPriceAgeStatus(prices.value, PriceDisplayMode.LAST) : null)
 
 /* ========================= INLINE EDIT USER PRICE ========================= */
 const isEditingPrice = ref(false)
@@ -221,7 +228,25 @@ const isRightAligned = (key: string) => key.includes('price') || key.startsWith(
           @blur="savePrice"
           @keydown="handlePriceKeydown"
         />
-        <span v-else>{{ getCellValue(col.key) }}</span>
+        <PriceAgeColor v-else :status="userPriceStatus">{{ getCellValue(col.key) }}</PriceAgeColor>
+      </div>
+
+      <!-- COMMUNITY PRICE -->
+      <div
+        v-else-if="col.key === 'community_average_price'"
+        class="cell right"
+        :title="String(getCellValue(col.key))"
+      >
+        <PriceAgeColor :status="communityPriceStatus">{{ getCellValue(col.key) }}</PriceAgeColor>
+      </div>
+
+      <!-- LAST PRICE -->
+      <div
+        v-else-if="col.key === 'last_updated_price'"
+        class="cell right"
+        :title="String(getCellValue(col.key))"
+      >
+        <PriceAgeColor :status="lastPriceStatus">{{ getCellValue(col.key) }}</PriceAgeColor>
       </div>
 
       <!-- AUTRES COLONNES -->
