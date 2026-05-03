@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import WorkshopItemSearchDropdown from './WorkshopItemSearchDropdown.vue'
+import WorkshopLinksButton from './WorkshopLinksButton.vue'
 import type { WorkshopSortBy, WorkshopSortOrder } from '../../../store/workshopDetail.store'
 
 interface Props {
@@ -74,14 +75,16 @@ function toggleSortOrder(current: WorkshopSortOrder) {
             </option>
         </select>
         
-        <button 
-            type="button" 
+        <button
+            type="button"
             class="sort-order-btn"
             @click="toggleSortOrder(sortOrder)"
             :title="sortOrder === 'asc' ? 'Croissant' : 'Décroissant'"
         >
             <i class="fa-solid" :class="sortOrder === 'asc' ? 'fa-sort-amount-up' : 'fa-sort-amount-down'"></i>
         </button>
+
+        <WorkshopLinksButton />
     </div>
 
     <WorkshopItemSearchDropdown />
