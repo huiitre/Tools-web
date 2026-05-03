@@ -115,6 +115,21 @@ const pinWorkshop = async (workshop: Workshop) => {
         ></span>
       </div>
 
+      <!-- LINKS -->
+      <div v-if="workshop.links?.length" class="card-links" @click.stop>
+        <a
+          v-for="link in workshop.links"
+          :key="link.id"
+          :href="link.url"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="card-link"
+        >
+          <span class="mdi mdi-link-variant"></span>
+          {{ link.label }}
+        </a>
+      </div>
+
       <!-- CONTENT -->
       <div class="card-content">
         <div class="card-tags">
@@ -196,6 +211,9 @@ const pinWorkshop = async (workshop: Workshop) => {
   padding: 1rem;
   cursor: pointer;
   transition: box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 
   &:hover {
     border-color: var(--pico-primary-border);
@@ -231,6 +249,35 @@ const pinWorkshop = async (workshop: Workshop) => {
   &.pinned {
     color: var(--pico-primary);
     opacity: 1 !important;
+  }
+}
+
+/* LINKS */
+.card-links {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin-bottom: 0.75rem;
+}
+
+.card-link {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--pico-primary);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  .mdi {
+    flex-shrink: 0;
+    font-size: 0.9rem;
+  }
+
+  &:hover {
+    text-decoration: underline;
   }
 }
 

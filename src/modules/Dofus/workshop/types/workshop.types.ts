@@ -1,11 +1,25 @@
 import { Item } from "@/modules/Dofus/item/types/item.types"
 
+export enum WorkshopLinkSource {
+  DOFUSBOOK = 'DOFUSBOOK',
+  CUSTOM = 'CUSTOM'
+}
+
+export type WorkshopLink = {
+  id: number
+  source: WorkshopLinkSource
+  url: string
+  label: string
+  createdAt: string
+}
+
 export type Workshop = {
   id: number
   name: string
   active: boolean
   tags: WorkshopTag[]
   pinned: boolean
+  links: WorkshopLink[]
 }
 
 export type WorkshopTag = {
