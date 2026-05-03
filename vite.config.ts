@@ -8,7 +8,13 @@ import { VitePWA } from 'vite-plugin-pwa'
 export default defineConfig({
   base: process.env.ELECTRON === 'true' ? './' : '/',
   plugins: [
-    vue(),
+    vue({
+      template: {
+        compilerOptions: {
+          isCustomElement: (tag) => tag === 'webview',
+        },
+      },
+    }),
     VitePWA({
       registerType: 'prompt',
       manifest: {
