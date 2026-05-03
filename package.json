@@ -28,10 +28,12 @@
     "linux": {
       "target": "AppImage",
       "category": "Utility",
-      "artifactName": "Tools.huiitre.fr.AppImage"
+      "artifactName": "Tools.huiitre.fr.AppImage",
+      "icon": "build/icon.png"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.png"
     }
   },
   "scripts": {
