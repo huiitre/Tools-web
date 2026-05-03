@@ -45,3 +45,9 @@ Conformité : Utilisation impérative du guide de variables PicoCSS fourni dans 
 [Autofocus] Intégration du moteur `tshark` pour le focus automatique basé sur l'initiative (paquets `6a626c`, `697977`, `6a6163`).
 
 [Autofocus] Mapping ID/Nom persisté dans IndexedDB (v4) avec synchronisation bidirectionnelle Electron/Renderer.
+
+[Workshop/Liens] Chaque atelier supporte jusqu'à 3 liens (DOFUSBOOK ou CUSTOM). Visualisation via `WorkshopLinkViewer.vue` : popup 85vw×85vh, `<webview>` Electron (contourne X-Frame-Options, nécessite `webviewTag: true` dans main.cjs) ou fallback web. Gestion add/edit/delete dans les cartes liste (WorkshopEditor) et dans un floating panel (`@floating-ui/vue`) sur la page détail (WorkshopLinksButton). Le scroll ferme le panel sauf scroll interne (fix paste/coller). `<webview>` déclarée custom element natif dans vite.config.ts.
+
+[Updates] Double mécanisme géré par `useAppUpdate.ts` et `update.service.ts` :
+- **Web (PWA)** : Polling toutes les 10s via `ServiceWorkerRegistration.update()`. Si une mise à jour est trouvée, `WebUpdateService` envoie `SKIP_WAITING` au worker. Le rechargement est déclenché par l'événement `statechange` -> `activated`.
+- **Electron** : Utilise `electron-updater`. Le `main.cjs` vérifie les updates au boot. Communication via IPC (`update-available` / `apply-update`). L'installation finale utilise `autoUpdater.quitAndInstall()`.

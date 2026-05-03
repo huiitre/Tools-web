@@ -7,17 +7,24 @@ export class WebUpdateService implements IUpdateService {
   }
 
   applyUpdate(): void {
+    // 1. Écouteur global pour le changement de contrôleur (plus fiable que statechange)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload()
+    }, { once: true })
+
     navigator.serviceWorker.getRegistration().then(reg => {
       if (reg?.waiting) {
+        // 2. On envoie l'ordre de prendre le contrôle
         reg.waiting.postMessage({ type: 'SKIP_WAITING' })
-        reg.waiting.addEventListener('statechange', (e) => {
-          if ((e.target as ServiceWorker).state === 'activated') {
-            window.location.reload()
-          }
-        })
       } else {
+        // Fallback si pas de worker en attente
         window.location.reload()
       }
     })
+
+    // 3. Sécurité : force le reload si l'événement n'est pas reçu après 2s
+    setTimeout(() => {
+      window.location.reload()
+    }, 2000)
   }
 }
