@@ -92,4 +92,15 @@ declare global {
 
 declare module '@vitejs/plugin-vue';
 
+declare namespace JSX {
+  interface IntrinsicElements {
+    webview: {
+      src?: string
+      class?: string
+      style?: string | Record<string, string>
+      [key: string]: any
+    }
+  }
+}
+
 export {};

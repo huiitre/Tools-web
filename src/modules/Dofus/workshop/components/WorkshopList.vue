@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, watchEffect, watch } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useWorkshopStore } from '@/modules/Dofus/workshop/store/workshop.store'
 import { Workshop } from '@/modules/Dofus/workshop/types/workshop.types'
 import WorkshopTagSelector from '@/modules/Dofus/workshop/components/WorkshopTagSelector.vue'
 import WorkshopEditor from '@/modules/Dofus/workshop/components/WorkshopEditor.vue'
+import WorkshopLinkViewer from '@/modules/Dofus/workshop/components/WorkshopLinkViewer.vue'
 import { getContrastColor } from '@/utils/color'
-import { useDofusStore } from '@/modules/Dofus/dofus.store'
 
 const router = useRouter()
 const store = useWorkshopStore()
-const dofusStore = useDofusStore()
 
 const route = useRoute()
 
@@ -36,6 +35,7 @@ watchEffect(() => {
 
 const selectedWorkshop = ref<Workshop | null>(null)
 const editedWorkshop = ref<Workshop | null>(null)
+const activeLink = ref<{ url: string; label: string } | null>(null)
 
   const workshops = computed(() => {
   // Archive
@@ -117,17 +117,15 @@ const pinWorkshop = async (workshop: Workshop) => {
 
       <!-- LINKS -->
       <div v-if="workshop.links?.length" class="card-links" @click.stop>
-        <a
+        <span
           v-for="link in workshop.links"
           :key="link.id"
-          :href="link.url"
-          target="_blank"
-          rel="noopener noreferrer"
           class="card-link"
+          @click.stop="activeLink = { url: link.url, label: link.label }"
         >
           <span class="mdi mdi-link-variant"></span>
           {{ link.label }}
-        </a>
+        </span>
       </div>
 
       <!-- CONTENT -->
@@ -193,6 +191,13 @@ const pinWorkshop = async (workshop: Workshop) => {
     v-if="editedWorkshop"
     :workshop="editedWorkshop"
     @close="editedWorkshop = null"
+  />
+
+  <WorkshopLinkViewer
+    v-if="activeLink"
+    :url="activeLink.url"
+    :label="activeLink.label"
+    @close="activeLink = null"
   />
 </template>
 
@@ -282,8 +287,6 @@ const pinWorkshop = async (workshop: Workshop) => {
 }
 
 /* CONTENT */
-.card-content {
-}
 
 /* TAGS */
 .card-tags {
