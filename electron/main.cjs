@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron')
+const { app, BrowserWindow, ipcMain, nativeImage } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { createSwitcherWindow } = require('./windows/dofusSwitcher.cjs')
@@ -10,9 +10,12 @@ const { registerLogsIpc } = require('./ipc/logs.ipc.cjs')
 const logger = require('./logger/LoggerService.cjs')
 
 function createWindow() {
+  const appIcon = nativeImage.createFromPath(path.join(__dirname, 'icon.png'))
+
   const win = new BrowserWindow({
     width: 1600,
     height: 960,
+    icon: appIcon,
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       contextIsolation: true,
@@ -20,6 +23,8 @@ function createWindow() {
       webviewTag: true,
     }
   })
+
+  win.setIcon(appIcon)
 
   logger.setMainWindow(win)
   logger.info('Main', 'Fenêtre principale créée')
