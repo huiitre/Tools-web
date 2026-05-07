@@ -15,6 +15,7 @@ import { useUIStore } from '@/stores/ui.store';
 
 import { routes as authRoutes } from '@/modules/Auth/auth.routes';
 import { routes as dofusRoutes } from '@/modules/Dofus/dofus.routes';
+import { routes as riotRoutes } from '@/modules/Riot/riot.routes';
 
 const isElectron = navigator.userAgent.includes('Electron')
 
@@ -22,6 +23,7 @@ const isElectron = navigator.userAgent.includes('Electron')
 export const routes = [
   ...authRoutes,
   ...dofusRoutes,
+  ...riotRoutes,
   {
     name: 'home',
     path: '/',
