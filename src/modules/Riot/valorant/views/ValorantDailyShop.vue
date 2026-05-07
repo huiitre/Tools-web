@@ -1,0 +1,593 @@
+<script setup lang="ts">
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { useRiotStore, type RiotRegion } from '@/modules/Riot/riot.store'
+import {
+  extractPuuid,
+  fetchEntitlementToken,
+  fetchClientVersion,
+  fetchStorefront,
+  fetchSkinsMap,
+  type ShopSkin,
+} from '@/modules/Riot/valorant/fetch/valorantShop.fetch'
+
+type View = 'form' | 'loading' | 'shop'
+
+const REGIONS: { value: RiotRegion; label: string }[] = [
+  { value: 'eu', label: 'EU — Europe' },
+  { value: 'na', label: 'NA — Amérique du Nord' },
+  { value: 'ap', label: 'AP — Asie-Pacifique' },
+  { value: 'kr', label: 'KR — Corée' },
+  { value: 'br', label: 'BR — Brésil' },
+  { value: 'latam', label: 'LATAM — Amérique latine' },
+]
+
+const riotStore = useRiotStore()
+
+const view = ref<View>('form')
+const skins = ref<ShopSkin[]>([])
+const error = ref<string | null>(null)
+const tokenInput = ref('')
+const showToken = ref(false)
+const selectedRegion = ref<RiotRegion>(riotStore.region)
+
+const remainingMs = ref(0)
+let timerInterval: ReturnType<typeof setInterval> | null = null
+
+const formattedTime = computed(() => {
+  const total = Math.max(0, remainingMs.value)
+  const h = Math.floor(total / 3_600_000)
+  const m = Math.floor((total % 3_600_000) / 60_000)
+  const s = Math.floor((total % 60_000) / 1_000)
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
+})
+
+function startTimer(seconds: number) {
+  stopTimer()
+  const expiresAt = Date.now() + seconds * 1_000
+  remainingMs.value = expiresAt - Date.now()
+  timerInterval = setInterval(() => {
+    remainingMs.value = Math.max(0, expiresAt - Date.now())
+    if (remainingMs.value === 0) stopTimer()
+  }, 1_000)
+}
+
+function stopTimer() {
+  if (timerInterval !== null) {
+    clearInterval(timerInterval)
+    timerInterval = null
+  }
+}
+
+onBeforeUnmount(() => stopTimer())
+
+onMounted(() => {
+  const saved = riotStore.accessToken
+  if (saved) {
+    tokenInput.value = saved
+    loadShop(saved, riotStore.region)
+  }
+})
+
+async function onSubmit() {
+  const token = tokenInput.value.trim()
+  if (!token) return
+  await loadShop(token, selectedRegion.value)
+}
+
+async function loadShop(token: string, region: RiotRegion) {
+  view.value = 'loading'
+  error.value = null
+
+  try {
+    const puuid = extractPuuid(token)
+    const [entitlementsToken, clientVersion, skinsMap] = await Promise.all([
+      fetchEntitlementToken(token),
+      fetchClientVersion(),
+      fetchSkinsMap(),
+    ])
+    const { offers, remainingSeconds } = await fetchStorefront(puuid, region, token, entitlementsToken, clientVersion)
+
+    skins.value = offers.map(({ id, cost }) => {
+      const skin = skinsMap[id]
+      return {
+        id,
+        name: skin?.displayName ?? 'Skin inconnu',
+        icon:
+          skin?.levels?.[0]?.displayIcon ??
+          skin?.displayIcon ??
+          skin?.chromas?.[0]?.fullRender ??
+          '',
+        cost,
+      }
+    })
+
+    riotStore.setAuth(token, region)
+    startTimer(remainingSeconds)
+    view.value = 'shop'
+  } catch (e: any) {
+    error.value = e?.message ?? 'Erreur lors du chargement de la boutique'
+    riotStore.clearAuth()
+    tokenInput.value = ''
+    view.value = 'form'
+  }
+}
+
+function resetAuth() {
+  stopTimer()
+  riotStore.clearAuth()
+  tokenInput.value = ''
+  skins.value = []
+  error.value = null
+  selectedRegion.value = 'eu'
+  view.value = 'form'
+}
+
+function currentRegionLabel() {
+  return REGIONS.find(r => r.value === riotStore.region)?.label ?? riotStore.region.toUpperCase()
+}
+</script>
+
+<template>
+  <!-- ── FORM ───────────────────────────────────────────────── -->
+  <div v-if="view === 'form'" class="form-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <i class="mdi mdi-crosshairs auth-icon" />
+        <div>
+          <h3 class="auth-title">Valorant Daily Shop</h3>
+          <p class="auth-subtitle">Consultez votre boutique sans ouvrir le jeu</p>
+        </div>
+      </div>
+
+      <div v-if="error" class="error-banner" role="alert">
+        <i class="mdi mdi-alert-circle-outline" />
+        {{ error }}
+      </div>
+
+      <label>
+        Région
+        <select v-model="selectedRegion">
+          <option v-for="r in REGIONS" :key="r.value" :value="r.value">{{ r.label }}</option>
+        </select>
+      </label>
+
+      <label>
+        Access Token
+        <div class="token-input-wrap">
+          <input
+            :type="showToken ? 'text' : 'password'"
+            v-model="tokenInput"
+            placeholder="Collez votre __Secure-access_token ici..."
+          />
+          <button
+            type="button"
+            class="token-eye"
+            aria-label="Afficher/masquer le token"
+            @click="showToken = !showToken"
+          >
+            <i :class="['mdi', showToken ? 'mdi-eye-off' : 'mdi-eye']" />
+          </button>
+        </div>
+      </label>
+
+      <details>
+        <summary>Comment récupérer mon token ?</summary>
+        <div class="help-content">
+          <ol class="help-steps">
+            <li>Connectez-vous sur <a href="https://playvalorant.com" target="_blank" rel="noopener">playvalorant.com</a></li>
+            <li>Ouvrez les DevTools (F12)</li>
+            <li>Allez dans <strong>Application</strong> → <strong>Cookies</strong> → <code>playvalorant.com</code></li>
+            <li>Cherchez <code>__Secure-access_token</code> et copiez toute la valeur</li>
+          </ol>
+          <p class="help-alt-label">Ou via la console DevTools sur playvalorant.com :</p>
+          <pre class="help-code"><code>document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('__Secure-access_token'))?.split('=').slice(1).join('=')</code></pre>
+        </div>
+      </details>
+
+      <button :disabled="!tokenInput.trim()" @click="onSubmit">
+        Afficher ma boutique
+      </button>
+    </div>
+  </div>
+
+  <!-- ── LOADING (skeleton) ─────────────────────────────────── -->
+  <div v-else-if="view === 'loading'" class="shop-wrapper">
+    <div class="shop-meta skeleton-meta">
+      <div class="skeleton-line" style="width: 160px; height: 0.85rem;" />
+    </div>
+    <div class="skin-grid">
+      <div v-for="i in 4" :key="i" class="skin-card skin-card--skeleton">
+        <div class="skeleton-image" />
+        <div class="skin-info">
+          <div class="skeleton-line" style="width: 72%; height: 1rem;" />
+          <div class="skeleton-line" style="width: 38%; height: 0.85rem; margin-top: 0.35rem;" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SHOP ───────────────────────────────────────────────── -->
+  <div v-else class="shop-wrapper">
+    <div class="shop-meta">
+      <span class="shop-region">
+        <i class="mdi mdi-map-marker-outline" />
+        {{ currentRegionLabel() }}
+      </span>
+      <button class="reset-btn" @click="resetAuth">
+        <i class="mdi mdi-refresh" />
+        Changer de token
+      </button>
+    </div>
+
+    <div class="shop-timer">{{ formattedTime }}</div>
+
+    <div class="skin-grid">
+      <article
+        v-for="(skin, i) in skins"
+        :key="skin.id"
+        class="skin-card"
+        :style="{ '--delay': `${i * 110}ms` }"
+      >
+        <div class="skin-image-wrap">
+          <img :src="skin.icon" :alt="skin.name" class="skin-image" loading="lazy" />
+        </div>
+        <div class="skin-info">
+          <div class="skin-name">{{ skin.name }}</div>
+          <div class="skin-price">
+            <span class="vp-badge">{{ skin.cost.toLocaleString('fr-FR') }} VP</span>
+          </div>
+        </div>
+      </article>
+    </div>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+/* ── Layout ─────────────────────────────────────────────────────────────── */
+.form-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: calc(100vh - 56px - 52px);
+  padding: 2rem 1rem;
+}
+
+.shop-wrapper {
+  padding: 1.5rem;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* ── Auth card ───────────────────────────────────────────────────────────── */
+.auth-card {
+  width: 100%;
+  max-width: 520px;
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-card-border-color);
+  border-radius: 12px;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+}
+
+.auth-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-icon {
+  font-size: 2.25rem;
+  color: var(--pico-primary);
+  flex-shrink: 0;
+}
+
+.auth-title {
+  margin: 0;
+  font-size: 1.2rem;
+  line-height: 1.2;
+}
+
+.auth-subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+/* ── Error ───────────────────────────────────────────────────────────────── */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: color-mix(in srgb, #e53e3e 10%, transparent);
+  border: 1px solid color-mix(in srgb, #e53e3e 25%, transparent);
+  color: #e53e3e;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+/* ── Token input ─────────────────────────────────────────────────────────── */
+.token-input-wrap {
+  position: relative;
+
+  input {
+    padding-right: 2.75rem;
+    margin: 0;
+  }
+}
+
+.token-eye {
+  position: absolute;
+  top: 50%;
+  right: 0.6rem;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  padding: 0.25rem;
+  margin: 0;
+  cursor: pointer;
+  color: var(--pico-muted-color);
+  font-size: 1.1rem;
+  line-height: 1;
+  transition: color 0.15s ease;
+  width: auto;
+
+  &:hover {
+    color: var(--pico-color);
+    background: transparent;
+  }
+}
+
+/* ── Labels ──────────────────────────────────────────────────────────────── */
+.auth-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0;
+}
+
+/* ── Help ────────────────────────────────────────────────────────────────── */
+details a {
+  color: var(--pico-primary);
+  text-decoration: none;
+  transition: color 0.15s ease;
+
+  &:hover {
+    text-decoration: underline;
+  }
+}
+
+.help-content {
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.help-steps {
+  margin: 0;
+  padding-left: 1.2rem;
+  font-size: 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  color: var(--pico-muted-color);
+
+  code {
+    font-size: 0.8em;
+    background: var(--pico-code-background-color);
+    padding: 0.1em 0.35em;
+    border-radius: 4px;
+    color: var(--pico-code-color);
+  }
+}
+
+.help-alt-label {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--pico-muted-color);
+}
+
+.help-code {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  background: var(--pico-code-background-color);
+  border: 1px solid var(--pico-card-border-color);
+  border-radius: 6px;
+  font-size: 0.76rem;
+  overflow-x: auto;
+  white-space: pre;
+
+  code {
+    background: transparent;
+    padding: 0;
+    color: var(--pico-code-color);
+    font-size: inherit;
+  }
+}
+
+/* ── Shop meta bar ───────────────────────────────────────────────────────── */
+.shop-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  min-height: 2rem;
+}
+
+.skeleton-meta {
+  pointer-events: none;
+}
+
+.shop-region {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--pico-muted-color);
+}
+
+.reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  padding: 0.35rem 0.75rem;
+  background: transparent;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: 6px;
+  color: var(--pico-muted-color);
+  cursor: pointer;
+  width: auto;
+  transition: border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    border-color: var(--pico-primary);
+    color: var(--pico-primary);
+    background: transparent;
+  }
+}
+
+/* ── Timer ───────────────────────────────────────────────────────────────── */
+.shop-timer {
+  text-align: center;
+  font-size: 3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
+  color: var(--pico-primary);
+  margin-bottom: 2rem;
+}
+
+/* ── Skin grid ───────────────────────────────────────────────────────────── */
+.skin-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+/* ── Skin card ───────────────────────────────────────────────────────────── */
+.skin-card {
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-card-border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  transition: transform 0.28s ease, box-shadow 0.28s ease, border-color 0.28s ease;
+  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: var(--delay, 0ms);
+
+  &:hover {
+    transform: translateY(-7px);
+    border-color: color-mix(in srgb, var(--pico-primary) 45%, transparent);
+    box-shadow:
+      0 16px 40px rgba(0, 0, 0, 0.22),
+      0 0 0 1px color-mix(in srgb, var(--pico-primary) 18%, transparent);
+
+    .skin-image {
+      transform: scale(1.07);
+    }
+  }
+}
+
+@keyframes card-enter {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ── Skin image ──────────────────────────────────────────────────────────── */
+.skin-image-wrap {
+  background: #0d0d1a;
+  height: 210px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1.25rem;
+}
+
+.skin-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  transition: transform 0.32s ease;
+}
+
+/* ── Skin info ───────────────────────────────────────────────────────────── */
+.skin-info {
+  padding: 1rem 1.1rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.skin-name {
+  flex: 1;
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--pico-color);
+  line-height: 1.3;
+}
+
+.skin-price {
+  margin-top: auto;
+}
+
+.vp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.22rem 0.6rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, #ff4655 10%, transparent);
+  border: 1px solid color-mix(in srgb, #ff4655 28%, transparent);
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #ff4655;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+/* ── Skeleton ────────────────────────────────────────────────────────────── */
+.skin-card--skeleton {
+  animation: none;
+  pointer-events: none;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+%shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--pico-card-background-color) 0%,
+    var(--pico-muted-border-color) 50%,
+    var(--pico-card-background-color) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-image {
+  @extend %shimmer;
+  height: 210px;
+}
+
+.skeleton-line {
+  @extend %shimmer;
+  display: block;
+  border-radius: 6px;
+}
+</style>
