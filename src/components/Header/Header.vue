@@ -89,6 +89,9 @@ const handleLogout = async () => {
       <!-- Update button -->
       <UpdateButton />
 
+      <!-- Admin -->
+      <RouterLink v-if="auth.isAdmin" to="/admin" class="admin-btn">Admin</RouterLink>
+
       <!-- Theme color -->
       <div class="theme-accent">
         <ThemePaletteButton />
@@ -204,6 +207,25 @@ const handleLogout = async () => {
 
 .theme-accent :deep(.theme-button:hover) {
   color: var(--pico-primary-hover);
+}
+
+.admin-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 2.25rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  background: transparent;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+
+  &:hover { background: var(--pico-muted-background-color); }
 }
 
 .env-badge {

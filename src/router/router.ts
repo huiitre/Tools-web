@@ -16,6 +16,7 @@ import { useUIStore } from '@/stores/ui.store';
 import { routes as authRoutes } from '@/modules/Auth/auth.routes';
 import { routes as dofusRoutes } from '@/modules/Dofus/dofus.routes';
 import { routes as riotRoutes } from '@/modules/Riot/riot.routes';
+import { routes as adminRoutes } from '@/modules/Admin/admin.routes';
 
 const isElectron = navigator.userAgent.includes('Electron')
 
@@ -24,6 +25,7 @@ export const routes = [
   ...authRoutes,
   ...dofusRoutes,
   ...riotRoutes,
+  ...adminRoutes,
   {
     name: 'home',
     path: '/',
@@ -101,6 +103,11 @@ router.beforeEach(async (to) => {
   //* Route protégée sans utilisateur
   if (requireAuth && !auth.user) {
     return '/login';
+  }
+
+  //* Route admin sans rang suffisant
+  if (to.meta.requireAdmin && !auth.isAdmin) {
+    return '/';
   }
 
   //* Déjà connecté → pas d’accès à /login
