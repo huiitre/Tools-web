@@ -1,4 +1,5 @@
 import type { RiotRegion } from '@/modules/Riot/riot.store'
+import { clientV3 } from '@/services/axiosInstance'
 
 const VP_CURRENCY_ID = '85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741'
 const CLIENT_PLATFORM =
@@ -72,6 +73,25 @@ export async function fetchStorefront(
       cost: offer.Cost[VP_CURRENCY_ID] ?? 0,
     })),
     remainingSeconds: data.SkinsPanelLayout.SingleItemOffersRemainingDurationInSeconds ?? 0,
+  }
+}
+
+export function isAccessTokenExpired(accessToken: string): boolean {
+  try {
+    const payload = JSON.parse(atob(accessToken.split('.')[1]))
+    return payload.exp * 1_000 < Date.now()
+  } catch {
+    return true
+  }
+}
+
+export async function refreshToAccessToken(
+  refreshToken: string,
+): Promise<{ accessToken: string; refreshToken: string }> {
+  const { data } = await clientV3.post('/riot/valorant/refresh-token', { refreshToken })
+  return {
+    accessToken: data.accessToken,
+    refreshToken: data.refreshToken ?? refreshToken,
   }
 }
 

@@ -6,7 +6,8 @@ const STORAGE_KEY = 'riot.auth'
 export type RiotRegion = 'eu' | 'na' | 'ap' | 'kr' | 'br' | 'latam'
 
 interface RiotAuth {
-  accessToken: string
+  accessToken: string | null
+  refreshToken: string | null
   region: RiotRegion
 }
 
@@ -23,6 +24,7 @@ export const useRiotStore = defineStore('riot', () => {
   })()
 
   const accessToken = ref<string | null>(stored?.accessToken ?? null)
+  const refreshToken = ref<string | null>(stored?.refreshToken ?? null)
   const region = ref<RiotRegion>(stored?.region ?? 'eu')
 
   function setAuth(token: string, reg: RiotRegion) {
@@ -31,23 +33,35 @@ export const useRiotStore = defineStore('riot', () => {
     persist()
   }
 
+  function setAccessToken(token: string) {
+    accessToken.value = token
+    persist()
+  }
+
+  function setRefreshToken(token: string) {
+    refreshToken.value = token
+    persist()
+  }
+
   function setRegion(reg: RiotRegion) {
     region.value = reg
     persist()
   }
 
-  function clearAuth() {
+  function clearAll() {
     accessToken.value = null
+    refreshToken.value = null
     localStorage.removeItem(STORAGE_KEY)
   }
 
   function persist() {
     const data: RiotAuth = {
-      accessToken: accessToken.value!,
+      accessToken: accessToken.value,
+      refreshToken: refreshToken.value,
       region: region.value,
     }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   }
 
-  return { accessToken, region, setAuth, setRegion, clearAuth }
+  return { accessToken, refreshToken, region, setAuth, setAccessToken, setRefreshToken, setRegion, clearAll }
 })
