@@ -73,15 +73,49 @@ async function getShop(accessToken, entitlementToken, puuid) {
   return data;
 }
 
-async function getSkinNames(itemIds) {
+const SKIN_TYPE_ID = 'e7c63390-eda7-46e0-bb7a-a6abdacd2433';
+
+async function buildSkinMap() {
   const { data } = await axios.get('https://valorant-api.com/v1/weapons/skins?language=fr-FR');
-  const skinMap = {};
+  const map = {};
   for (const skin of data.data) {
-    skinMap[skin.uuid] = skin.displayName;
-    for (const level of skin.levels ?? []) skinMap[level.uuid] = skin.displayName;
-    for (const chroma of skin.chromas ?? []) skinMap[chroma.uuid] = skin.displayName;
+    map[skin.uuid] = skin.displayName;
+    for (const level of skin.levels ?? []) map[level.uuid] = skin.displayName;
+    for (const chroma of skin.chromas ?? []) map[chroma.uuid] = skin.displayName;
   }
+  return map;
+}
+
+function resolveSkinNames(skinMap, itemIds) {
   return itemIds.map(id => skinMap[id] ?? `Skin inconnu (${id.slice(0, 8)}...)`);
+}
+
+async function getBundles(featuredBundle, skinMap) {
+  const bundles = featuredBundle.Bundles ?? (featuredBundle.Bundle ? [featuredBundle.Bundle] : []);
+  const VP = '85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741';
+
+  return Promise.all(bundles.map(async (bundle) => {
+    const assetId = bundle.DataAssetID;
+    let name = `Pack inconnu (${assetId.slice(0, 8)}...)`;
+    try {
+      const { data } = await axios.get(`https://valorant-api.com/v1/bundles/${assetId}?language=fr-FR`);
+      name = data.data.displayName;
+    } catch {}
+
+    const baseCost = bundle.TotalBaseCost?.[VP] ?? 0;
+    const discountedCost = bundle.TotalDiscountedCost?.[VP] ?? baseCost;
+    const discount = bundle.TotalDiscountPercent ?? 0;
+    const remaining = bundle.DurationRemainingInSeconds ?? featuredBundle.BundleRemainingDurationInSeconds ?? 0;
+    const days = Math.floor(remaining / 86400);
+    const hours = Math.floor((remaining % 86400) / 3600);
+
+    const skinIds = (bundle.Items ?? [])
+      .filter(i => i.Item?.ItemTypeID === SKIN_TYPE_ID)
+      .map(i => i.Item.ItemID);
+    const skins = resolveSkinNames(skinMap, skinIds);
+
+    return { name, baseCost, discountedCost, discount, days, hours, skins };
+  }));
 }
 
 (async () => {
@@ -110,9 +144,11 @@ async function getSkinNames(itemIds) {
     console.log('🛒 Récupération du shop...\n');
     const shop = await getShop(accessToken, entitlementToken, puuid);
 
+    const skinMap = await buildSkinMap();
+
     const offers = shop.SkinsPanelLayout.SingleItemStoreOffers;
     const skinIds = offers.map(o => o.Rewards[0].ItemID);
-    const skinNames = await getSkinNames(skinIds);
+    const skinNames = resolveSkinNames(skinMap, skinIds);
 
     console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
     console.log('📅 SHOP QUOTIDIEN');
@@ -127,6 +163,29 @@ async function getSkinNames(itemIds) {
     const h = Math.floor(remaining / 3600);
     const m = Math.floor((remaining % 3600) / 60);
     console.log(`\n⏱️  Expire dans ${h}h ${m}min`);
+
+    if (shop.FeaturedBundle) {
+      const bundles = await getBundles(shop.FeaturedBundle, skinMap);
+
+      console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🎁 PACKS EN VENTE');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+      bundles.forEach(b => {
+        const priceStr = b.discount > 0
+          ? `${b.discountedCost} VP (au lieu de ${b.baseCost} VP, -${Math.round(b.discount * 100)}%)`
+          : `${b.discountedCost} VP`;
+        const timeStr = b.days > 0 ? `${b.days}j ${b.hours}h` : `${b.hours}h`;
+        console.log(`🎮 ${b.name}`);
+        console.log(`   💰 ${priceStr}`);
+        console.log(`   ⏱️  Expire dans ${timeStr}`);
+        if (b.skins.length) {
+          console.log(`   🔫 Skins inclus :`);
+          b.skins.forEach(s => console.log(`      · ${s}`));
+        }
+        console.log();
+      });
+    }
   } catch (error) {
     const detail = error.response
       ? `${error.response.status} — ${JSON.stringify(error.response.data)}`
