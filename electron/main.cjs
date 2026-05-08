@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, nativeImage } = require('electron')
+const { app, BrowserWindow, ipcMain, nativeImage, session } = require('electron')
 const { autoUpdater } = require('electron-updater')
 const path = require('path')
 const { createSwitcherWindow } = require('./windows/dofusSwitcher.cjs')
@@ -92,6 +92,20 @@ app.commandLine.appendSwitch('disable-features', 'ServiceWorker')
 
 app.whenReady().then(() => {
   logger.info('Main', 'App prête — enregistrement des IPC')
+
+  // Riot auth endpoint ne renvoie pas de headers CORS — on les injecte côté Electron
+  session.defaultSession.webRequest.onHeadersReceived(
+    { urls: ['https://auth.riotgames.com/*'] },
+    (details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          'Access-Control-Allow-Origin': ['*'],
+          'Access-Control-Allow-Headers': ['Content-Type'],
+        },
+      })
+    }
+  )
   const { registerSwitcherIpc, switcherService } = require('./ipc/switcher.ipc.cjs')
   registerLogsIpc()
   registerSwitcherIpc()

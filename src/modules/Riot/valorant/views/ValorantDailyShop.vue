@@ -7,10 +7,13 @@ import {
   fetchClientVersion,
   fetchStorefront,
   fetchSkinsMap,
+  refreshToAccessToken,
+  isAccessTokenExpired,
   type ShopSkin,
 } from '@/modules/Riot/valorant/fetch/valorantShop.fetch'
 
 type View = 'form' | 'loading' | 'shop'
+type AuthMode = 'access' | 'refresh'
 
 const REGIONS: { value: RiotRegion; label: string }[] = [
   { value: 'eu', label: 'EU — Europe' },
@@ -24,7 +27,11 @@ const REGIONS: { value: RiotRegion; label: string }[] = [
 const riotStore = useRiotStore()
 
 const view = ref<View>('form')
+const authMode = ref<AuthMode>('access')
 const skins = ref<ShopSkin[]>([])
+const currentSkinIds = ref<string[]>([])
+const cachedSkinsMap = ref<Record<string, any> | null>(null)
+const isRenewing = ref(false)
 const error = ref<string | null>(null)
 const tokenInput = ref('')
 const showToken = ref(false)
@@ -32,6 +39,7 @@ const selectedRegion = ref<RiotRegion>(riotStore.region)
 
 const remainingMs = ref(0)
 let timerInterval: ReturnType<typeof setInterval> | null = null
+let renewalActive = false
 
 const formattedTime = computed(() => {
   const total = Math.max(0, remainingMs.value)
@@ -41,13 +49,30 @@ const formattedTime = computed(() => {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
 })
 
+const tokenLabel = computed(() =>
+  authMode.value === 'access' ? 'Access Token' : 'Refresh Token'
+)
+
+const tokenPlaceholder = computed(() =>
+  authMode.value === 'access'
+    ? 'Collez votre __Secure-access_token ici...'
+    : 'Collez votre __Secure-refresh_token ici...'
+)
+
+const submitLabel = computed(() => 'Afficher ma boutique')
+
+const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
+
 function startTimer(seconds: number) {
   stopTimer()
   const expiresAt = Date.now() + seconds * 1_000
   remainingMs.value = expiresAt - Date.now()
   timerInterval = setInterval(() => {
     remainingMs.value = Math.max(0, expiresAt - Date.now())
-    if (remainingMs.value === 0) stopTimer()
+    if (remainingMs.value === 0) {
+      stopTimer()
+      startRenewal()
+    }
   }, 1_000)
 }
 
@@ -58,20 +83,88 @@ function stopTimer() {
   }
 }
 
-onBeforeUnmount(() => stopTimer())
+function stopRenewal() {
+  renewalActive = false
+  isRenewing.value = false
+}
 
-onMounted(() => {
-  const saved = riotStore.accessToken
-  if (saved) {
-    tokenInput.value = saved
-    loadShop(saved, riotStore.region)
+async function ensureAccessToken(): Promise<string | null> {
+  const current = riotStore.accessToken
+  if (current && !isAccessTokenExpired(current)) return current
+
+  if (riotStore.refreshToken) {
+    try {
+      const { accessToken, refreshToken: newRefresh } = await refreshToAccessToken(riotStore.refreshToken)
+      riotStore.setAccessToken(accessToken)
+      riotStore.setRefreshToken(newRefresh)
+      return accessToken
+    } catch {
+      riotStore.clearAll()
+      return null
+    }
   }
-})
 
-async function onSubmit() {
-  const token = tokenInput.value.trim()
-  if (!token) return
-  await loadShop(token, selectedRegion.value)
+  return null
+}
+
+async function fetchOffers(token: string, region: RiotRegion) {
+  const puuid = extractPuuid(token)
+  const [entitlementsToken, clientVersion] = await Promise.all([
+    fetchEntitlementToken(token),
+    fetchClientVersion(),
+  ])
+  return fetchStorefront(puuid, region, token, entitlementsToken, clientVersion)
+}
+
+async function startRenewal() {
+  if (renewalActive) return
+  renewalActive = true
+  isRenewing.value = true
+
+  const prevIds = currentSkinIds.value.join(',')
+  let attempts = 0
+
+  while (renewalActive && attempts < 30) {
+    await sleep(10_000)
+    if (!renewalActive) break
+
+    attempts++
+
+    const token = await ensureAccessToken()
+    if (!token) {
+      stopRenewal()
+      error.value = 'Session expirée, veuillez vous reconnecter'
+      view.value = 'form'
+      return
+    }
+
+    try {
+      const { offers, remainingSeconds } = await fetchOffers(token, riotStore.region)
+      const newIds = offers.map(o => o.id).join(',')
+
+      if (newIds !== prevIds && renewalActive) {
+        const map = cachedSkinsMap.value ?? await fetchSkinsMap()
+        cachedSkinsMap.value = map
+        skins.value = offers.map(({ id, cost }) => {
+          const skin = map[id]
+          return {
+            id,
+            name: skin?.displayName ?? 'Skin inconnu',
+            icon: skin?.levels?.[0]?.displayIcon ?? skin?.displayIcon ?? skin?.chromas?.[0]?.fullRender ?? '',
+            cost,
+          }
+        })
+        currentSkinIds.value = offers.map(o => o.id)
+        startTimer(remainingSeconds)
+        stopRenewal()
+        return
+      }
+    } catch {
+      // retry next iteration
+    }
+  }
+
+  if (renewalActive) stopRenewal()
 }
 
 async function loadShop(token: string, region: RiotRegion) {
@@ -79,44 +172,84 @@ async function loadShop(token: string, region: RiotRegion) {
   error.value = null
 
   try {
-    const puuid = extractPuuid(token)
-    const [entitlementsToken, clientVersion, skinsMap] = await Promise.all([
-      fetchEntitlementToken(token),
-      fetchClientVersion(),
+    const [{ offers, remainingSeconds }, skinsMap] = await Promise.all([
+      fetchOffers(token, region),
       fetchSkinsMap(),
     ])
-    const { offers, remainingSeconds } = await fetchStorefront(puuid, region, token, entitlementsToken, clientVersion)
 
+    cachedSkinsMap.value = skinsMap
     skins.value = offers.map(({ id, cost }) => {
       const skin = skinsMap[id]
       return {
         id,
         name: skin?.displayName ?? 'Skin inconnu',
-        icon:
-          skin?.levels?.[0]?.displayIcon ??
-          skin?.displayIcon ??
-          skin?.chromas?.[0]?.fullRender ??
-          '',
+        icon: skin?.levels?.[0]?.displayIcon ?? skin?.displayIcon ?? skin?.chromas?.[0]?.fullRender ?? '',
         cost,
       }
     })
+    currentSkinIds.value = offers.map(o => o.id)
 
     riotStore.setAuth(token, region)
     startTimer(remainingSeconds)
     view.value = 'shop'
   } catch (e: any) {
     error.value = e?.message ?? 'Erreur lors du chargement de la boutique'
-    riotStore.clearAuth()
+    riotStore.clearAll()
     tokenInput.value = ''
     view.value = 'form'
   }
 }
 
+onMounted(async () => {
+  if (riotStore.refreshToken) {
+    view.value = 'loading'
+    if (riotStore.accessToken && !isAccessTokenExpired(riotStore.accessToken)) {
+      await loadShop(riotStore.accessToken, riotStore.region)
+    } else {
+      const token = await ensureAccessToken()
+      if (token) {
+        await loadShop(token, riotStore.region)
+      } else {
+        error.value = 'Session expirée, veuillez vous reconnecter'
+        view.value = 'form'
+      }
+    }
+  } else if (riotStore.accessToken && !isAccessTokenExpired(riotStore.accessToken)) {
+    await loadShop(riotStore.accessToken, riotStore.region)
+  }
+})
+
+async function onSubmit() {
+  const token = tokenInput.value.trim()
+  if (!token) return
+
+  if (authMode.value === 'access') {
+    await loadShop(token, selectedRegion.value)
+  } else {
+    view.value = 'loading'
+    error.value = null
+    try {
+      const { accessToken, refreshToken: newRefresh } = await refreshToAccessToken(token)
+      riotStore.setRefreshToken(newRefresh)
+      riotStore.setRegion(selectedRegion.value)
+      await loadShop(accessToken, selectedRegion.value)
+    } catch (e: any) {
+      error.value = e?.message ?? 'Refresh token invalide ou expiré'
+      riotStore.clearAll()
+      tokenInput.value = ''
+      view.value = 'form'
+    }
+  }
+}
+
 function resetAuth() {
   stopTimer()
-  riotStore.clearAuth()
+  stopRenewal()
+  riotStore.clearAll()
   tokenInput.value = ''
   skins.value = []
+  currentSkinIds.value = []
+  cachedSkinsMap.value = null
   error.value = null
   selectedRegion.value = 'eu'
   view.value = 'form'
@@ -125,6 +258,11 @@ function resetAuth() {
 function currentRegionLabel() {
   return REGIONS.find(r => r.value === riotStore.region)?.label ?? riotStore.region.toUpperCase()
 }
+
+onBeforeUnmount(() => {
+  stopTimer()
+  stopRenewal()
+})
 </script>
 
 <template>
@@ -144,6 +282,21 @@ function currentRegionLabel() {
         {{ error }}
       </div>
 
+      <div class="auth-mode-switch">
+        <button
+          :class="['mode-btn', { active: authMode === 'access' }]"
+          @click="authMode = 'access'; tokenInput = ''"
+        >
+          Access Token
+        </button>
+        <button
+          :class="['mode-btn', { active: authMode === 'refresh' }]"
+          @click="authMode = 'refresh'; tokenInput = ''"
+        >
+          Refresh Token
+        </button>
+      </div>
+
       <label>
         Région
         <select v-model="selectedRegion">
@@ -152,12 +305,12 @@ function currentRegionLabel() {
       </label>
 
       <label>
-        Access Token
+        {{ tokenLabel }}
         <div class="token-input-wrap">
           <input
             :type="showToken ? 'text' : 'password'"
             v-model="tokenInput"
-            placeholder="Collez votre __Secure-access_token ici..."
+            :placeholder="tokenPlaceholder"
           />
           <button
             type="button"
@@ -170,22 +323,48 @@ function currentRegionLabel() {
         </div>
       </label>
 
+      <p v-if="authMode === 'refresh'" class="help-note">
+        Le refresh token dure plusieurs semaines — vous n'aurez plus besoin de le renouveler régulièrement.
+      </p>
+      <p v-else class="help-note">
+        L'access token expire après ~1h. Préférez le Refresh Token pour ne pas avoir à revenir ici régulièrement.
+      </p>
+
       <details>
         <summary>Comment récupérer mon token ?</summary>
         <div class="help-content">
-          <ol class="help-steps">
-            <li>Connectez-vous sur <a href="https://playvalorant.com" target="_blank" rel="noopener">playvalorant.com</a></li>
-            <li>Ouvrez les DevTools (F12)</li>
-            <li>Allez dans <strong>Application</strong> → <strong>Cookies</strong> → <code>playvalorant.com</code></li>
-            <li>Cherchez <code>__Secure-access_token</code> et copiez toute la valeur</li>
-          </ol>
-          <p class="help-alt-label">Ou via la console DevTools sur playvalorant.com :</p>
-          <pre class="help-code"><code>document.cookie.split(';').map(c=>c.trim()).find(c=>c.startsWith('__Secure-access_token'))?.split('=').slice(1).join('=')</code></pre>
+
+          <!-- Access token help -->
+          <template v-if="authMode === 'access'">
+            <ol class="help-steps">
+              <li>Connectez-vous sur <a href="https://playvalorant.com" target="_blank" rel="noopener">playvalorant.com</a></li>
+              <li>Ouvrez les DevTools (F12) → onglet <strong>Application</strong></li>
+              <li>Dans le panneau gauche : <strong>Cookies</strong> → <code>https://playvalorant.com</code></li>
+              <li>Cherchez <code>__Secure-access_token</code> et copiez la colonne <strong>Value</strong></li>
+            </ol>
+            <p class="help-note" style="background: transparent; border-color: transparent; color: var(--pico-muted-color);">
+              Ces cookies sont HttpOnly — non lisibles via la console JS, utilisez uniquement l'onglet Application.
+            </p>
+          </template>
+
+          <!-- Refresh token help -->
+          <template v-else>
+            <ol class="help-steps">
+              <li>Connectez-vous sur <a href="https://playvalorant.com" target="_blank" rel="noopener">playvalorant.com</a></li>
+              <li>Ouvrez les DevTools (F12) → onglet <strong>Application</strong></li>
+              <li>Dans le panneau gauche : <strong>Cookies</strong> → <code>https://playvalorant.com</code></li>
+              <li>Cherchez <code>__Secure-refresh_token</code> et copiez la colonne <strong>Value</strong></li>
+            </ol>
+            <p class="help-note" style="background: transparent; border-color: transparent; color: var(--pico-muted-color);">
+              Ces cookies sont HttpOnly — non lisibles via la console JS, utilisez uniquement l'onglet Application.
+            </p>
+          </template>
+
         </div>
       </details>
 
       <button :disabled="!tokenInput.trim()" @click="onSubmit">
-        Afficher ma boutique
+        {{ submitLabel }}
       </button>
     </div>
   </div>
@@ -194,6 +373,9 @@ function currentRegionLabel() {
   <div v-else-if="view === 'loading'" class="shop-wrapper">
     <div class="shop-meta skeleton-meta">
       <div class="skeleton-line" style="width: 160px; height: 0.85rem;" />
+    </div>
+    <div class="shop-timer skeleton-timer">
+      <div class="skeleton-line" style="width: 200px; height: 3rem; border-radius: 8px;" />
     </div>
     <div class="skin-grid">
       <div v-for="i in 4" :key="i" class="skin-card skin-card--skeleton">
@@ -219,7 +401,15 @@ function currentRegionLabel() {
       </button>
     </div>
 
-    <div class="shop-timer">{{ formattedTime }}</div>
+    <div class="shop-timer" :class="{ 'shop-timer--renewing': isRenewing }">
+      {{ formattedTime }}
+    </div>
+    <Transition name="fade">
+      <div v-if="isRenewing" class="renewing-hint">
+        <i class="mdi mdi-refresh renewing-spin" />
+        Vérification des nouveaux skins...
+      </div>
+    </Transition>
 
     <div class="skin-grid">
       <article
@@ -295,6 +485,40 @@ function currentRegionLabel() {
   color: var(--pico-muted-color);
 }
 
+/* ── Auth mode switch ────────────────────────────────────────────────────── */
+.auth-mode-switch {
+  display: flex;
+  background: var(--pico-muted-border-color);
+  border-radius: 8px;
+  padding: 3px;
+  gap: 3px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  color: var(--pico-muted-color);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+  margin: 0;
+  width: auto;
+
+  &.active {
+    background: var(--pico-card-background-color);
+    color: var(--pico-color);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
+  }
+
+  &:not(.active):hover {
+    color: var(--pico-color);
+    background: transparent;
+  }
+}
+
 /* ── Error ───────────────────────────────────────────────────────────────── */
 .error-banner {
   display: flex;
@@ -307,6 +531,14 @@ function currentRegionLabel() {
   color: #e53e3e;
   font-size: 0.875rem;
   line-height: 1.4;
+}
+
+/* ── Labels ──────────────────────────────────────────────────────────────── */
+.auth-card label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-bottom: 0;
 }
 
 /* ── Token input ─────────────────────────────────────────────────────────── */
@@ -341,14 +573,6 @@ function currentRegionLabel() {
   }
 }
 
-/* ── Labels ──────────────────────────────────────────────────────────────── */
-.auth-card label {
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-  margin-bottom: 0;
-}
-
 /* ── Help ────────────────────────────────────────────────────────────────── */
 details a {
   color: var(--pico-primary);
@@ -365,6 +589,16 @@ details a {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
+}
+
+.help-note {
+  margin: 0;
+  font-size: 0.82rem;
+  color: var(--pico-primary);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--pico-primary) 8%, transparent);
+  border: 1px solid color-mix(in srgb, var(--pico-primary) 20%, transparent);
 }
 
 .help-steps {
@@ -459,7 +693,53 @@ details a {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.05em;
   color: var(--pico-primary);
-  margin-bottom: 2rem;
+  margin-bottom: 0.75rem;
+  transition: opacity 0.3s ease;
+}
+
+.skeleton-timer {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+}
+
+.shop-timer--renewing {
+  opacity: 0.35;
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.6; }
+}
+
+.renewing-hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--pico-muted-color);
+  margin-bottom: 1.5rem;
+}
+
+.renewing-spin {
+  animation: spin 1.2s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 
 /* ── Skin grid ───────────────────────────────────────────────────────────── */
@@ -467,6 +747,7 @@ details a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
+  margin-top: 0.75rem;
 }
 
 /* ── Skin card ───────────────────────────────────────────────────────────── */
