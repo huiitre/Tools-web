@@ -18,6 +18,12 @@ export const routes = [
         component: () => import('@/modules/Admin/users/views/AdminUsers.vue'),
         meta: { label: 'Utilisateurs' },
       },
+      {
+        name: 'admin-modules',
+        path: 'modules',
+        component: () => import('@/modules/Admin/modules/views/AdminModules.vue'),
+        meta: { label: 'Modules' },
+      },
     ],
   },
 ]
