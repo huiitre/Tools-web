@@ -7,13 +7,32 @@ import {
   fetchClientVersion,
   fetchStorefront,
   fetchSkinsMap,
+  fetchBundleMeta,
   refreshToAccessToken,
   isAccessTokenExpired,
   type ShopSkin,
+  type RawBundle,
 } from '@/modules/Riot/valorant/fetch/valorantShop.fetch'
 
 type View = 'form' | 'loading' | 'shop'
 type AuthMode = 'access' | 'refresh'
+
+interface BundleSkin {
+  id: string
+  name: string
+  icon: string
+}
+
+interface ShopBundle {
+  uuid: string
+  name: string
+  displayIcon: string
+  baseCost: number
+  discountedCost: number
+  discountPercent: number
+  expiresAt: number
+  skins: BundleSkin[]
+}
 
 const REGIONS: { value: RiotRegion; label: string }[] = [
   { value: 'eu', label: 'EU — Europe' },
@@ -29,6 +48,7 @@ const riotStore = useRiotStore()
 const view = ref<View>('form')
 const authMode = ref<AuthMode>('access')
 const skins = ref<ShopSkin[]>([])
+const bundles = ref<ShopBundle[]>([])
 const currentSkinIds = ref<string[]>([])
 const cachedSkinsMap = ref<Record<string, any> | null>(null)
 const isRenewing = ref(false)
@@ -38,6 +58,7 @@ const showToken = ref(false)
 const selectedRegion = ref<RiotRegion>(riotStore.region)
 
 const remainingMs = ref(0)
+const bundleNow = ref(Date.now())
 let timerInterval: ReturnType<typeof setInterval> | null = null
 let renewalActive = false
 
@@ -63,12 +84,45 @@ const submitLabel = computed(() => 'Afficher ma boutique')
 
 const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
+async function buildBundles(rawBundles: RawBundle[], skinsMap: Record<string, any>): Promise<ShopBundle[]> {
+  return Promise.all(rawBundles.map(async (b) => {
+    const meta = await fetchBundleMeta(b.dataAssetId)
+    return {
+      uuid: b.dataAssetId,
+      name: meta.name,
+      displayIcon: meta.displayIcon,
+      baseCost: b.totalBaseCost,
+      discountedCost: b.totalDiscountedCost,
+      discountPercent: b.discountPercent,
+      expiresAt: Date.now() + b.remainingSeconds * 1_000,
+      skins: b.skinItemIds.map(id => {
+        const skin = skinsMap[id]
+        return {
+          id,
+          name: skin?.displayName ?? 'Skin inconnu',
+          icon: skin?.levels?.[0]?.displayIcon ?? skin?.displayIcon ?? skin?.chromas?.[0]?.fullRender ?? '',
+        }
+      }),
+    }
+  }))
+}
+
+function bundleFormattedTime(b: ShopBundle): string {
+  const ms = Math.max(0, b.expiresAt - bundleNow.value)
+  const d = Math.floor(ms / 86_400_000)
+  const h = Math.floor((ms % 86_400_000) / 3_600_000)
+  const m = Math.floor((ms % 3_600_000) / 60_000)
+  return d > 0 ? `${d}j ${h}h ${m}min` : `${h}h ${m}min`
+}
+
 function startTimer(seconds: number) {
   stopTimer()
   const expiresAt = Date.now() + seconds * 1_000
   remainingMs.value = expiresAt - Date.now()
   timerInterval = setInterval(() => {
-    remainingMs.value = Math.max(0, expiresAt - Date.now())
+    const now = Date.now()
+    remainingMs.value = Math.max(0, expiresAt - now)
+    bundleNow.value = now
     if (remainingMs.value === 0) {
       stopTimer()
       startRenewal()
@@ -139,7 +193,7 @@ async function startRenewal() {
     }
 
     try {
-      const { offers, remainingSeconds } = await fetchOffers(token, riotStore.region)
+      const { offers, remainingSeconds, bundles: rawBundles } = await fetchOffers(token, riotStore.region)
       const newIds = offers.map(o => o.id).join(',')
 
       if (newIds !== prevIds && renewalActive) {
@@ -155,6 +209,7 @@ async function startRenewal() {
           }
         })
         currentSkinIds.value = offers.map(o => o.id)
+        bundles.value = await buildBundles(rawBundles, map)
         startTimer(remainingSeconds)
         stopRenewal()
         return
@@ -172,7 +227,7 @@ async function loadShop(token: string, region: RiotRegion) {
   error.value = null
 
   try {
-    const [{ offers, remainingSeconds }, skinsMap] = await Promise.all([
+    const [{ offers, remainingSeconds, bundles: rawBundles }, skinsMap] = await Promise.all([
       fetchOffers(token, region),
       fetchSkinsMap(),
     ])
@@ -188,6 +243,7 @@ async function loadShop(token: string, region: RiotRegion) {
       }
     })
     currentSkinIds.value = offers.map(o => o.id)
+    bundles.value = await buildBundles(rawBundles, skinsMap)
 
     riotStore.setAuth(token, region)
     startTimer(remainingSeconds)
@@ -248,6 +304,7 @@ function resetAuth() {
   riotStore.clearAll()
   tokenInput.value = ''
   skins.value = []
+  bundles.value = []
   currentSkinIds.value = []
   cachedSkinsMap.value = null
   error.value = null
@@ -429,6 +486,46 @@ onBeforeUnmount(() => {
         </div>
       </article>
     </div>
+
+    <template v-if="bundles.length">
+      <div class="bundle-section-header">
+        <i class="mdi mdi-package-variant-closed" />
+        Pack{{ bundles.length > 1 ? 's' : '' }} en vente
+      </div>
+      <article v-for="b in bundles" :key="b.uuid" class="bundle-card">
+        <!-- Image pleine largeur -->
+        <div class="bundle-banner">
+          <img v-if="b.displayIcon" :src="b.displayIcon" :alt="b.name" loading="lazy" />
+          <div v-else class="bundle-banner-placeholder" />
+        </div>
+        <!-- Info -->
+        <div class="bundle-info-row">
+          <div class="bundle-info-left">
+            <div class="bundle-name">{{ b.name }}</div>
+            <div class="bundle-price-row">
+              <span class="vp-badge">{{ b.discountedCost.toLocaleString('fr-FR') }} VP</span>
+              <template v-if="b.discountPercent > 0">
+                <span class="bundle-original">{{ b.baseCost.toLocaleString('fr-FR') }} VP</span>
+                <span class="bundle-discount-badge">-{{ Math.round(b.discountPercent * 100) }}%</span>
+              </template>
+            </div>
+          </div>
+          <div class="bundle-timer-block">
+            <div class="bundle-countdown">{{ bundleFormattedTime(b) }}</div>
+            <div class="bundle-timer-label">restant</div>
+          </div>
+        </div>
+        <!-- Skins inclus -->
+        <div v-if="b.skins.length" class="bundle-skins-grid">
+          <div v-for="skin in b.skins" :key="skin.id" class="bundle-skin-item">
+            <div class="bundle-skin-img">
+              <img v-if="skin.icon" :src="skin.icon" :alt="skin.name" loading="lazy" />
+            </div>
+            <span class="bundle-skin-label">{{ skin.name }}</span>
+          </div>
+        </div>
+      </article>
+    </template>
   </div>
 </template>
 
@@ -870,5 +967,167 @@ details a {
   @extend %shimmer;
   display: block;
   border-radius: 6px;
+}
+
+/* ── Bundle section ──────────────────────────────────────────────────────── */
+.bundle-section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--pico-color);
+
+  .mdi { font-size: 1.15rem; color: var(--pico-primary); }
+}
+
+.bundle-card {
+  background: var(--pico-card-background-color);
+  border: 1px solid var(--pico-card-border-color);
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 1.25rem;
+  animation: card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 80ms;
+}
+
+/* Bannière pleine largeur */
+.bundle-banner {
+  width: 100%;
+  background: #0d0d1a;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.bundle-banner-placeholder {
+  width: 100%;
+  height: 100%;
+}
+
+/* Ligne info : nom+prix à gauche, timer à droite */
+.bundle-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--pico-card-border-color);
+
+  @media (max-width: 520px) {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.6rem;
+  }
+}
+
+.bundle-info-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.bundle-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--pico-color);
+  line-height: 1.3;
+}
+
+.bundle-price-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.bundle-original {
+  font-size: 0.82rem;
+  color: var(--pico-muted-color);
+  text-decoration: line-through;
+}
+
+.bundle-discount-badge {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #22c55e;
+  background: color-mix(in srgb, #22c55e 12%, transparent);
+  border: 1px solid color-mix(in srgb, #22c55e 28%, transparent);
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+}
+
+/* Timer bundle */
+.bundle-timer-block {
+  text-align: right;
+  flex-shrink: 0;
+
+  @media (max-width: 520px) { text-align: left; }
+}
+
+.bundle-countdown {
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--pico-primary);
+  line-height: 1.2;
+}
+
+.bundle-timer-label {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+  margin-top: 0.1rem;
+}
+
+/* Grille de skins */
+.bundle-skins-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--pico-card-border-color);
+}
+
+.bundle-skin-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.85rem 0.75rem;
+  border-right: 1px solid var(--pico-card-border-color);
+  border-bottom: 1px solid var(--pico-card-border-color);
+
+  &:last-child { border-right: none; }
+}
+
+.bundle-skin-img {
+  width: 100%;
+  height: 72px;
+  background: #0d0d1a;
+  border-radius: 8px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.bundle-skin-label {
+  font-size: 0.75rem;
+  color: var(--pico-muted-color);
+  text-align: center;
+  line-height: 1.3;
 }
 </style>

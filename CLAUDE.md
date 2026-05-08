@@ -127,23 +127,34 @@ Panel réservé aux utilisateurs avec le rôle ADMIN, TECH ou OWNER.
 
 ```
 src/modules/Admin/
-├── admin.routes.ts         # /admin → redirect dashboard, children: dashboard + users
-├── Admin.vue               # Layout avec AdminNav
+├── admin.routes.ts              # /admin → redirect dashboard, children: dashboard + users + modules
+├── Admin.vue                    # Layout avec AdminNav
 ├── shared/components/
-│   └── AdminNav.vue        # Génère les onglets depuis route.matched (même pattern que RiotNav)
+│   └── AdminNav.vue             # Génère les onglets depuis route.matched (même pattern que RiotNav)
 ├── dashboard/
 │   ├── fetch/adminStats.fetch.ts   # GET /api/v3/admin/stats
 │   ├── types/adminStats.types.ts
 │   └── views/AdminDashboard.vue    # KPIs (totalUsers, activeUsers, newUsersThisWeek) + modules
-└── users/
-    ├── fetch/adminUsers.fetch.ts   # GET /api/v3/admin/users, GET /api/v3/admin/roles, PUT /api/v3/admin/users/:id/role
-    ├── types/adminUsers.types.ts   # AdminUser, AdminRole, AdminUserColumn, AdminSortDir, AdminPageSize
-    ├── store/adminUsers.store.ts   # Tri/filtre/pagination côté client
-    ├── views/AdminUsers.vue
+├── users/
+│   ├── fetch/adminUsers.fetch.ts   # GET /users, GET /roles, PUT /users/:id/role
+│   ├── types/adminUsers.types.ts   # AdminUser, AdminRole, AdminUserColumn, AdminSortDir, AdminPageSize
+│   ├── store/adminUsers.store.ts   # Tri/filtre/pagination côté client
+│   ├── views/AdminUsers.vue
+│   └── components/
+│       ├── AdminUsersHeader.vue    # En-têtes colonnes triables
+│       ├── AdminUsersRow.vue       # Ligne utilisateur avec popup édition de rôle inline
+│       └── AdminUsersToolbar.vue   # Recherche, sélecteur colonnes, pagination
+└── modules/
+    ├── fetch/adminModules.fetch.ts  # GET/POST /modules, PUT /modules/:id, GET /modules/:id/users,
+    │                                # POST /modules/:id/users/:userId, PUT /modules/:id/users/:userId/role,
+    │                                # DELETE /modules/:id/users/:userId
+    ├── types/adminModules.types.ts  # AdminModule, ModuleUser, CreateModulePayload, UpdateModulePayload
+    ├── store/adminModules.store.ts  # modules, roles, allUsers, moduleUsers, memberIds, availableUsers
+    ├── views/AdminModules.vue       # Split view sidebar + DnD panneau détail
     └── components/
-        ├── AdminUsersHeader.vue    # En-têtes colonnes triables (même pattern catalogue Dofus)
-        ├── AdminUsersRow.vue       # Ligne utilisateur avec popup édition de rôle
-        └── AdminUsersToolbar.vue   # Recherche, sélecteur colonnes, pagination
+        ├── ModuleCreateModal.vue    # Formulaire création module (émet created)
+        ├── ModuleEditModal.vue      # Formulaire édition module (prop module, émet updated)
+        └── ModuleRolePickerModal.vue # Sélection de rôle après drop (props user+roles, émet confirm)
 ```
 
 ### Tableau utilisateurs — points clés
@@ -153,6 +164,14 @@ src/modules/Admin/
 - **Rôles** : l'API retourne `roles: number[]` (IDs). Le store charge `GET /roles` séparément. La résolution se fait dans `resolvedRoles` computed : `store.roles.find(sr => sr.code === String(r) || String(sr.id) === String(r))`. La hiérarchie `['READ_ONLY', 'USER', 'MODERATOR', 'ADMIN', 'TECH', 'OWNER']` détermine le badge affiché.
 - **Édition de rôle** : clic sur la colonne rôle → popup inline (même pattern que les tags workshop). `store.editingRoleUserId` gère "un seul popup ouvert à la fois". Clic sur un rôle → `PUT /users/:id/role` + mise à jour locale + fermeture.
 - **`updateUserRoleLocally`** : stocke le `roleCode` (string) dans `user.roles` après un changement.
+
+### Page Modules — points clés
+
+- **Layout** : sidebar 240px (liste des modules avec point actif/inactif + bouton Créer) + panneau droit (header module + zone DnD).
+- **Drag & drop natif HTML5** : deux colonnes "Disponibles" / "Membres". Glisser vers Membres → `ModuleRolePickerModal` pour choisir le rôle → `POST /modules/:id/users/:userId` puis `PUT /modules/:id/users/:userId/role { roleId }`. Glisser vers Disponibles → `DELETE /modules/:id/users/:userId`.
+- **Rôle inline** : clic sur le badge rôle d'un membre → popup avec la liste des rôles → `PUT /modules/:id/users/:userId/role { roleId }`. Fermeture au clic extérieur et au scroll (listeners sur `document`).
+- **Types** : `ModuleUser` → `{ userId: number, name, email, roleId, roleCode }`. Les utilisateurs disponibles viennent de `GET /users` typé `AdminUser[]` (plus de `SimpleUser` — type supprimé). `AdminRole` importé depuis `users/types/adminUsers.types.ts`.
+- **Création module** : `POST /modules` — toujours créé inactif. Activer via `PUT /modules/:id { active: true }`. Le code doit correspondre à l'enum `ModuleCode` côté Java.
 
 ## Module Riot (`src/modules/Riot/`)
 
@@ -167,6 +186,31 @@ const { data } = await clientV3.post('/riot/valorant/refresh-token', { refreshTo
 ```
 
 Les cookies `__Secure-access_token` et `__Secure-refresh_token` sont **HttpOnly** — non lisibles via `document.cookie`. L'aide utilisateur dans `ValorantDailyShop.vue` dirige vers DevTools → Application → Cookies.
+
+### Valorant — boutique : packs en vente (FeaturedBundle)
+
+`fetchStorefront` extrait également le `FeaturedBundle` de la réponse Riot et retourne `bundles: RawBundle[]` dans `StorefrontResult`.
+
+```typescript
+// valorantShop.fetch.ts
+export interface RawBundle {
+  dataAssetId: string      // UUID du pack (DataAssetID côté Riot)
+  skinItemIds: string[]    // IDs des items de type SKIN (filtrés par SKIN_TYPE_ID)
+  totalBaseCost: number    // prix de base en VP
+  totalDiscountedCost: number
+  discountPercent: number  // décimal (ex: 0.33 = -33%)
+  remainingSeconds: number
+}
+```
+
+- `SKIN_TYPE_ID = 'e7c63390-eda7-46e0-bb7a-a6abdacd2433'` — ItemTypeID pour les niveaux de skins dans les items du bundle.
+- `fetchBundleMeta(uuid)` → `{ name, displayIcon }` via `https://valorant-api.com/v1/bundles/{uuid}?language=fr-FR`. Priorité : `displayIcon2` (panoramique) > `displayIcon` > `verticalPromoImage`.
+
+Dans `ValorantDailyShop.vue` :
+- `bundles = ref<ShopBundle[]>([])` — chaque entrée contient `expiresAt: number` (timestamp calculé au chargement).
+- `bundleNow = ref(Date.now())` mis à jour toutes les secondes dans le même `timerInterval` que le compte à rebours des skins → timer live des packs.
+- `buildBundles(rawBundles, skinsMap)` résout les noms/images des skins via la `cachedSkinsMap` déjà chargée.
+- Layout de la carte pack : bannière pleine largeur (220px, `object-fit: cover`), ligne info (nom + prix à gauche, timer "Xj Xh Xmin" à droite), grille de skins en bas (conteneurs 72px de haut, `object-fit: contain`).
 
 ## `useImagePreview` — taille minimale
 

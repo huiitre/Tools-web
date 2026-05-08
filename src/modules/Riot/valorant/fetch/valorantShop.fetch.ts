@@ -2,6 +2,7 @@ import type { RiotRegion } from '@/modules/Riot/riot.store'
 import { clientV3 } from '@/services/axiosInstance'
 
 const VP_CURRENCY_ID = '85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741'
+const SKIN_TYPE_ID = 'e7c63390-eda7-46e0-bb7a-a6abdacd2433'
 const CLIENT_PLATFORM =
   'ew0KCSJwbGF0Zm9ybVR5cGUiOiAiUEMiLA0KCSJwbGF0Zm9ybU9TIjogIldpbmRvd3MiLA0KCSJwbGF0Zm9ybU9TVmVyc2lvbiI6ICIxMC4wLjE5MDQyLjEuMjU2LjY0Yml0IiwNCgkicGxhdGZvcm1DaGlwc2V0IjogIlVua25vd24iDQp9'
 
@@ -43,9 +44,19 @@ export async function fetchClientVersion(): Promise<string> {
   return data.data.riotClientVersion
 }
 
+export interface RawBundle {
+  dataAssetId: string
+  skinItemIds: string[]
+  totalBaseCost: number
+  totalDiscountedCost: number
+  discountPercent: number
+  remainingSeconds: number
+}
+
 export interface StorefrontResult {
   offers: Array<{ id: string; cost: number }>
   remainingSeconds: number
+  bundles: RawBundle[]
 }
 
 export async function fetchStorefront(
@@ -67,12 +78,49 @@ export async function fetchStorefront(
   })
   if (!res.ok) throw new Error(`Erreur boutique Valorant (${res.status})`)
   const data = await res.json()
+
+  const bundles: RawBundle[] = []
+  const featured = data.FeaturedBundle
+  if (featured) {
+    const rawBundles: any[] = featured.Bundles ?? (featured.Bundle ? [featured.Bundle] : [])
+    for (const b of rawBundles) {
+      const remaining = b.DurationRemainingInSeconds ?? featured.BundleRemainingDurationInSeconds ?? 0
+      const skinIds: string[] = (b.Items ?? [])
+        .filter((i: any) => i.Item?.ItemTypeID === SKIN_TYPE_ID)
+        .map((i: any) => i.Item.ItemID as string)
+      bundles.push({
+        dataAssetId: b.DataAssetID,
+        skinItemIds: skinIds,
+        totalBaseCost: b.TotalBaseCost?.[VP_CURRENCY_ID] ?? 0,
+        totalDiscountedCost: b.TotalDiscountedCost?.[VP_CURRENCY_ID] ?? b.TotalBaseCost?.[VP_CURRENCY_ID] ?? 0,
+        discountPercent: b.TotalDiscountPercent ?? 0,
+        remainingSeconds: remaining,
+      })
+    }
+  }
+
   return {
     offers: data.SkinsPanelLayout.SingleItemStoreOffers.map((offer: any) => ({
       id: offer.Rewards[0].ItemID,
       cost: offer.Cost[VP_CURRENCY_ID] ?? 0,
     })),
     remainingSeconds: data.SkinsPanelLayout.SingleItemOffersRemainingDurationInSeconds ?? 0,
+    bundles,
+  }
+}
+
+export async function fetchBundleMeta(uuid: string): Promise<{ name: string; displayIcon: string }> {
+  try {
+    const res = await fetch(`https://valorant-api.com/v1/bundles/${uuid}?language=fr-FR`)
+    if (!res.ok) return { name: 'Pack inconnu', displayIcon: '' }
+    const json = await res.json()
+    const d = json.data
+    return {
+      name: d?.displayName ?? 'Pack inconnu',
+      displayIcon: d?.displayIcon2 ?? d?.displayIcon ?? d?.verticalPromoImage ?? '',
+    }
+  } catch {
+    return { name: 'Pack inconnu', displayIcon: '' }
   }
 }
 
