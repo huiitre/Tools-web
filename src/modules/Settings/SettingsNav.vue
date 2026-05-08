@@ -2,177 +2,157 @@
 export type SettingsSection =
   | 'account-profile'
   | 'account-security'
-  | 'account-providers'
-  | 'prefs-general'
-  | 'prefs-appearance'
-  | 'prefs-notifications'
-  | 'prefs-config'
   | 'module-dofus'
-  | 'module-todolist'
 
-defineProps<{
-  currentSection: SettingsSection
-}>()
+defineProps<{ currentSection: SettingsSection }>()
 
-const emit = defineEmits<{
-  (e: 'select', section: SettingsSection): void
-}>()
-
-const goTo = (section: SettingsSection) => {
-  emit('select', section)
-}
+const emit = defineEmits<{ (e: 'select', section: SettingsSection): void }>()
 </script>
 
 <template>
-  <!-- MOBILE NAV : ACCORDÉON -->
+  <!-- MOBILE -->
   <nav class="settings-nav-mobile mobile-only">
     <details>
       <summary>Navigation</summary>
 
       <div class="nav-group">
-        <strong>Compte</strong>
+        <span class="nav-label">Compte</span>
         <ul>
-          <li @click="goTo('account-profile')">Profil</li>
-          <li @click="goTo('account-security')">Sécurité</li>
-          <li @click="goTo('account-providers')">Comptes liés</li>
+          <li :class="{ active: currentSection === 'account-profile' }" @click="emit('select', 'account-profile')">Profil</li>
+          <li :class="{ active: currentSection === 'account-security' }" @click="emit('select', 'account-security')">Sécurité</li>
         </ul>
       </div>
 
       <div class="nav-group">
-        <strong>Préférences</strong>
+        <span class="nav-label">Modules</span>
         <ul>
-          <li @click="goTo('prefs-general')">Général</li>
-          <li @click="goTo('prefs-appearance')">Apparence</li>
-          <li @click="goTo('prefs-notifications')">Notifications</li>
-          <li @click="goTo('prefs-config')">Paramètres</li>
-        </ul>
-      </div>
-
-      <div class="nav-group">
-        <strong>Modules</strong>
-        <ul>
-          <li @click="goTo('module-dofus')">Dofus</li>
+          <li :class="{ active: currentSection === 'module-dofus' }" @click="emit('select', 'module-dofus')">Dofus</li>
         </ul>
       </div>
     </details>
   </nav>
 
-  <!-- DESKTOP SIDEBAR (INCHANGÉ LOGIQUEMENT) -->
+  <!-- DESKTOP -->
   <aside class="settings-sidebar desktop-only">
     <nav>
-      <h4>Compte</h4>
-      <ul>
-        <li :class="{ active: currentSection === 'account-profile' }" @click="goTo('account-profile')">Profil</li>
-        <li :class="{ active: currentSection === 'account-security' }" @click="goTo('account-security')">Sécurité</li>
-        <li :class="{ active: currentSection === 'account-providers' }" @click="goTo('account-providers')">Comptes liés</li>
-      </ul>
+      <div class="nav-section">
+        <span class="nav-label">Compte</span>
+        <ul>
+          <li :class="{ active: currentSection === 'account-profile' }" @click="emit('select', 'account-profile')">Profil</li>
+          <li :class="{ active: currentSection === 'account-security' }" @click="emit('select', 'account-security')">Sécurité</li>
+        </ul>
+      </div>
 
-      <h4>Préférences</h4>
-      <ul>
-        <li :class="{ active: currentSection === 'prefs-general' }" @click="goTo('prefs-general')">Général</li>
-        <li :class="{ active: currentSection === 'prefs-appearance' }" @click="goTo('prefs-appearance')">Apparence</li>
-        <li :class="{ active: currentSection === 'prefs-notifications' }" @click="goTo('prefs-notifications')">Notifications</li>
-        <li :class="{ active: currentSection === 'prefs-config' }" @click="goTo('prefs-config')">Paramètres</li>
-      </ul>
-
-      <h4>Modules</h4>
-      <ul>
-        <li :class="{ active: currentSection === 'module-dofus' }" @click="goTo('module-dofus')">Dofus</li>
-      </ul>
+      <div class="nav-section">
+        <span class="nav-label">Modules</span>
+        <ul>
+          <li :class="{ active: currentSection === 'module-dofus' }" @click="emit('select', 'module-dofus')">Dofus</li>
+        </ul>
+      </div>
     </nav>
   </aside>
 </template>
 
-<style scoped>
-/* ===== MOBILE ===== */
+<style lang="scss" scoped>
+$sidebar-width: 220px;
+$label-size: 0.72rem;
+$item-size: 0.875rem;
 
-.settings-nav-mobile {
-  margin-top: 1rem;
-}
-
-.settings-nav-mobile details {
-  border: 1px solid var(--pico-muted-border-color, #ddd);
-  border-radius: 6px;
-  padding: 0.5rem 0.75rem;
-  background: var(--pico-background-color);
-}
-
-.settings-nav-mobile summary {
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.nav-group {
-  margin-top: 0.75rem;
-}
-
-.nav-group strong {
-  display: block;
-  font-size: 0.85rem;
-  opacity: 0.7;
-  margin-bottom: 0.25rem;
-}
-
-.nav-group ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+/* ── Desktop sidebar ───────────────────────────────────────────── */
+.settings-sidebar {
+  width: $sidebar-width;
+  min-height: 100%;
+  border-right: 1px solid var(--pico-card-border-color);
+  padding: 1.5rem 0;
   display: flex;
   flex-direction: column;
 }
 
-.nav-group li {
-  padding: 0.3rem 0;
-  cursor: pointer;
+nav {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0;
+  overflow: visible;
 }
 
-/* ===== DESKTOP ===== */
-
-.settings-sidebar {
-  width: 260px;
-  border-right: 1px solid #ddd;
-  padding: 1rem;
+.nav-section {
+  padding: 0 1rem 1rem;
 }
 
-nav h4 {
-  margin-top: 1.25rem;
-  font-size: 0.85rem;
+.nav-label {
+  display: block;
+  font-size: $label-size;
+  font-weight: 600;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
+  color: var(--pico-muted-color);
+  padding: 0.75rem 0.5rem 0.4rem;
 }
 
-nav ul {
+ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
-nav li {
-  padding: 0.35rem 0;
+li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  font-size: $item-size;
   cursor: pointer;
-  margin-left: 1rem;
+  color: var(--pico-color);
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: var(--pico-card-background-color);
+  }
+
+  &.active {
+    background: color-mix(in srgb, var(--pico-primary) 12%, transparent);
+    color: var(--pico-primary);
+    font-weight: 600;
+  }
 }
 
-nav li.active {
-  font-weight: 600;
-  color: var(--pico-primary);
+/* ── Mobile nav ────────────────────────────────────────────────── */
+.settings-nav-mobile {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--pico-card-border-color);
+
+  details summary {
+    font-size: $item-size;
+    font-weight: 600;
+    cursor: pointer;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
 }
 
-/* ===== RESPONSIVE ===== */
+.nav-group {
+  padding: 0.5rem 0;
 
-.mobile-only {
-  display: none;
+  &:not(:last-child) {
+    border-bottom: 1px solid var(--pico-card-border-color);
+  }
+
+  ul {
+    display: flex;
+    flex-direction: column;
+  }
 }
 
-.desktop-only {
-  display: block;
-}
+/* ── Responsive ────────────────────────────────────────────────── */
+.mobile-only { display: none; }
+.desktop-only { display: flex; }
 
 @media (max-width: 768px) {
-  .desktop-only {
-    display: none;
-  }
-
-  .mobile-only {
-    display: block;
-  }
+  .desktop-only { display: none; }
+  .mobile-only { display: block; }
 }
 </style>

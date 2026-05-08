@@ -54,6 +54,12 @@ export const useAuthStore = defineStore('auth', {
   getters: {
     isAuthenticated: (s) => !!s.user,
 
+    isAdmin: (s): boolean => {
+      if (!s.user) return false
+      const adminLevel: string[] = [RoleCode.ADMIN, RoleCode.TECH, RoleCode.OWNER]
+      return s.user.roles.some(r => r.active && adminLevel.includes(r.code))
+    },
+
     hasModuleAccess: (s) => (moduleCode: string, minRole: RoleCode) => {
 
       if (!s.user) return false

@@ -1,13 +1,19 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useImagePreview } from '@/composables/useImagePreview'
 
-const { isOpen, imageUrl, imageAlt, close } = useImagePreview()
+const { isOpen, imageUrl, imageAlt, imageMinSize, close } = useImagePreview()
+
+const imgStyle = computed(() => imageMinSize.value
+  ? { minWidth: `${imageMinSize.value}px`, minHeight: `${imageMinSize.value}px` }
+  : {}
+)
 </script>
 
 <template>
   <Teleport to="body">
     <div v-if="isOpen" class="image-preview-overlay" @click="close">
-      <img :src="imageUrl" :alt="imageAlt" class="image-preview-content" />
+      <img :src="imageUrl" :alt="imageAlt" :style="imgStyle" class="image-preview-content" />
     </div>
   </Teleport>
 </template>

@@ -35,6 +35,8 @@ Feature modules live under `src/modules/`. Each module owns its routes (`*.route
 
 - **Auth** — login/logout, token storage, refresh flow
 - **Dofus** — game tooling with sub-features: `hdv/` (market sniffer), `bankmanagement/` (bank sniffer), `workshop/`, `catalogue/`, `almanax/`, `switcher/` (account switcher)
+- **Riot** — intégration Riot Games, sous-module `valorant/` (daily shop)
+- **Admin** — panel d'administration réservé aux rôles ADMIN / TECH / OWNER
 - **Settings**, **Downloads**, **Legal**
 
 ### Mécanisme de Mise à jour (`src/services/update/`)
@@ -110,6 +112,71 @@ Four Axios instances are exported from `src/services/axiosInstance.ts`: `axiosV1
 - `.env` — `VITE_TOOLS_API_BASE_URL`, Google/GitHub OAuth client IDs
 - `package.json` `build` key — electron-builder config (Linux AppImage, Windows NSIS)
 - `.releaserc.json` — semantic-release for CI versioning
+
+## Module Admin (`src/modules/Admin/`)
+
+Panel réservé aux utilisateurs avec le rôle ADMIN, TECH ou OWNER.
+
+### Accès et sécurité
+
+- Bouton "Admin" dans le header principal (`src/components/Header/Header.vue`), visible uniquement si `auth.isAdmin`. Stylisé comme les boutons de thème (hauteur 2.25rem, border, sans icône).
+- Route guard dans `src/router/router.ts` : `if (to.meta.requireAdmin && !auth.isAdmin) return '/'`
+- `isAdmin` getter dans `src/modules/Auth/auth.store.ts` : vérifie que l'utilisateur possède un rôle actif parmi `ADMIN`, `TECH`, `OWNER`.
+
+### Structure
+
+```
+src/modules/Admin/
+├── admin.routes.ts         # /admin → redirect dashboard, children: dashboard + users
+├── Admin.vue               # Layout avec AdminNav
+├── shared/components/
+│   └── AdminNav.vue        # Génère les onglets depuis route.matched (même pattern que RiotNav)
+├── dashboard/
+│   ├── fetch/adminStats.fetch.ts   # GET /api/v3/admin/stats
+│   ├── types/adminStats.types.ts
+│   └── views/AdminDashboard.vue    # KPIs (totalUsers, activeUsers, newUsersThisWeek) + modules
+└── users/
+    ├── fetch/adminUsers.fetch.ts   # GET /api/v3/admin/users, GET /api/v3/admin/roles, PUT /api/v3/admin/users/:id/role
+    ├── types/adminUsers.types.ts   # AdminUser, AdminRole, AdminUserColumn, AdminSortDir, AdminPageSize
+    ├── store/adminUsers.store.ts   # Tri/filtre/pagination côté client
+    ├── views/AdminUsers.vue
+    └── components/
+        ├── AdminUsersHeader.vue    # En-têtes colonnes triables (même pattern catalogue Dofus)
+        ├── AdminUsersRow.vue       # Ligne utilisateur avec popup édition de rôle
+        └── AdminUsersToolbar.vue   # Recherche, sélecteur colonnes, pagination
+```
+
+### Tableau utilisateurs — points clés
+
+- **Colonnes** : avatar (fixe 36px), nom, email, rôle, statut, date d'inscription. Même système de `gridTemplateColumns` dynamique que le catalogue Dofus.
+- **Avatar** : affiche `<img>` si `avatarUrl` existe et se charge correctement, sinon initiales (2 premières lettres du nom). `@error` sur l'img bascule sur les initiales (URLs Google qui expirent). Clic → `openPreview(url, name, 200)` (min 200px dans la modale).
+- **Rôles** : l'API retourne `roles: number[]` (IDs). Le store charge `GET /roles` séparément. La résolution se fait dans `resolvedRoles` computed : `store.roles.find(sr => sr.code === String(r) || String(sr.id) === String(r))`. La hiérarchie `['READ_ONLY', 'USER', 'MODERATOR', 'ADMIN', 'TECH', 'OWNER']` détermine le badge affiché.
+- **Édition de rôle** : clic sur la colonne rôle → popup inline (même pattern que les tags workshop). `store.editingRoleUserId` gère "un seul popup ouvert à la fois". Clic sur un rôle → `PUT /users/:id/role` + mise à jour locale + fermeture.
+- **`updateUserRoleLocally`** : stocke le `roleCode` (string) dans `user.roles` après un changement.
+
+## Module Riot (`src/modules/Riot/`)
+
+### Valorant — refresh token
+
+Le refresh token ne peut pas être échangé directement depuis le navigateur (CORS bloqué par Riot). Le flux passe par le backend :
+
+```typescript
+// valorantShop.fetch.ts
+const { data } = await clientV3.post('/riot/valorant/refresh-token', { refreshToken })
+// Réponse : { accessToken: string, refreshToken: string } (camelCase)
+```
+
+Les cookies `__Secure-access_token` et `__Secure-refresh_token` sont **HttpOnly** — non lisibles via `document.cookie`. L'aide utilisateur dans `ValorantDailyShop.vue` dirige vers DevTools → Application → Cookies.
+
+## `useImagePreview` — taille minimale
+
+`src/composables/useImagePreview.ts` accepte un troisième paramètre optionnel `minSize` (en px) :
+
+```typescript
+open(url: string, alt?: string, minSize?: number)
+```
+
+`ImagePreviewModal.vue` applique `min-width` et `min-height` en style inline quand `minSize` est défini. Utilisé pour les avatars admin (200px) sans impacter les autres usages (images catalogue Dofus en taille naturelle).
 
 ## Workshop — Liens et popup de visualisation
 
