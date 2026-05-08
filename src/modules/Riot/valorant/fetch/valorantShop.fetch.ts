@@ -46,7 +46,7 @@ export async function fetchClientVersion(): Promise<string> {
 
 export interface RawBundle {
   dataAssetId: string
-  skinItemIds: string[]
+  items: Array<{ itemId: string; cost: number }>
   totalBaseCost: number
   totalDiscountedCost: number
   discountPercent: number
@@ -85,12 +85,16 @@ export async function fetchStorefront(
     const rawBundles: any[] = featured.Bundles ?? (featured.Bundle ? [featured.Bundle] : [])
     for (const b of rawBundles) {
       const remaining = b.DurationRemainingInSeconds ?? featured.BundleRemainingDurationInSeconds ?? 0
-      const skinIds: string[] = (b.Items ?? [])
+      const items = (b.Items ?? [])
         .filter((i: any) => i.Item?.ItemTypeID === SKIN_TYPE_ID)
-        .map((i: any) => i.Item.ItemID as string)
+        .map((i: any) => ({
+          itemId: i.Item.ItemID as string,
+          cost: i.DiscountedPrice ?? i.BasePrice ?? 0,
+        }))
+
       bundles.push({
         dataAssetId: b.DataAssetID,
-        skinItemIds: skinIds,
+        items,
         totalBaseCost: b.TotalBaseCost?.[VP_CURRENCY_ID] ?? 0,
         totalDiscountedCost: b.TotalDiscountedCost?.[VP_CURRENCY_ID] ?? b.TotalBaseCost?.[VP_CURRENCY_ID] ?? 0,
         discountPercent: b.TotalDiscountPercent ?? 0,

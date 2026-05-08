@@ -187,30 +187,47 @@ const { data } = await clientV3.post('/riot/valorant/refresh-token', { refreshTo
 
 Les cookies `__Secure-access_token` et `__Secure-refresh_token` sont **HttpOnly** — non lisibles via `document.cookie`. L'aide utilisateur dans `ValorantDailyShop.vue` dirige vers DevTools → Application → Cookies.
 
+### Valorant — architecture des fichiers
+
+Le sous-module Valorant est découpé en 4 fichiers :
+
+```
+valorant/
+  fetch/valorantShop.fetch.ts         # fonctions HTTP + interfaces RawBundle, ShopSkin, etc.
+  composables/useValorantShop.ts      # toute la logique métier (état, timers, renewal, auth)
+  components/ValorantAuthCard.vue     # formulaire auth (state interne : authMode, tokenInput…)
+  components/ValorantBundleCard.vue   # carte pack (props: bundle, now)
+  views/ValorantDailyShop.vue         # orchestrateur ~160 lignes (branche composable + composants)
+```
+
+Types exportés depuis `useValorantShop.ts` : `View`, `AuthMode`, `BundleSkin`, `ShopBundle`, `REGIONS`.
+
+`ValorantAuthCard` gère tout son état de formulaire en interne (authMode, tokenInput, showToken, selectedRegion) et émet `submit({ token, region, mode })`. L'orchestrateur appelle simplement `handleSubmit(token, region, mode)` du composable.
+
+`ValorantBundleCard` reçoit `bundle: ShopBundle` + `now: number` (valeur de `bundleNow` passée chaque seconde depuis le composable) et calcule le timer live en interne.
+
 ### Valorant — boutique : packs en vente (FeaturedBundle)
 
-`fetchStorefront` extrait également le `FeaturedBundle` de la réponse Riot et retourne `bundles: RawBundle[]` dans `StorefrontResult`.
+`fetchStorefront` extrait le `FeaturedBundle` de la réponse Riot et retourne `bundles: RawBundle[]` dans `StorefrontResult`.
 
 ```typescript
 // valorantShop.fetch.ts
 export interface RawBundle {
-  dataAssetId: string      // UUID du pack (DataAssetID côté Riot)
-  skinItemIds: string[]    // IDs des items de type SKIN (filtrés par SKIN_TYPE_ID)
-  totalBaseCost: number    // prix de base en VP
+  dataAssetId: string
+  items: Array<{ itemId: string; cost: number }>  // skins filtrés par SKIN_TYPE_ID, avec prix unitaire
+  totalBaseCost: number
   totalDiscountedCost: number
-  discountPercent: number  // décimal (ex: 0.33 = -33%)
+  discountPercent: number  // décimal (0.33 = -33%)
   remainingSeconds: number
 }
 ```
 
 - `SKIN_TYPE_ID = 'e7c63390-eda7-46e0-bb7a-a6abdacd2433'` — ItemTypeID pour les niveaux de skins dans les items du bundle.
-- `fetchBundleMeta(uuid)` → `{ name, displayIcon }` via `https://valorant-api.com/v1/bundles/{uuid}?language=fr-FR`. Priorité : `displayIcon2` (panoramique) > `displayIcon` > `verticalPromoImage`.
-
-Dans `ValorantDailyShop.vue` :
-- `bundles = ref<ShopBundle[]>([])` — chaque entrée contient `expiresAt: number` (timestamp calculé au chargement).
-- `bundleNow = ref(Date.now())` mis à jour toutes les secondes dans le même `timerInterval` que le compte à rebours des skins → timer live des packs.
-- `buildBundles(rawBundles, skinsMap)` résout les noms/images des skins via la `cachedSkinsMap` déjà chargée.
-- Layout de la carte pack : bannière pleine largeur (220px, `object-fit: cover`), ligne info (nom + prix à gauche, timer "Xj Xh Xmin" à droite), grille de skins en bas (conteneurs 72px de haut, `object-fit: contain`).
+- `fetchBundleMeta(uuid)` → `{ name, displayIcon }` — priorité : `displayIcon2` (panoramique) > `displayIcon` > `verticalPromoImage`.
+- `BundleSkin.cost` permet d'afficher le prix individuel de chaque skin dans le pack (badge "OFFERT" si `cost === 0`).
+- `bundleNow = ref(Date.now())` mis à jour chaque seconde dans le même `timerInterval` que le compte à rebours des skins → timer live des packs sans interval dédié.
+- `useImagePreview` est utilisé sur les images de skins (boutique) et sur la bannière + miniatures des packs (clic → modale).
+- Layout carte pack : bannière pleine largeur (`height: auto`, `object-fit: contain`), ligne info (nom + prix/remise à gauche, timer "Xj Xh Xmin" à droite), grille skins en bas (conteneurs 72px, `object-fit: contain`). Badge vert "OFFERT" pour `cost = 0`.
 
 ## `useImagePreview` — taille minimale
 
