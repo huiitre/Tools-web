@@ -488,7 +488,7 @@ onUnmounted(() => {
 /* ── Back to Top ───────────────────────────────────────────────────────── */
 .back-to-top {
   position: fixed;
-  bottom: 2rem;
+  bottom: 6rem;
   right: 2rem;
   width: 3rem;
   height: 3rem;
