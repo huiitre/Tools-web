@@ -84,8 +84,8 @@ onBeforeUnmount(() => {
 
     <section class="dofus-content">
       <router-view v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
-          <component :is="Component" :key="dofusStore.renderKey" />
+        <Transition name="dofus-page" mode="out-in">
+          <component :is="Component" />
         </Transition>
       </router-view>
     </section>
@@ -94,17 +94,17 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 /* Transitions */
-.page-enter-active,
-.page-leave-active {
+.dofus-page-enter-active,
+.dofus-page-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.page-enter-from {
+.dofus-page-enter-from {
   opacity: 0;
   transform: translateY(6px);
 }
 
-.page-leave-to {
+.dofus-page-leave-to {
   opacity: 0;
   transform: translateY(-6px);
 }
