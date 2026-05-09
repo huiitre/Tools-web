@@ -153,3 +153,17 @@ export async function fetchSkinByLevelId(levelUuid: string): Promise<{ name: str
     return { name: 'Skin inconnu', icon: '' }
   }
 }
+
+export interface ValorantWeapon {
+  id: number
+  assetId: string
+  name: string
+  category: string
+  defaultSkinAssetId: string
+  displayIconUrl: string | null
+}
+
+export async function fetchWeapons(): Promise<ValorantWeapon[]> {
+  const { data } = await clientV3.get<ValorantWeapon[]>('/riot/valorant/weapons')
+  return data
+}

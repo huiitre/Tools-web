@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, watch, onBeforeUnmount } from 'vue'
 import { useImagePreview } from '@/composables/useImagePreview'
 
 const { isOpen, imageUrl, imageAlt, imageMinSize, close } = useImagePreview()
@@ -8,6 +8,18 @@ const imgStyle = computed(() => imageMinSize.value
   ? { minWidth: `${imageMinSize.value}px`, minHeight: `${imageMinSize.value}px` }
   : {}
 )
+
+watch(isOpen, (value) => {
+  if (value) {
+    window.addEventListener('scroll', close, { passive: true })
+  } else {
+    window.removeEventListener('scroll', close)
+  }
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('scroll', close)
+})
 </script>
 
 <template>
