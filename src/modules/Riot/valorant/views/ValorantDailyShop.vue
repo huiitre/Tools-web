@@ -13,92 +13,98 @@ const { open: openImagePreview } = useImagePreview()
 </script>
 
 <template>
-  <!-- ── FORM ───────────────────────────────────────────────── -->
-  <div v-if="view === 'form'" class="form-wrapper">
-    <ValorantAuthCard
-      :error="error"
-      :regions="REGIONS"
-      @submit="({ token, region, mode }) => handleSubmit(token, region, mode)"
-    />
-  </div>
+  <div class="valorant-shop-view">
+    <!-- ── FORM ───────────────────────────────────────────────── -->
+    <div v-if="view === 'form'" class="form-wrapper">
+      <ValorantAuthCard
+        :error="error"
+        :regions="REGIONS"
+        @submit="({ token, region, mode }) => handleSubmit(token, region, mode)"
+      />
+    </div>
 
-  <!-- ── LOADING (skeleton) ─────────────────────────────────── -->
-  <div v-else-if="view === 'loading'" class="shop-wrapper">
-    <div class="shop-meta skeleton-meta">
-      <div class="skeleton-line" style="width: 160px; height: 0.85rem;" />
-    </div>
-    <div class="shop-timer skeleton-timer">
-      <div class="skeleton-line" style="width: 200px; height: 3rem; border-radius: 8px;" />
-    </div>
-    <div class="skin-grid">
-      <div v-for="i in 4" :key="i" class="skin-card skin-card--skeleton">
-        <div class="skeleton-image" />
-        <div class="skin-info">
-          <div class="skeleton-line" style="width: 72%; height: 1rem;" />
-          <div class="skeleton-line" style="width: 38%; height: 0.85rem; margin-top: 0.35rem;" />
-        </div>
+    <!-- ── LOADING (skeleton) ─────────────────────────────────── -->
+    <div v-else-if="view === 'loading'" class="shop-wrapper">
+      <div class="shop-meta skeleton-meta">
+        <div class="skeleton-line" style="width: 160px; height: 0.85rem;" />
       </div>
-    </div>
-  </div>
-
-  <!-- ── SHOP ───────────────────────────────────────────────── -->
-  <div v-else class="shop-wrapper">
-    <div class="shop-meta">
-      <span class="shop-region">
-        <i class="mdi mdi-map-marker-outline" />
-        {{ currentRegionLabel() }}
-      </span>
-      <button class="reset-btn" @click="reset">
-        <i class="mdi mdi-refresh" />
-        Changer de token
-      </button>
-    </div>
-
-    <div class="shop-timer" :class="{ 'shop-timer--renewing': isRenewing }">
-      {{ formattedTime }}
-    </div>
-    <Transition name="fade">
-      <div v-if="isRenewing" class="renewing-hint">
-        <i class="mdi mdi-refresh renewing-spin" />
-        Vérification des nouveaux skins...
+      <div class="shop-timer skeleton-timer">
+        <div class="skeleton-line" style="width: 200px; height: 3rem; border-radius: 8px;" />
       </div>
-    </Transition>
-
-    <div class="skin-grid">
-      <article
-        v-for="(skin, i) in skins"
-        :key="skin.id"
-        class="skin-card"
-        :style="{ '--delay': `${i * 110}ms` }"
-      >
-        <div class="skin-image-wrap" @click="skin.icon && openImagePreview(skin.icon, skin.name)">
-          <img :src="skin.icon" :alt="skin.name" class="skin-image" loading="lazy" />
-        </div>
-        <div class="skin-info">
-          <div class="skin-name">{{ skin.name }}</div>
-          <div class="skin-price">
-            <span class="vp-badge">{{ skin.cost.toLocaleString('fr-FR') }} VP</span>
+      <div class="skin-grid">
+        <div v-for="i in 4" :key="i" class="skin-card skin-card--skeleton">
+          <div class="skeleton-image" />
+          <div class="skin-info">
+            <div class="skeleton-line" style="width: 72%; height: 1rem;" />
+            <div class="skeleton-line" style="width: 38%; height: 0.85rem; margin-top: 0.35rem;" />
           </div>
         </div>
-      </article>
+      </div>
     </div>
 
-    <template v-if="bundles.length">
-      <div class="bundle-section-header">
-        <i class="mdi mdi-package-variant-closed" />
-        Pack{{ bundles.length > 1 ? 's' : '' }} en vente
+    <!-- ── SHOP ───────────────────────────────────────────────── -->
+    <div v-else class="shop-wrapper">
+      <div class="shop-meta">
+        <span class="shop-region">
+          <i class="mdi mdi-map-marker-outline" />
+          {{ currentRegionLabel() }}
+        </span>
+        <button class="reset-btn" @click="reset">
+          <i class="mdi mdi-refresh" />
+          Changer de token
+        </button>
       </div>
-      <ValorantBundleCard
-        v-for="b in bundles"
-        :key="b.uuid"
-        :bundle="b"
-        :now="bundleNow"
-      />
-    </template>
+
+      <div class="shop-timer" :class="{ 'shop-timer--renewing': isRenewing }">
+        {{ formattedTime }}
+      </div>
+      <Transition name="fade">
+        <div v-if="isRenewing" class="renewing-hint">
+          <i class="mdi mdi-refresh renewing-spin" />
+          Vérification des nouveaux skins...
+        </div>
+      </Transition>
+
+      <div class="skin-grid">
+        <article
+          v-for="(skin, i) in skins"
+          :key="skin.id"
+          class="skin-card"
+          :style="{ '--delay': `${i * 110}ms` }"
+        >
+          <div class="skin-image-wrap" @click="skin.icon && openImagePreview(skin.icon, skin.name)">
+            <img :src="skin.icon" :alt="skin.name" class="skin-image" loading="lazy" />
+          </div>
+          <div class="skin-info">
+            <div class="skin-name">{{ skin.name }}</div>
+            <div class="skin-price">
+              <span class="vp-badge">{{ skin.cost.toLocaleString('fr-FR') }} VP</span>
+            </div>
+          </div>
+        </article>
+      </div>
+
+      <template v-if="bundles.length">
+        <div class="bundle-section-header">
+          <i class="mdi mdi-package-variant-closed" />
+          Pack{{ bundles.length > 1 ? 's' : '' }} en vente
+        </div>
+        <ValorantBundleCard
+          v-for="b in bundles"
+          :key="b.uuid"
+          :bundle="b"
+          :now="bundleNow"
+        />
+      </template>
+    </div>
   </div>
 </template>
 
 <style lang="scss" scoped>
+.valorant-shop-view {
+  width: 100%;
+}
+
 .form-wrapper {
   display: flex;
   justify-content: center;
@@ -333,6 +339,9 @@ const { open: openImagePreview } = useImagePreview()
   font-weight: 700;
   color: var(--pico-color);
 
-  .mdi { font-size: 1.15rem; color: var(--pico-primary); }
+  .mdi {
+    font-size: 1.15rem;
+    color: var(--pico-primary);
+  }
 }
 </style>

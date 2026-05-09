@@ -206,6 +206,22 @@ Types exportés depuis `useValorantShop.ts` : `View`, `AuthMode`, `BundleSkin`, 
 
 `ValorantBundleCard` reçoit `bundle: ShopBundle` + `now: number` (valeur de `bundleNow` passée chaque seconde depuis le composable) et calcule le timer live en interne.
 
+### Valorant — suppression de valorant-api.com
+
+**valorant-api.com est entièrement supprimé du frontend.** Tous les appels passent désormais par le backend (`clientV3`) :
+
+| Ancienne fonction | Nouvelle source |
+|---|---|
+| `fetchClientVersion()` | `GET /riot/valorant/version` → `data.riotClientVersion` |
+| `fetchSkinsMap()` | `fetchSkinByLevelId(uuid)` → `GET /riot/valorant/skins/by-level/{uuid}` → `{ name: data.name, icon: data.iconUrl }` |
+| `fetchBundleMeta(uuid)` | `GET /riot/valorant/bundles/by-asset/{uuid}` → `{ name: data.name, displayIcon: data.bannerUrl }` |
+
+**Point critique — UUIDs de levels :** le storefront Riot retourne des **UUIDs de levels** (pas de skins racines) dans les offres quotidiennes et les items de bundle. `SKIN_TYPE_ID = 'e7c63390-eda7-46e0-bb7a-a6abdacd2433'` est l'ItemTypeID `EquippableSkinLevel`. Le backend expose `GET /riot/valorant/skins/by-level/{levelUuid}` pour faire le pont.
+
+**Table DB `valorant_skin_levels` :** `id BIGSERIAL, skin_id BIGINT FK (→ valorant_weapon_skins, CASCADE), asset_id UUID UNIQUE, level_index INT, name VARCHAR, level_item VARCHAR, display_icon_url TEXT, streamed_video_url TEXT, created_at, updated_at`. Index sur `skin_id` (PostgreSQL ne le crée pas automatiquement sur les FK).
+
+**Réponse `GET /riot/valorant/skins` :** inclut un tableau `levels[]` embarqué : `{ assetId, levelIndex, displayIconUrl, streamedVideoUrl }`.
+
 ### Valorant — boutique : packs en vente (FeaturedBundle)
 
 `fetchStorefront` extrait le `FeaturedBundle` de la réponse Riot et retourne `bundles: RawBundle[]` dans `StorefrontResult`.
@@ -222,12 +238,11 @@ export interface RawBundle {
 }
 ```
 
-- `SKIN_TYPE_ID = 'e7c63390-eda7-46e0-bb7a-a6abdacd2433'` — ItemTypeID pour les niveaux de skins dans les items du bundle.
-- `fetchBundleMeta(uuid)` → `{ name, displayIcon }` — priorité : `displayIcon2` (panoramique) > `displayIcon` > `verticalPromoImage`.
 - `BundleSkin.cost` permet d'afficher le prix individuel de chaque skin dans le pack (badge "OFFERT" si `cost === 0`).
 - `bundleNow = ref(Date.now())` mis à jour chaque seconde dans le même `timerInterval` que le compte à rebours des skins → timer live des packs sans interval dédié.
 - `useImagePreview` est utilisé sur les images de skins (boutique) et sur la bannière + miniatures des packs (clic → modale).
 - Layout carte pack : bannière pleine largeur (`height: auto`, `object-fit: contain`), ligne info (nom + prix/remise à gauche, timer "Xj Xh Xmin" à droite), grille skins en bas (conteneurs 72px, `object-fit: contain`). Badge vert "OFFERT" pour `cost = 0`.
+- `buildBundles(rawBundles)` résout bundle meta + skins en parallèle via `Promise.all` — plus de `skinsMap` passé en paramètre. `cachedSkinsMap` supprimé du composable.
 
 ## `useImagePreview` — taille minimale
 

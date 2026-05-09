@@ -8,7 +8,7 @@ import AdminNav from '@/modules/Admin/shared/components/AdminNav.vue'
 
     <section class="admin-content">
       <router-view v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
+        <Transition name="admin-page" mode="out-in">
           <component :is="Component" />
         </Transition>
       </router-view>
@@ -17,17 +17,17 @@ import AdminNav from '@/modules/Admin/shared/components/AdminNav.vue'
 </template>
 
 <style lang="scss" scoped>
-.page-enter-active,
-.page-leave-active {
+.admin-page-enter-active,
+.admin-page-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.page-enter-from {
+.admin-page-enter-from {
   opacity: 0;
   transform: translateY(6px);
 }
 
-.page-leave-to {
+.admin-page-leave-to {
   opacity: 0;
   transform: translateY(-6px);
 }

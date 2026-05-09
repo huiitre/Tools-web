@@ -7,4 +7,12 @@ export const valorantRoutes = [
       label: 'Valorant Shop',
     },
   },
+  {
+    name: 'riot-valorant-skins',
+    path: 'valorant-skins',
+    component: () => import('@/modules/Riot/valorant/views/ValorantSkinCatalog.vue'),
+    meta: {
+      label: 'Valorant Skins',
+    },
+  },
 ]

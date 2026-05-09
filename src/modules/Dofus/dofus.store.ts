@@ -1,7 +1,6 @@
 import { GameServer, GameVersion } from '@/modules/Dofus/game/types/game.types';
 import { defineStore } from 'pinia';
 import { useItemPrices } from '@/modules/Dofus/almanax/composables/useItemPrices';
-import { useAlmanaxStore } from '@/modules/Dofus/almanax/almanax.store';
 
 /* ======================
    TYPES
@@ -12,7 +11,6 @@ type DofusState = {
   currentGameVersionId: number | null;
   gameServers: GameServer[];
   currentGameServerId: number | null;
-  renderKey: number;
   switcherOpen: boolean;
 };
 
@@ -26,7 +24,6 @@ export const useDofusStore = defineStore('dofus', {
     currentGameVersionId: null,
     gameServers: [],
     currentGameServerId: null,
-    renderKey: 0,
     switcherOpen: false,
   }),
 
@@ -58,7 +55,6 @@ export const useDofusStore = defineStore('dofus', {
     setCurrentGameServer(id: number) {
       this.currentGameServerId = id;
       localStorage.setItem('dofus.gameServerId', String(id));
-      this.renderKey++;
 
       useItemPrices().refresh();
     },

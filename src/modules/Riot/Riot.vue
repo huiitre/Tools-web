@@ -8,7 +8,7 @@ import RiotNav from '@/modules/Riot/shared/components/RiotNav.vue'
 
     <section class="riot-content">
       <router-view v-slot="{ Component }">
-        <Transition name="page" mode="out-in">
+        <Transition name="riot-page" mode="out-in">
           <component :is="Component" />
         </Transition>
       </router-view>
@@ -17,17 +17,17 @@ import RiotNav from '@/modules/Riot/shared/components/RiotNav.vue'
 </template>
 
 <style lang="scss" scoped>
-.page-enter-active,
-.page-leave-active {
+.riot-page-enter-active,
+.riot-page-leave-active {
   transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-.page-enter-from {
+.riot-page-enter-from {
   opacity: 0;
   transform: translateY(6px);
 }
 
-.page-leave-to {
+.riot-page-leave-to {
   opacity: 0;
   transform: translateY(-6px);
 }
