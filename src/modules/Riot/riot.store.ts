@@ -11,6 +11,11 @@ interface RiotAuth {
   region: RiotRegion
 }
 
+export interface UserSkinData {
+  skinId: number
+  addedAt: string
+}
+
 export const useRiotStore = defineStore('riot', () => {
   const stored = (() => {
     try {
@@ -26,6 +31,10 @@ export const useRiotStore = defineStore('riot', () => {
   const accessToken = ref<string | null>(stored?.accessToken ?? null)
   const refreshToken = ref<string | null>(stored?.refreshToken ?? null)
   const region = ref<RiotRegion>(stored?.region ?? 'eu')
+
+  // User Skins & Watchlist state
+  const ownedSkins = ref<UserSkinData[]>([])
+  const watchedSkins = ref<UserSkinData[]>([])
 
   function setAuth(token: string, reg: RiotRegion) {
     accessToken.value = token
@@ -63,5 +72,78 @@ export const useRiotStore = defineStore('riot', () => {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
   }
 
-  return { accessToken, refreshToken, region, setAuth, setAccessToken, setRefreshToken, setRegion, clearAll }
+  /* =========================
+     MY SKINS (OWNED)
+  ========================= */
+
+  function setOwnedSkins(skins: UserSkinData[]) {
+    ownedSkins.value = skins
+  }
+
+  function isSkinOwned(id: number) {
+    return ownedSkins.value.some(s => s.skinId === id)
+  }
+
+  function getOwnedAddedAt(id: number) {
+    return ownedSkins.value.find(s => s.skinId === id)?.addedAt ?? null
+  }
+
+  function toggleOwnedLocally(id: number, active: boolean) {
+    if (active) {
+      if (!isSkinOwned(id)) {
+        ownedSkins.value.push({ skinId: id, addedAt: new Date().toISOString() })
+      }
+      removeFromWatchlistLocally(id)
+    } else {
+      ownedSkins.value = ownedSkins.value.filter(s => s.skinId !== id)
+    }
+  }
+
+  /* =========================
+     WATCHLIST
+  ========================= */
+
+  function setWatchedSkins(skins: UserSkinData[]) {
+    watchedSkins.value = skins
+  }
+
+  function isSkinWatched(id: number) {
+    return watchedSkins.value.some(s => s.skinId === id)
+  }
+
+  function getWatchedAddedAt(id: number) {
+    return watchedSkins.value.find(s => s.skinId === id)?.addedAt ?? null
+  }
+
+  function addToWatchlistLocally(id: number) {
+    if (!isSkinWatched(id)) {
+      watchedSkins.value.push({ skinId: id, addedAt: new Date().toISOString() })
+    }
+  }
+
+  function removeFromWatchlistLocally(id: number) {
+    watchedSkins.value = watchedSkins.value.filter(s => s.skinId !== id)
+  }
+
+  return {
+    accessToken,
+    refreshToken,
+    region,
+    ownedSkins,
+    watchedSkins,
+    setAuth,
+    setAccessToken,
+    setRefreshToken,
+    setRegion,
+    clearAll,
+    setOwnedSkins,
+    isSkinOwned,
+    getOwnedAddedAt,
+    toggleOwnedLocally,
+    setWatchedSkins,
+    isSkinWatched,
+    getWatchedAddedAt,
+    addToWatchlistLocally,
+    removeFromWatchlistLocally,
+  }
 })

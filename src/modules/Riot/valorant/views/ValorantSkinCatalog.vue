@@ -2,8 +2,12 @@
 import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue'
 import { clientV3 } from '@/services/axiosInstance'
 import { useImagePreview } from '@/composables/useImagePreview'
-import { fetchWeapons, type ValorantWeapon } from '../fetch/valorantShop.fetch'
+import { fetchWeapons, type ValorantWeapon } from '@/modules/Riot/valorant/fetch/valorantShop.fetch'
+import { fetchMySkins, fetchWatchlist } from '@/modules/Riot/valorant/fetch/valorantUserSkins.fetch'
+import { useRiotStore } from '@/modules/Riot/riot.store'
 import ValorantSkinCard from '../components/ValorantSkinCard.vue'
+
+const STORAGE_KEY_FILTERS = 'riot.valorant.catalog.filters'
 
 interface ValorantSkinLevel {
   assetId: string
@@ -23,9 +27,11 @@ interface ValorantSkin {
   levels: ValorantSkinLevel[]
 }
 
-type SortBy = 'name' | 'id'
+type FilterState = 'all' | 'owned' | 'watched' | 'unowned'
+type SortBy = 'name' | 'id' | 'addedAt'
 type SortDir = 'asc' | 'desc'
 
+const riotStore = useRiotStore()
 const skins = ref<ValorantSkin[]>([])
 const weapons = ref<ValorantWeapon[]>([])
 const loading = ref(true)
@@ -34,6 +40,7 @@ const error = ref<string | null>(null)
 // Filters & Sort
 const q = ref('')
 const weaponId = ref<number | null>(null)
+const stateFilter = ref<FilterState>('all')
 const sortBy = ref<SortBy>('name')
 const sortDir = ref<SortDir>('asc')
 
@@ -62,6 +69,15 @@ const filteredSkins = computed(() => {
     result = result.filter(s => s.weaponId === weaponId.value)
   }
 
+  // State Filter
+  if (stateFilter.value === 'owned') {
+    result = result.filter(s => riotStore.isSkinOwned(s.id))
+  } else if (stateFilter.value === 'watched') {
+    result = result.filter(s => riotStore.isSkinWatched(s.id))
+  } else if (stateFilter.value === 'unowned') {
+    result = result.filter(s => !riotStore.isSkinOwned(s.id))
+  }
+
   // Sort
   result.sort((a, b) => {
     let valA: string | number = ''
@@ -70,9 +86,15 @@ const filteredSkins = computed(() => {
     if (sortBy.value === 'name') {
       valA = a.name.toLowerCase()
       valB = b.name.toLowerCase()
-    } else {
+    } else if (sortBy.value === 'id') {
       valA = a.id
       valB = b.id
+    } else if (sortBy.value === 'addedAt') {
+      // Get the most relevant date (owned preferred over watched)
+      const dateA = riotStore.getOwnedAddedAt(a.id) ?? riotStore.getWatchedAddedAt(a.id) ?? '0'
+      const dateB = riotStore.getOwnedAddedAt(b.id) ?? riotStore.getWatchedAddedAt(b.id) ?? '0'
+      valA = dateA
+      valB = dateB
     }
 
     if (valA < valB) return sortDir.value === 'asc' ? -1 : 1
@@ -98,11 +120,46 @@ function handleScroll() {
   showBackToTop.value = window.scrollY > 600
 }
 
+function clearFilters() {
+  q.value = ''
+  weaponId.value = null
+  stateFilter.value = 'all'
+  sortBy.value = 'name'
+  sortDir.value = 'asc'
+  localStorage.removeItem(STORAGE_KEY_FILTERS)
+}
+
 // Reset limit on filter/sort change
-watch([q, weaponId, sortBy, sortDir], () => {
+watch([q, weaponId, stateFilter, sortBy, sortDir], () => {
   limit.value = PAGE_SIZE
   scrollToTop()
 })
+
+// Persist filters to localStorage
+watch([weaponId, stateFilter, sortBy, sortDir], () => {
+  const data = {
+    weaponId: weaponId.value,
+    stateFilter: stateFilter.value,
+    sortBy: sortBy.value,
+    sortDir: sortDir.value
+  }
+  localStorage.setItem(STORAGE_KEY_FILTERS, JSON.stringify(data))
+})
+
+function hydrateFilters() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY_FILTERS)
+    if (!raw) return
+    const data = JSON.parse(raw)
+    
+    if (data.weaponId !== undefined) weaponId.value = data.weaponId
+    if (data.stateFilter) stateFilter.value = data.stateFilter
+    if (data.sortBy) sortBy.value = data.sortBy
+    if (data.sortDir) sortDir.value = data.sortDir
+  } catch (e) {
+    console.warn('Failed to hydrate Valorant filters', e)
+  }
+}
 
 function initObserver() {
   if (observer) observer.disconnect()
@@ -117,14 +174,20 @@ function initObserver() {
 }
 
 onMounted(async () => {
+  hydrateFilters()
   window.addEventListener('scroll', handleScroll, { passive: true })
   try {
-    const [skinsRes, weaponsRes] = await Promise.all([
+    const [skinsRes, weaponsRes, mySkins, watchlist] = await Promise.all([
       clientV3.get<ValorantSkin[]>('/riot/valorant/skins'),
-      fetchWeapons()
+      fetchWeapons(),
+      fetchMySkins(),
+      fetchWatchlist()
     ])
     skins.value = skinsRes.data
     weapons.value = weaponsRes.sort((a, b) => a.name.localeCompare(b.name))
+    
+    riotStore.setOwnedSkins(mySkins.map(s => ({ skinId: s.skinId, addedAt: s.createdAt })))
+    riotStore.setWatchedSkins(watchlist.map(s => ({ skinId: s.skinId, addedAt: s.createdAt })))
 
     await nextTick()
     initObserver()
@@ -160,13 +223,37 @@ onUnmounted(() => {
         </option>
       </select>
 
-      <select v-model="sortBy" class="toolbar-select sort-select">
-        <option value="name">Nom</option>
-        <option value="id">ID</option>
+      <select v-model="stateFilter" class="toolbar-select state-select">
+        <option value="all">Tous les skins</option>
+        <option value="owned">Obtenus</option>
+        <option value="watched">Surveillés</option>
+        <option value="unowned">Non possédés</option>
       </select>
 
-      <button class="sort-dir-btn" @click="toggleSortDir">
-        <i :class="['mdi', sortDir === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending']" />
+      <div class="sort-controls">
+        <select v-model="sortBy" class="toolbar-select sort-select">
+          <option value="name">Nom</option>
+          <option value="id">ID</option>
+          <option value="addedAt">Date d'ajout</option>
+        </select>
+
+        <button
+          type="button"
+          class="toolbar-btn sort-order-btn"
+          @click="toggleSortDir"
+          :title="sortDir === 'asc' ? 'Croissant' : 'Décroissant'"
+        >
+          <i class="mdi" :class="sortDir === 'asc' ? 'mdi-sort-ascending' : 'mdi-sort-descending'" />
+        </button>
+      </div>
+
+      <button
+        type="button"
+        class="toolbar-btn reset-btn"
+        title="Réinitialiser les filtres"
+        @click="clearFilters"
+      >
+        <i class="mdi mdi-filter-remove-outline" />
       </button>
 
       <span v-if="!loading && !error" class="catalog-count">
@@ -204,7 +291,6 @@ onUnmounted(() => {
     <div ref="sentinel" class="sentinel">
       <div v-if="hasMore" class="loading-more">
         <div class="spinner" />
-        Chargement des skins suivants...
       </div>
     </div>
 
@@ -259,10 +345,17 @@ onUnmounted(() => {
   font-size: 0.75rem;
   width: auto;
 
-  &.sort-select { min-width: 80px; }
+  &.state-select { min-width: 130px; }
+  &.sort-select { min-width: 110px; }
 }
 
-.sort-dir-btn {
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.toolbar-btn {
   margin: 0;
   height: 2rem;
   width: 2rem;
@@ -276,14 +369,19 @@ onUnmounted(() => {
   cursor: pointer;
   border-radius: var(--pico-border-radius);
   flex-shrink: 0;
+  transition: all 0.2s;
 
   &:hover {
     border-color: var(--pico-primary);
     color: var(--pico-primary);
-    background: var(--pico-form-element-background-color);
   }
 
   i { font-size: 1rem; }
+}
+
+.reset-btn:hover {
+  border-color: var(--pico-del-color);
+  color: var(--pico-del-color);
 }
 
 .catalog-count {
@@ -368,23 +466,15 @@ onUnmounted(() => {
 
 /* ── Sentinel & Infinite Scroll ─────────────────────────────────────────── */
 .sentinel {
-  min-height: 100px;
-  margin-top: 2rem;
-}
-
-.loading-more {
+  min-height: 60px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
   justify-content: center;
-  gap: 1rem;
-  color: var(--pico-muted-color);
-  font-size: 0.9rem;
+  align-items: center;
 }
 
 .spinner {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 1.25rem;
+  height: 1.25rem;
   border: 2px solid var(--pico-muted-border-color);
   border-top-color: var(--pico-primary);
   border-radius: 50%;
