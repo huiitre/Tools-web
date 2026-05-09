@@ -5,7 +5,7 @@ import {
   fetchEntitlementToken,
   fetchClientVersion,
   fetchStorefront,
-  fetchSkinsMap,
+  fetchSkinByLevelId,
   fetchBundleMeta,
   refreshToAccessToken,
   isAccessTokenExpired,
@@ -49,7 +49,6 @@ export function useValorantShop() {
   const skins = ref<{ id: string; name: string; icon: string; cost: number }[]>([])
   const bundles = ref<ShopBundle[]>([])
   const currentSkinIds = ref<string[]>([])
-  const cachedSkinsMap = ref<Record<string, any> | null>(null)
   const isRenewing = ref(false)
   const error = ref<string | null>(null)
   const remainingMs = ref(0)
@@ -68,19 +67,15 @@ export function useValorantShop() {
 
   const sleep = (ms: number) => new Promise<void>(resolve => setTimeout(resolve, ms))
 
-  function mapSkin(id: string, cost: number, skinsMap: Record<string, any>) {
-    const skin = skinsMap[id]
-    return {
-      id,
-      name: skin?.displayName ?? 'Skin inconnu',
-      icon: skin?.levels?.[0]?.displayIcon ?? skin?.displayIcon ?? skin?.chromas?.[0]?.fullRender ?? '',
-      cost,
-    }
-  }
-
-  async function buildBundles(rawBundles: RawBundle[], skinsMap: Record<string, any>): Promise<ShopBundle[]> {
+  async function buildBundles(rawBundles: RawBundle[]): Promise<ShopBundle[]> {
     return Promise.all(rawBundles.map(async (b) => {
-      const meta = await fetchBundleMeta(b.dataAssetId)
+      const [meta, ...skins] = await Promise.all([
+        fetchBundleMeta(b.dataAssetId),
+        ...b.items.map(async (item) => {
+          const { name, icon } = await fetchSkinByLevelId(item.itemId)
+          return { id: item.itemId, name, icon, cost: item.cost }
+        }),
+      ])
       return {
         uuid: b.dataAssetId,
         name: meta.name,
@@ -89,7 +84,7 @@ export function useValorantShop() {
         discountedCost: b.totalDiscountedCost,
         discountPercent: b.discountPercent,
         expiresAt: Date.now() + b.remainingSeconds * 1_000,
-        skins: b.items.map(item => mapSkin(item.itemId, item.cost, skinsMap)),
+        skins,
       }
     }))
   }
@@ -175,11 +170,13 @@ export function useValorantShop() {
         const newIds = offers.map(o => o.id).join(',')
 
         if (newIds !== prevIds && renewalActive) {
-          const map = cachedSkinsMap.value ?? await fetchSkinsMap()
-          cachedSkinsMap.value = map
-          skins.value = offers.map(({ id, cost }) => mapSkin(id, cost, map))
+          const [resolvedSkins, resolvedBundles] = await Promise.all([
+            Promise.all(offers.map(({ id, cost }) => fetchSkinByLevelId(id).then(({ name, icon }) => ({ id, name, icon, cost })))),
+            buildBundles(rawBundles),
+          ])
+          skins.value = resolvedSkins
           currentSkinIds.value = offers.map(o => o.id)
-          bundles.value = await buildBundles(rawBundles, map)
+          bundles.value = resolvedBundles
           startTimer(remainingSeconds)
           stopRenewal()
           return
@@ -197,15 +194,16 @@ export function useValorantShop() {
     error.value = null
 
     try {
-      const [{ offers, remainingSeconds, bundles: rawBundles }, skinsMap] = await Promise.all([
-        fetchOffers(token, region),
-        fetchSkinsMap(),
+      const { offers, remainingSeconds, bundles: rawBundles } = await fetchOffers(token, region)
+
+      const [resolvedSkins, resolvedBundles] = await Promise.all([
+        Promise.all(offers.map(({ id, cost }) => fetchSkinByLevelId(id).then(({ name, icon }) => ({ id, name, icon, cost })))),
+        buildBundles(rawBundles),
       ])
 
-      cachedSkinsMap.value = skinsMap
-      skins.value = offers.map(({ id, cost }) => mapSkin(id, cost, skinsMap))
+      skins.value = resolvedSkins
       currentSkinIds.value = offers.map(o => o.id)
-      bundles.value = await buildBundles(rawBundles, skinsMap)
+      bundles.value = resolvedBundles
 
       riotStore.setAuth(token, region)
       startTimer(remainingSeconds)
@@ -243,7 +241,6 @@ export function useValorantShop() {
     skins.value = []
     bundles.value = []
     currentSkinIds.value = []
-    cachedSkinsMap.value = null
     error.value = null
     view.value = 'form'
   }
