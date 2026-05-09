@@ -109,12 +109,13 @@ async function getBundles(featuredBundle, skinMap) {
     const days = Math.floor(remaining / 86400);
     const hours = Math.floor((remaining % 86400) / 3600);
 
-    const skinIds = (bundle.Items ?? [])
+    const skinItems = (bundle.Items ?? [])
       .filter(i => i.Item?.ItemTypeID === SKIN_TYPE_ID)
-      .map(i => i.Item.ItemID);
-    const skins = resolveSkinNames(skinMap, skinIds);
+      .map(i => ({ id: i.Item.ItemID, cost: i.DiscountedPrice ?? i.BasePrice ?? 0 }));
+    const skinIds = skinItems.map(i => i.id);
+    const skins = resolveSkinNames(skinMap, skinIds).map((name, idx) => ({ name, id: skinItems[idx].id }));
 
-    return { name, baseCost, discountedCost, discount, days, hours, skins };
+    return { name, assetId, baseCost, discountedCost, discount, days, hours, skins };
   }));
 }
 
@@ -157,6 +158,7 @@ async function getBundles(featuredBundle, skinMap) {
     skinNames.forEach((name, i) => {
       const cost = offers[i].Cost['85ad13f7-3d1b-5128-9eb2-7cd8ee0b5741'];
       console.log(`${i + 1}. ${name} — ${cost} VP`);
+      console.log(`   UUID Riot : ${skinIds[i]}`);
     });
 
     const remaining = shop.SkinsPanelLayout.SingleItemOffersRemainingDurationInSeconds;
@@ -177,11 +179,12 @@ async function getBundles(featuredBundle, skinMap) {
           : `${b.discountedCost} VP`;
         const timeStr = b.days > 0 ? `${b.days}j ${b.hours}h` : `${b.hours}h`;
         console.log(`🎮 ${b.name}`);
+        console.log(`   UUID bundle : ${b.assetId}`);
         console.log(`   💰 ${priceStr}`);
         console.log(`   ⏱️  Expire dans ${timeStr}`);
         if (b.skins.length) {
           console.log(`   🔫 Skins inclus :`);
-          b.skins.forEach(s => console.log(`      · ${s}`));
+          b.skins.forEach(s => console.log(`      · ${s.name}\n        UUID Riot : ${s.id}`));
         }
         console.log();
       });

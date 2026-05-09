@@ -38,10 +38,8 @@ export async function fetchEntitlementToken(accessToken: string): Promise<string
 }
 
 export async function fetchClientVersion(): Promise<string> {
-  const res = await fetch('https://valorant-api.com/v1/version')
-  if (!res.ok) throw new Error(`Impossible de récupérer la version Valorant (${res.status})`)
-  const data = await res.json()
-  return data.data.riotClientVersion
+  const { data } = await clientV3.get('/riot/valorant/version')
+  return data.riotClientVersion
 }
 
 export interface RawBundle {
@@ -115,13 +113,10 @@ export async function fetchStorefront(
 
 export async function fetchBundleMeta(uuid: string): Promise<{ name: string; displayIcon: string }> {
   try {
-    const res = await fetch(`https://valorant-api.com/v1/bundles/${uuid}?language=fr-FR`)
-    if (!res.ok) return { name: 'Pack inconnu', displayIcon: '' }
-    const json = await res.json()
-    const d = json.data
+    const { data } = await clientV3.get(`/riot/valorant/bundles/by-asset/${uuid}`)
     return {
-      name: d?.displayName ?? 'Pack inconnu',
-      displayIcon: d?.displayIcon2 ?? d?.displayIcon ?? d?.verticalPromoImage ?? '',
+      name: data.name ?? 'Pack inconnu',
+      displayIcon: data.bannerUrl ?? '',
     }
   } catch {
     return { name: 'Pack inconnu', displayIcon: '' }
@@ -147,16 +142,14 @@ export async function refreshToAccessToken(
   }
 }
 
-export async function fetchSkinsMap(): Promise<Record<string, any>> {
-  const res = await fetch('https://valorant-api.com/v1/weapons/skins?language=fr-FR')
-  if (!res.ok) throw new Error(`Impossible de récupérer les skins (${res.status})`)
-  const data = await res.json()
-
-  const map: Record<string, any> = {}
-  for (const skin of data.data) {
-    map[skin.uuid] = skin
-    for (const level of skin.levels ?? []) map[level.uuid] = skin
-    for (const chroma of skin.chromas ?? []) map[chroma.uuid] = skin
+export async function fetchSkinByLevelId(levelUuid: string): Promise<{ name: string; icon: string }> {
+  try {
+    const { data } = await clientV3.get(`/riot/valorant/skins/by-level/${levelUuid}`)
+    return {
+      name: data.name ?? 'Skin inconnu',
+      icon: data.iconUrl ?? '',
+    }
+  } catch {
+    return { name: 'Skin inconnu', icon: '' }
   }
-  return map
 }
